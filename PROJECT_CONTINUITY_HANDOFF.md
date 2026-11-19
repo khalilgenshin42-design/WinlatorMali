@@ -271,3 +271,13 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Corrected workflow execution **44640556637** was triggered by the workflow fix commit `eeb5ce9afd884500493d71167392579858847f14`: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44640556637
 - At the latest inspection, the job was still in progress during checkout. No result or artifact is claimed yet.
+
+## Engineering step log — 2026-11-20: CPython managed-emulator ABI mismatch
+
+- Corrected run **44640556637** completed unsuccessfully. Its log shows the managed emulator selected x86_64 (`NATIVE_ABI` follows the x86_64 GitHub runner), while the testbed Gradle configuration discovered only the ARM64 prefix and applied `ndk.abiFilters = arm64-v8a`. Gradle therefore reported `No matching Apks found for maxVersion`, started zero tests, and failed to find the instrumentation target. No Python runtime test executed.
+- Updated workflow in commit `e02a93e8a15a3aa73234f0de5d07e6ab8fca1944`:
+  1. Run upstream CPython `ci x86_64-linux-android --fast-ci` so the emulator and test APK ABI match.
+  2. Separately configure, build, and package `aarch64-linux-android` for the MaliWinlator ARM64 production target.
+  3. Audit and upload only the ARM64 package.
+- This separates emulator test ABI from shipping ABI. It is not yet proof of ARM64 device runtime compatibility, and no Legendary package or UI has been integrated yet.
+- Next gates: obtain a non-zero passing CPython emulator test run; inspect ARM64 package ELF closure and relocatability; build and import-test Legendary dependencies for Android/Bionic; implement an isolated JNI-managed runtime with secret-safe process invocation; only then implement the Epic library/auth/install/update/launch UI and validate on the Xiaomi 15T.
