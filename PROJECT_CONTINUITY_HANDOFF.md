@@ -268,3 +268,6 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
   `python3 Platforms/Android ci aarch64-linux-android --fast-ci`.
   The workflow will audit and upload the runtime only after that command succeeds. This change is a CI/test-harness correction; it does not alter MaliWinlator app source or claim Android runtime validation.
 - Next gate: inspect the new CI run. If it passes, inspect the artifact and perform ELF/dependency/relocation checks before adding any JNI or Legendary code. If it fails, use the new log to distinguish emulator provisioning, packaging, linker, and Python test failures.
+
+- Corrected workflow execution **44640556637** was triggered by the workflow fix commit `eeb5ce9afd884500493d71167392579858847f14`: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44640556637
+- At the latest inspection, the job was still in progress during checkout. No result or artifact is claimed yet.
