@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-cpython-android:
-    name: Build and test CPython 3.15.2 for Android ARM64
+    name: Test CPython 3.15.2 on Android emulator; package ARM64 runtime
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
@@ -79,11 +79,18 @@ jobs:
         working-directory: cpython
         run: |
           set -euo pipefail
-          # Upstream's ci command tests the packaged prefix in its release
-          # testbed, rather than testing the in-tree cross-build directory.
-          # This also applies CPython's fast-CI test arguments and fails if
-          # the managed emulator executes zero tests.
-          python3 Platforms/Android ci aarch64-linux-android --fast-ci
+          # The managed emulator on the x86_64 GitHub runner requires an
+          # x86_64 app APK. Test a matching x86_64 CPython package first.
+          # This is a host-emulator validation, not the ARM64 target artifact.
+          python3 Platforms/Android ci x86_64-linux-android --fast-ci
+
+      - name: Build the production Android ARM64 runtime
+        working-directory: cpython
+        run: |
+          set -euo pipefail
+          python3 Platforms/Android configure-host aarch64-linux-android
+          python3 Platforms/Android make-host aarch64-linux-android
+          python3 Platforms/Android package aarch64-linux-android
 
       - name: Audit packaged runtime
         working-directory: cpython
@@ -100,7 +107,7 @@ jobs:
             echo "Android target: aarch64-linux-android"
             echo "App ABI: arm64-v8a"
             echo "NDK from upstream android-env.sh: 27.3.13750724"
-            echo "Build/test mode: upstream Platforms/Android ci --fast-ci"
+            echo "Emulator test: x86_64-linux-android via upstream Platforms/Android ci --fast-ci"\n            echo "Shipped target: separately built aarch64-linux-android"
             cat runtime-sha256.txt
           } > runtime-build-info.txt
           cat runtime-build-info.txt
