@@ -165,8 +165,8 @@ android {
     productFlavors {
         standard {
             dimension "version"
-            applicationId "com.winlator.mali"
-            resValue "string", "app_name", "Winlator Mali"
+            applicationId "com.maliwinlator.app"
+            resValue "string", "app_name", "MaliWinlator"
         }
         ludashi {
             dimension "version"
