@@ -40,3 +40,15 @@ On Xiaomi 15T / Android 16:
 ## Release requirements
 
 Record APK SHA-256, package ID, version code/name, signing certificate fingerprint, source commit, and toolchain. Keep debug and release artifacts separate. Do not claim device testing until installed and exercised on the target phone.
+
+
+## Verified CI baseline artifact (2026-11-19)
+
+- Run: [44584271920](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44584271920).
+- Commit: `d68e700c374c16c59a0812f7bec72a8bb5455a8a`.
+- Build result: `BUILD SUCCESSFUL`; APK artifact upload succeeded.
+- APK file: `app-standard-debug.apk`, 447,758,192 bytes.
+- APK SHA-256: `e0de614ae5bf93d66d885a92f6de5dba649a7afcc88695e894855ee27fcab67a`.
+- Artifact ZIP SHA-256: `388b073f6015d838a653115bb61815006c20457b88ebcfb99e8da6232cf6780e`.
+- The APK includes the compressed root filesystem and runtime asset bundles, explaining its large size. It is an ARM64 debug APK.
+- Device installation and launch are not yet tested.
