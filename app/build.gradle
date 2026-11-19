@@ -94,7 +94,7 @@ android {
         targetSdkVersion 28
 
         versionCode 23
-        versionName "1.2.1 Bionic"
+        versionName "1.2.1 MaliWinlator dev"
 
         // External native build from Winlator
         externalNativeBuild {
@@ -165,8 +165,8 @@ android {
     productFlavors {
         standard {
             dimension "version"
-            applicationId "com.winlator.mali"
-            resValue "string", "app_name", "Winlator Mali"
+            applicationId "com.maliwinlator.app"
+            resValue "string", "app_name", "MaliWinlator"
         }
         ludashi {
             dimension "version"
