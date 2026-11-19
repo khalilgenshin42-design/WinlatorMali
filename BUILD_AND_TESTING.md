@@ -52,3 +52,12 @@ Record APK SHA-256, package ID, version code/name, signing certificate fingerpri
 - Artifact ZIP SHA-256: `388b073f6015d838a653115bb61815006c20457b88ebcfb99e8da6232cf6780e`.
 - The APK includes the compressed root filesystem and runtime asset bundles, explaining its large size. It is an ARM64 debug APK.
 - Device installation and launch are not yet tested.
+
+
+## Isolated-storage rebuild (2026-11-19)
+
+- Source commit: `d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
+- Changed fresh-install external default to `/storage/emulated/0/MaliWinlator`; shortcut export default follows it.
+- CI run [44586902271](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44586902271) completed successfully; the standard debug APK was built and uploaded.
+- Artifact ZIP SHA-256: `44662ff6b8374d80535e3ae2963dfbf9bec8323ef3f7135e6ef4e7cf25235340`.
+- Device smoke test is pending.
