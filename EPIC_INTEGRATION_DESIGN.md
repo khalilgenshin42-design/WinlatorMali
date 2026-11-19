@@ -88,3 +88,12 @@ Proof-of-concept gates before UI work:
 5. Invoke pinned Legendary's CLI entrypoint in-process for `--version` and a non-authenticated help/list command. Authentication must be tested only after output redaction, token storage and lifecycle are in place.
 
 This is a design decision based on official CPython Android packaging guidance, not yet a successful build or runtime test.
+
+
+## Initial dependency pin candidates (2026-11-19)
+
+- CPython candidate: **3.14.10**, a current stable maintenance release with official Android build/embedding documentation. Do not select 3.15 for the first POC until the native dependency stack has been tested against it. Pin the exact source archive checksum and Android build-script revision in CI before using it in a shipped APK.
+- Legendary candidate: **0.21.1**, the latest published non-prerelease release verified during this investigation. Its project metadata declares Python >=3.10, GPL-3.0-or-later, and runtime dependencies `requests`, `filelock`, and `pycryptodomex`. Pin the release tag/commit and dependency hashes; do not build from floating `master`.
+- Android target architecture is `aarch64-linux-android` / app ABI `arm64-v8a`. CPython's Android build tooling explicitly lists this host triplet and builds a shared `libpython` for embedding.
+
+These are candidates for the reproducible POC, not yet validated compatible binaries. The critical risk is building and testing `pycryptodomex` and other native extensions for Android ARM64 rather than installing desktop Linux wheels.
