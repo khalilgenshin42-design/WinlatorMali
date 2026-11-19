@@ -25,7 +25,7 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - [x] Create a clean development branch directly from the 1.2.1 commit.
 - [x] Reapply only MaliWinlator identity, documentation, and CI on top of that baseline.
 - [x] Verify CI ancestry check and clean APK build (run 44584271920, commit d68e700c374c16c59a0812f7bec72a8bb5455a8a).
-- [x] Record APK artifact and ZIP SHA-256: `388b073f6015d838a653115bb61815006c20457b88ebcfb99e8da6232cf6780e`.
+- [x] Record second APK artifact ZIP SHA-256: `44662ff6b8374d80535e3ae2963dfbf9bec8323ef3f7135e6ef4e7cf25235340`.
 - [ ] Verify installed package identity and first-run/launch behavior on Xiaomi 15T; device testing is still pending.
 
 ### M1 — Reproducible baseline
@@ -76,3 +76,14 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - APK size: 447,758,192 bytes; SHA-256: `e0de614ae5bf93d66d885a92f6de5dba649a7afcc88695e894855ee27fcab67a`.
 - ZIP integrity test: passed.
 - CI build success does not establish device installation/runtime compatibility. Xiaomi 15T smoke testing remains pending.
+
+
+## Isolated baseline rebuild (2026-11-19)
+
+- Found upstream's default external folder was shared as `/storage/emulated/0/Winlator`, despite the app's distinct Android package ID.
+- Changed MaliWinlator's fresh-install default external folder to `/storage/emulated/0/MaliWinlator` (shortcut export path follows this default).
+- Source commit: `d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
+- CI run [44586902271](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44586902271): successful, including 1.2.1 ancestry check, Gradle build and artifact upload.
+- Artifact: `maliwinlator-1.2.1-standard-debug-d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
+- Artifact ZIP: 446,620,646 bytes; SHA-256: `44662ff6b8374d80535e3ae2963dfbf9bec8323ef3f7135e6ef4e7cf25235340`.
+- Target device installation/launch is still untested.
