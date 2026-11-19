@@ -92,8 +92,13 @@ This is a design decision based on official CPython Android packaging guidance, 
 
 ## Initial dependency pin candidates (2026-11-19)
 
-- CPython candidate: **3.14.10**, a current stable maintenance release with official Android build/embedding documentation. Do not select 3.15 for the first POC until the native dependency stack has been tested against it. Pin the exact source archive checksum and Android build-script revision in CI before using it in a shipped APK.
+- CPython candidate: **3.15.2**, the current stable release with the official `Platforms/Android` cross-build tooling present in its tagged source tree. The earlier 3.14.10 candidate is withdrawn: inspection of the exact v3.14.10 source tag did not find the Android platform build scripts, whereas v3.15.2 contains them. Pin the exact source tag/commit and archive checksum in CI. Legendary declares Python >=3.10, but runtime compatibility with 3.15 and all native dependencies must still be tested.
 - Legendary candidate: **0.21.1**, the latest published non-prerelease release verified during this investigation. Its project metadata declares Python >=3.10, GPL-3.0-or-later, and runtime dependencies `requests`, `filelock`, and `pycryptodomex`. Pin the release tag/commit and dependency hashes; do not build from floating `master`.
 - Android target architecture is `aarch64-linux-android` / app ABI `arm64-v8a`. CPython's Android build tooling explicitly lists this host triplet and builds a shared `libpython` for embedding.
 
 These are candidates for the reproducible POC, not yet validated compatible binaries. The critical risk is building and testing `pycryptodomex` and other native extensions for Android ARM64 rather than installing desktop Linux wheels.
+
+
+### CPython version correction (2026-11-19)
+
+Inspection of the exact CPython tags found that `v3.15.2` contains `Platforms/Android/README.md` and `Platforms/Android/__main__.py`, including the `aarch64-linux-android` host target. The exact `v3.14.10` source tag did not contain that directory. Therefore the initial POC pin is corrected to CPython **3.15.2**; 3.14.10 is not the selected build path. This does not yet establish Legendary 0.21.1 or `pycryptodomex` compatibility with Python 3.15, which remains a required test gate.
