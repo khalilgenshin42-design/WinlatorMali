@@ -24,8 +24,9 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - [x] Verify the official 1.2.1 release tag and commit.
 - [x] Create a clean development branch directly from the 1.2.1 commit.
 - [x] Reapply only MaliWinlator identity, documentation, and CI on top of that baseline.
-- [ ] Verify CI ancestry check and clean APK build.
-- [ ] Record artifact checksum, package name, version, and install/launch result.
+- [x] Verify CI ancestry check and clean APK build (run 44584271920, commit d68e700c374c16c59a0812f7bec72a8bb5455a8a).
+- [x] Record APK artifact and ZIP SHA-256: `388b073f6015d838a653115bb61815006c20457b88ebcfb99e8da6232cf6780e`.
+- [ ] Verify installed package identity and first-run/launch behavior on Xiaomi 15T; device testing is still pending.
 
 ### M1 — Reproducible baseline
 - Validate submodule checkout and external root-filesystem asset download.
@@ -62,3 +63,16 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - Keep Legendary process-isolated and preserve license notices.
 - Do not silently migrate or delete existing Wine prefixes, saves, or user content.
 - Do not claim a build or device test succeeded unless its result is observable.
+
+
+## Baseline build result (2026-11-19)
+
+- GitHub Actions run: [44584271920](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44584271920) — successful.
+- Source commit: `d68e700c374c16c59a0812f7bec72a8bb5455a8a`.
+- Official 1.2.1 baseline ancestry check: passed.
+- Gradle task: `:app:assembleStandardDebug` — BUILD SUCCESSFUL.
+- Artifact: `app-standard-debug.apk`, contained in the uploaded Actions artifact.
+- Artifact ZIP size: 446,620,713 bytes; SHA-256: `388b073f6015d838a653115bb61815006c20457b88ebcfb99e8da6232cf6780e`.
+- APK size: 447,758,192 bytes; SHA-256: `e0de614ae5bf93d66d885a92f6de5dba649a7afcc88695e894855ee27fcab67a`.
+- ZIP integrity test: passed.
+- CI build success does not establish device installation/runtime compatibility. Xiaomi 15T smoke testing remains pending.
