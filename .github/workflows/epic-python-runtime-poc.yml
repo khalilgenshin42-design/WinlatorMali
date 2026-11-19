@@ -1,0 +1,109 @@
+name: Epic runtime — CPython Android ARM64 POC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maliwinlator-epic-cpython-poc
+  cancel-in-progress: false
+
+jobs:
+  build-cpython-android:
+    name: Build CPython 3.15.2 for Android ARM64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout MaliWinlator
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          path: maliwinlator
+
+      - name: Checkout pinned CPython source
+        uses: actions/checkout@v4
+        with:
+          repository: python/cpython
+          ref: v3.15.2
+          path: cpython
+          fetch-depth: 1
+
+      - name: Set up host Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            curl \
+            git \
+            libbz2-dev \
+            libffi-dev \
+            liblzma-dev \
+            libncurses-dev \
+            libreadline-dev \
+            libsqlite3-dev \
+            libssl-dev \
+            uuid-dev \
+            zlib1g-dev
+
+      - name: Verify pinned Android build target
+        working-directory: cpython
+        run: |
+          test -f Platforms/Android/README.md
+          test -f Platforms/Android/__main__.py
+          python3 Platforms/Android configure-host --help
+          git rev-parse HEAD
+
+      - name: Build CPython Android ARM64
+        working-directory: cpython
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        run: |
+          python3 Platforms/Android build aarch64-linux-android
+          python3 Platforms/Android package aarch64-linux-android
+
+      - name: Audit packaged runtime
+        working-directory: cpython
+        run: |
+          set -euo pipefail
+          PACKAGE="$(find cross-build/aarch64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$PACKAGE"
+          tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
+          tar -tzf "$PACKAGE" | grep -E 'python3\.15'
+          sha256sum "$PACKAGE" | tee runtime-sha256.txt
+          {
+            echo "CPython tag: v3.15.2"
+            echo "CPython commit: $(git rev-parse HEAD)"
+            echo "Android target: aarch64-linux-android"
+            echo "App ABI: arm64-v8a"
+            echo "NDK from upstream android-env.sh: 27.3.13750724"
+            echo "Build mode: Android shared libpython; packaged prefix"
+            cat runtime-sha256.txt
+          } > runtime-build-info.txt
+          cat runtime-build-info.txt
+
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
