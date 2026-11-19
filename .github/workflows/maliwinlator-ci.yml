@@ -1,0 +1,79 @@
+name: MaliWinlator 1.2.1 baseline APK
+
+on:
+  push:
+    branches:
+      - 'development/**'
+    paths:
+      - 'app/**'
+      - 'android_sysvshm/**'
+      - 'audio_plugin/**'
+      - 'input_controls/**'
+      - '.github/workflows/maliwinlator-ci.yml'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'gradle.properties'
+      - 'gradlew'
+      - '.gitmodules'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maliwinlator-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standard-debug:
+    name: Build MaliWinlator 1.2.1 standard debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout source and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Verify exact 1.2.1 release ancestry
+        run: |
+          test "$(git rev-parse HEAD^)" = "dfcdd4aaeff6def126ad8173619790806a5830db"
+          git show -s --format='%H %s' HEAD^
+          git show -s --format='%H %s' HEAD
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install pinned Android toolchain
+        run: |
+          sdkmanager --install \
+            "platforms;android-34" \
+            "build-tools;35.0.0" \
+            "cmake;3.22.1" \
+            "ndk;29.0.14206865"
+
+      - name: Verify submodules and wrapper
+        run: |
+          git submodule status --recursive
+          chmod +x ./gradlew
+          ./gradlew --version
+
+      - name: Build standard debug APK
+        run: ./gradlew :app:assembleStandardDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-standard-debug-${{ github.sha }}
+          path: app/build/outputs/apk/standard/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

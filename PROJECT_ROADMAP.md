@@ -1,0 +1,64 @@
+# MaliWinlator project roadmap
+
+## Project identity
+
+- Android app working name: **MaliWinlator**.
+- Source fork: [khalilgenshin42-design/WinlatorMali](https://github.com/khalilgenshin42-design/WinlatorMali).
+- Upstream: [GunaCharanTeja/WinlatorMali](https://github.com/GunaCharanTeja/WinlatorMali).
+- **Required baseline: Winlator Mali Bionic 1.2.1**, tag `bionic-mali-1.2.1`.
+- Baseline release commit: `dfcdd4aaeff6def126ad8173619790806a5830db`.
+- Development branch: `development/maliwinlator-1.2.1-bootstrap`.
+- This project is independent of the PanVK-G720 driver repository. It must not replace Android's vendor Vulkan driver.
+
+## Product goal
+
+Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic Games library workflow:
+1. **Legendary integration (primary):** authenticate through Legendary's supported Epic account flow, list owned games, install/update/uninstall, and launch installed games through a selected Wine container.
+2. **Official Epic Games Launcher (secondary):** offer an isolated Wine-prefix/container installation path as a compatibility fallback. It is not assumed to work until tested on-device.
+3. Preserve existing container, graphics-wrapper, DXVK/VKD3D, Box64/FEX, controller, shortcut, save, logging, and content-manager functionality.
+4. Keep custom Vulkan drivers as optional, importable content. Never overwrite or replace the system Vulkan implementation.
+
+## Milestones
+
+### M0 — Correct baseline and audit
+- [x] Verify the official 1.2.1 release tag and commit.
+- [x] Create a clean development branch directly from the 1.2.1 commit.
+- [x] Reapply only MaliWinlator identity, documentation, and CI on top of that baseline.
+- [ ] Verify CI ancestry check and clean APK build.
+- [ ] Record artifact checksum, package name, version, and install/launch result.
+
+### M1 — Reproducible baseline
+- Validate submodule checkout and external root-filesystem asset download.
+- Fix only reproducible build blockers; keep upstream runtime behavior unchanged.
+- Produce a debug APK artifact before changing product functionality.
+
+### M2 — Epic integration proof of concept
+- Keep Legendary as a separate GPL-3.0 executable/process; do not link its implementation into the MIT Android app.
+- Verify a compatible Python/runtime environment inside the app's Bionic/proot guest.
+- Prove command execution, cancellation, stdout/stderr capture, exit status, and safe token handling.
+- Implement account status and owned-game metadata before download/installation UI.
+
+### M3 — Game library and lifecycle
+- Model Epic catalog entries separately from existing Wine shortcuts.
+- Implement install location, disk-space preflight, resumable/retryable downloads, update state, and uninstall.
+- Create a launch shortcut only after install metadata and executable mapping are verified.
+- Keep long-running work in a foreground service with visible progress and cancellation.
+
+### M4 — Official launcher fallback
+- Install the official Epic Games Launcher into a dedicated container/prefix.
+- Test login, library rendering, download, update, launch, overlay, and restart persistence independently.
+- Clearly label unsupported or unreliable behavior.
+
+### M5 — Device validation and release
+- Test on Xiaomi 15T / Dimensity 8400 Ultra / Mali-G720 MC7 / Android 16.
+- Run a regression matrix for existing Winlator Mali features and representative DXVK/VKD3D games.
+- Publish signed APKs with reproducible build metadata, checksums, changelog, and rollback path.
+
+## Engineering rules
+
+- Work only in the development branch until a tested milestone is ready.
+- Do not modify upstream or the PanVK repository as part of this project.
+- Never commit Epic credentials, OAuth tokens, signing keys, keystores, or private user data.
+- Keep Legendary process-isolated and preserve license notices.
+- Do not silently migrate or delete existing Wine prefixes, saves, or user content.
+- Do not claim a build or device test succeeded unless its result is observable.
