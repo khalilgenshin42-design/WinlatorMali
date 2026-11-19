@@ -193,3 +193,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 1. Monitor retry run `44590732396`; inspect job logs at each failing step rather than assuming success.
 2. If the runtime package builds, audit its archive structure and ELF dependencies, then create an app-side JNI initialization probe.
 3. If the build fails, record the actual compiler/configuration error and patch the build pipeline before adding any Epic UI.
+
+
+## Engineering step log — 2026-11-19: JNI embedding integration audit
+
+- Inspected the CPython v3.15.2 Android testbed source: `Platforms/Android/testbed/app/src/main/c/main_activity.c`, Kotlin runner, and Gradle packaging logic. The upstream reference initializes Python with `PyConfig`, `PyConfig_SetBytesArgv`, `PyConfig_SetBytesString(home)`, `Py_InitializeFromConfig`, then runs the requested module via `Py_RunMain`. It extracts the Python standard library assets into app-private storage and loads the native library.
+- Inspected MaliWinlator native build: `app/src/main/cpp/CMakeLists.txt` currently builds `winlator` and `fakeinput`; it can host a separate `epicpython` JNI shared library linked to CPython without coupling to the renderer. Current Gradle config is ARM64-only and NDK/CMake based.
+- Security implementation must differ from the CPython testbed's stdio-to-logcat convenience code: Legendary authentication output and exceptions must be captured/redacted; never route raw credentials or auth URLs/tokens into logcat. Use a dedicated Java manager/worker and controlled in-process argv.
+- No JNI/app source has been added yet; this was a source design audit only.
+- CPython retry workflow `44590732396` was still running at this point; check its latest status before continuing.
