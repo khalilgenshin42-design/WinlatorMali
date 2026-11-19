@@ -36,3 +36,28 @@ Use a dedicated Wine prefix; never mutate the default container. Test login, lib
 ### Acceptance criteria
 
 Legendary integration is complete only after supported login, owned-game listing, install with progress/cancellation, safe retry, update/uninstall, launch through a selected container, working shortcut, and persistence after app restart. The official launcher has an independent compatibility matrix.
+
+
+## Runtime feasibility audit (2026-11-19)
+
+The successfully built 1.2.1 APK was inspected, including its embedded `assets/imagefs.tzst` root filesystem. A tar inventory found no `python`, `python3`, or `pip` executable in that imagefs. Therefore Legendary cannot be assumed to run in the stock guest environment, and the Epic feature must not yet be implemented as a Python command invocation.
+
+The source already provides useful integration primitives:
+- `xenvironment/ImageFs`: resolves the app-private guest root at `files/imagefs`.
+- `xenvironment/components/GuestProgramLauncherComponent`: launches and configures guest programs in the active container environment.
+- `contents/ContentsManager`, `ContentProfile`, and `ContentDownloads`: existing runtime-component catalog/install lifecycle.
+- `contents/ContentDownloadService`: foreground download notification and wake-lock pattern.
+- `container/ContainerManager` and `Container`: container identity and prefix management.
+- `MainActivity` and `ContentsFragment`: current navigation and component-management entry points.
+
+### Required next engineering gate: Python runtime proof
+
+Before UI or game-library work:
+1. Choose a redistributable ARM64 CPython runtime compatible with the Android/Bionic execution environment used by this app. Do not assume a generic glibc Linux wheel or executable is compatible.
+2. Keep Python, its standard library, and Legendary's Python dependencies in a dedicated app-managed component directory; do not pollute the base rootfs or user Wine prefixes.
+3. Run a guest-side probe for interpreter startup, TLS/CA validation, DNS/HTTPS, subprocess execution, filesystem access, and persistence across app restart.
+4. Install a pinned Legendary release into that isolated runtime and test `--version`, authentication flow initiation, and non-secret metadata commands.
+5. Verify all GPL-3.0 notices/source-distribution obligations for the separately distributed Legendary executable and its dependencies.
+6. Only after those tests pass, add a typed Java client and foreground Epic install service.
+
+The current APK does not include Legendary or a Python runtime. Epic Games integration is still design/proof-of-feasibility work, not a delivered feature.
