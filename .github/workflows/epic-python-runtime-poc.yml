@@ -84,6 +84,12 @@ jobs:
           python3 Platforms/Android make-host aarch64-linux-android
           python3 Platforms/Android package aarch64-linux-android
 
+      - name: Test CPython on managed Android emulator
+        working-directory: cpython
+        run: |
+          set -euo pipefail
+          python3 Platforms/Android test --managed maxVersion
+
       - name: Audit packaged runtime
         working-directory: cpython
         run: |
