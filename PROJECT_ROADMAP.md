@@ -26,7 +26,7 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - [x] Reapply only MaliWinlator identity, documentation, and CI on top of that baseline.
 - [x] Verify CI ancestry check and clean APK build (run 44584271920, commit d68e700c374c16c59a0812f7bec72a8bb5455a8a).
 - [x] Record second APK artifact ZIP SHA-256: `44662ff6b8374d80535e3ae2963dfbf9bec8323ef3f7135e6ef4e7cf25235340`.
-- [ ] Verify installed package identity and first-run/launch behavior on Xiaomi 15T; device testing is still pending.
+- [x] User installed the isolated-storage build on Xiaomi 15T and reported on 2026-11-19 that it works. Scope confirmed: successful basic install/launch smoke test; deeper game/container regression tests remain pending.
 
 ### M1 — Reproducible baseline
 - Validate submodule checkout and external root-filesystem asset download.
@@ -87,3 +87,10 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - Artifact: `maliwinlator-1.2.1-standard-debug-d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
 - Artifact ZIP: 446,620,646 bytes; SHA-256: `44662ff6b8374d80535e3ae2963dfbf9bec8323ef3f7135e6ef4e7cf25235340`.
 - Target device installation/launch is still untested.
+
+
+## Target-device smoke test (2026-11-19)
+
+The user confirmed that the latest MaliWinlator 1.2.1 build works after installation on the Xiaomi 15T. This closes the basic install/launch gate. No claim is made yet about Epic functionality, game installation, or full Winlator regression coverage.
+
+Continuity log: [PROJECT_CONTINUITY_HANDOFF.md](PROJECT_CONTINUITY_HANDOFF.md).
