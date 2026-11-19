@@ -102,3 +102,11 @@ These are candidates for the reproducible POC, not yet validated compatible bina
 ### CPython version correction (2026-11-19)
 
 Inspection of the exact CPython tags found that `v3.15.2` contains `Platforms/Android/README.md` and `Platforms/Android/__main__.py`, including the `aarch64-linux-android` host target. The exact `v3.14.10` source tag did not contain that directory. Therefore the initial POC pin is corrected to CPython **3.15.2**; 3.14.10 is not the selected build path. This does not yet establish Legendary 0.21.1 or `pycryptodomex` compatibility with Python 3.15, which remains a required test gate.
+
+### Android native dependency build strategy (2026-11-20)
+
+Legendary 0.21.1 imports the separate `Cryptodome` namespace supplied by `pycryptodomex`, not the `Crypto` namespace supplied by the default `pycryptodome` distribution. PyCryptodome 4.x no longer publishes the separate `pycryptodomex` distribution, so use the 3.x line (candidate pin 3.23.0) unless Legendary changes its imports/dependencies.
+
+The upstream python-for-android project has a maintained Android recipe for PyCryptodome 3.23.0 and a wheel-oriented recipe build pipeline. PyCryptodome's source build supports a `.separate_namespace` marker that changes the installed distribution/package namespace from `Crypto` to `Cryptodome`. Investigate a small custom python-for-android recipe that creates this marker before the package build, compiles the extension for `arm64-v8a`, and emits an Android ELF extension set. This is a candidate engineering route only: it must be validated against CPython 3.15's stable ABI, Android API 26+, NDK compatibility, actual device loading, and Legendary's import tests before adoption.
+
+Pure-Python dependencies (`requests`, `filelock`, and their pure-Python transitive dependencies) can be vendored into the isolated runtime after pinning and hash verification. Do not use desktop Linux wheels for native modules. Avoid the optional pywebview dependency initially; use Legendary's manual authorization-code flow through the system browser and a secure in-app code-entry surface.
