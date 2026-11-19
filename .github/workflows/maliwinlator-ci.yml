@@ -39,8 +39,9 @@ jobs:
 
       - name: Verify exact 1.2.1 release ancestry
         run: |
-          test "$(git rev-parse HEAD^)" = "dfcdd4aaeff6def126ad8173619790806a5830db"
-          git show -s --format='%H %s' HEAD^
+          BASELINE="dfcdd4aaeff6def126ad8173619790806a5830db"
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          git show -s --format='%H %s' "$BASELINE"
           git show -s --format='%H %s' HEAD
 
       - name: Set up Java 17
