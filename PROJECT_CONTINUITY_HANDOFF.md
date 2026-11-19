@@ -1,0 +1,131 @@
+# MaliWinlator — Project Continuity Handoff
+
+Last updated: 2026-11-19
+Active branch: `development/maliwinlator-1.2.1-bootstrap`
+Repository: https://github.com/khalilgenshin42-design/WinlatorMali
+
+## Purpose and scope
+
+Build an independent Winlator Mali fork named **MaliWinlator**, based on **Winlator Mali 1.2.1**, preserving its Mali-specific runtime and existing Winlator features while adding Epic Games support.
+
+This is separate from the user's PanVK-G720 driver research. Never replace Android's vendor/system Vulkan driver. Do not merge PanVK work into this repository.
+
+## User/device validation
+
+- Target device: Xiaomi 15T, Dimensity 8400 Ultra, Mali-G720 MC7, Android 16, 12 GB RAM, non-rooted.
+- On 2026-11-19 the user explicitly reported that the latest MaliWinlator build was installed and **worked**.
+- This confirms the user's installation/smoke test succeeded. Exact tested screens, container creation, game launch, and regression coverage were not specified; do not claim those additional tests.
+- Ask for device logs only if a concrete runtime defect needs investigation. Continue non-device source/runtime work without requiring the user to repeat prior setup.
+
+## Source baseline and branch
+
+- Upstream: `GunaCharanTeja/WinlatorMali`.
+- Required release tag: `bionic-mali-1.2.1`.
+- Exact upstream release commit: `dfcdd4aaeff6def126ad8173619790806a5830db`.
+- Fork: `khalilgenshin42-design/WinlatorMali`.
+- Active branch: `development/maliwinlator-1.2.1-bootstrap`.
+- Last known branch HEAD before this handoff update: `0f7cab56d115a7c3053f17b11bec4a0cd7b3e4b4`.
+- Older `development/maliwinlator-bootstrap` based on 1.2 is incorrect; do not continue work there.
+- Preserve upstream 1.2.1 history and fixes. Do not force-push or rewrite history.
+
+## Current app identity / isolation
+
+- App label: `MaliWinlator`.
+- Standard flavor application ID: `com.maliwinlator.app`.
+- Namespace remains upstream `com.winlator.cmod`.
+- Fresh-install external default path: `/storage/emulated/0/MaliWinlator`.
+- Shortcut export default follows that path.
+- This app is intended to install alongside the original Winlator Mali app. Do not share or overwrite its data directory by default.
+
+## Build evidence
+
+### Initial baseline build
+- CI run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44584271920
+- Commit: `d68e700c374c16c59a0812f7bec72a8bb5455a8a`.
+- Gradle: `:app:assembleStandardDebug`, successful.
+- APK SHA-256: `e0de614ae5bf93d66d885a92f6de5dba649a7afcc88695e894855ee27fcab67a`.
+- This was superseded by the isolated-storage rebuild.
+
+### Current tested build
+- Source commit: `d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
+- CI run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44586902271 — successful.
+- Artifact name: `maliwinlator-1.2.1-standard-debug-d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
+- Artifact ZIP SHA-256: `44662ff6b8374d80535e3ae2963dfbf9bec8323ef3f7135e6ef4e7cf25235340`.
+- Artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44586902271/artifacts/14560983797
+- ZIP contains `app-standard-debug.apk`; prior runtime tool limitations prevented a verified extracted-APK hash for this second artifact.
+- User has now reported that this build works on the Xiaomi 15T.
+- Docs-only commits followed the source build; the tested app source remains commit `d9da8b4446edfcdae9abf5a0efabe54096769c3c`.
+
+## Epic Games product requirements
+
+User selected both:
+1. **Legendary CLI as the primary Epic integration** — authentication via its supported Epic flow, owned library, install/update/uninstall, launch through a selected Wine container, progress and cancellation.
+2. **Official Epic Games Launcher as secondary fallback** — installed in a dedicated Wine container/prefix, independently tested; never mutate the user's default prefix.
+
+Preserve existing containers, Wine/Proton, Box64/FEXCore, DXVK/VKD3D, graphics wrappers, controllers, saves, shortcuts, logs, and custom driver import. Epic games should create/update shortcuts only after install metadata and executable mapping are verified.
+
+## Epic feasibility findings (verified before implementation)
+
+- Current bundled rootfs inventory was inspected: no `python`, `python3`, or `pip` executable is present.
+- Rootfs uses Android Bionic (`usr/lib/libc.so` resolves to `/system/lib64/libc.so`), not a conventional glibc distro.
+- Upstream Legendary requires 64-bit Python 3.10+ and `requests`; its generic standalone Linux executable expects glibc >= 2.25. Do not bundle that Linux binary and assume compatibility.
+- Existing source extension points:
+  - `MainActivity`, `ContentsFragment`
+  - `contents/ContentsManager`, `ContentProfile`, `ContentDownloads`, `ContentDownloadService`
+  - `container/ContainerManager`, `Container`
+  - `xenvironment/ImageFs`, `XEnvironment`, `GuestProgramLauncherComponent`
+  - `core/ProcessHelper`
+  - `ShortcutsFragment`, `Shortcut`
+- `GuestProgramLauncherComponent` builds Wine/Box64 guest launch commands and environment; do not repurpose it as the Legendary host process runner.
+- Termux's Android/Bionic CPython build recipes are useful technical references, but Termux packages are built for a fixed Termux prefix and are not assumed relocatable into this app.
+
+## Architecture to implement
+
+1. **Runtime feasibility first:** build or package a redistributable ARM64 Android/Bionic CPython >=3.10 runtime in an app-private component directory, independent of base imagefs and Wine prefixes. Verify relocatability and modules: `ssl`, `ctypes`, `zlib`, `sqlite3`, subprocess, DNS/HTTPS, CA trust, filesystem access, persistence.
+2. Install a pinned Legendary version plus pinned Python dependencies in that isolated runtime. Verify `legendary --version`, safe auth initiation, and non-secret metadata commands before UI integration.
+3. Use a dedicated Java process adapter: argument arrays (never shell-concatenated UI strings), explicit executable/cwd/environment, bounded stdout/stderr capture, exit status, cancellation, timeouts, and redaction of secrets.
+4. Add components (names provisional): `EpicAccountManager`, `LegendaryClient`, `EpicLibraryRepository`, `EpicInstallService` (foreground service, notifications, progress/cancel/retry), `EpicGameLauncher`.
+5. Keep catalog IDs separate from shortcut IDs; persist state/manifests atomically; preflight disk space; support resumable/retryable installs; validate expected files before success.
+6. Store secrets only in app-private storage, preferably Android Keystore-backed encryption if compatible with the process boundary. Never log tokens, credentials, or authorization headers.
+7. Keep Legendary separate and respect GPL-3.0 distribution/source-notice obligations; audit all bundled dependency licenses.
+8. Add official launcher fallback in its own dedicated Wine prefix only after the primary path is viable. Test login, library, downloads, updates, launch, overlay, and persistence independently.
+
+## Acceptance criteria
+
+Legendary is not considered complete until the device test proves:
+- account authentication and sign-out;
+- owned-game listing;
+- install with visible progress, cancellation, safe retry/resume;
+- update and uninstall without deleting unrelated data;
+- launch through selected container;
+- correct shortcut creation and persistence after app restart.
+
+The official launcher fallback has its own compatibility matrix and must not be claimed working merely because its installer runs.
+
+## Engineering workflow / reporting rules
+
+- Work only on `development/maliwinlator-1.2.1-bootstrap` until a milestone is tested.
+- Inspect the current branch and relevant source before modifying.
+- Make small, reviewable commits. Never run concurrent writes to the same GitHub file/branch.
+- Update this file after every meaningful step: source changes, architecture decisions, build/CI results, test outcomes, blockers, and next actions.
+- Update roadmap/design/build docs when relevant.
+- Never commit API keys, Epic tokens, passwords, signing keys, keystores, or personal data.
+- Never claim build, package, feature, or device test success without direct evidence.
+- Keep debug builds separate from release builds and record source commit, artifact link, and hashes.
+- User prefers autonomous progress and only being interrupted when device validation or an unavoidable decision is required.
+
+## Current status and next actions
+
+- [x] Correct 1.2.1 source baseline.
+- [x] Separate app identity and default external data directory.
+- [x] CI build and artifact upload.
+- [x] User-confirmed successful installation/launch smoke test on target phone (2026-11-19; scope limited to "worked").
+- [x] Epic integration architecture and runtime incompatibility audit.
+- [ ] Build and validate relocatable Bionic CPython runtime.
+- [ ] Package/test Legendary and prove authentication/library metadata.
+- [ ] Implement Epic account/library UI and foreground install lifecycle.
+- [ ] Integrate game launch/shortcuts with selected containers.
+- [ ] Implement and independently validate official Epic Launcher fallback.
+- [ ] Full regression and release signing/distribution audit.
+
+Immediate next engineering task: inspect Android NDK/toolchain and app packaging constraints, then prototype a pinned CPython 3.10+ Bionic build with a MaliWinlator-specific relocatable prefix. Do not start Epic UI work before runtime proof.
