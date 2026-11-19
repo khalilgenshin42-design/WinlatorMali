@@ -61,3 +61,10 @@ Before UI or game-library work:
 6. Only after those tests pass, add a typed Java client and foreground Epic install service.
 
 The current APK does not include Legendary or a Python runtime. Epic Games integration is still design/proof-of-feasibility work, not a delivered feature.
+
+
+### Python runtime compatibility decision
+
+The upstream Legendary README currently requires 64-bit Python 3.10+ and `requests`. Its standalone Linux PyInstaller executable requires glibc >= 2.25. This app's imagefs is not a conventional glibc distribution: the `usr/lib/libc.so` entry is a symlink to Android's `/system/lib64/libc.so`, and the imagefs inventory contains no Python interpreter. Therefore do not bundle Legendary's Linux standalone executable into this Bionic-based guest and assume it will run.
+
+Preferred investigation path: build a relocatable ARM64 Android/Bionic CPython runtime for MaliWinlator's app-private directory, using the Termux Bionic build recipes as a technical reference rather than copying their fixed-prefix packages blindly. The Termux Python recipe documents its Android-specific NDK toolchain and native dependencies. Verify relocation, interpreter startup, `ssl`, `ctypes`, `zlib`, `sqlite3`, subprocesses, and TLS before adding Legendary. Keep this runtime separate from the base imagefs and from the Wine prefix.
