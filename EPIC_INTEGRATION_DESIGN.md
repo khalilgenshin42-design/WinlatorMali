@@ -68,3 +68,23 @@ The current APK does not include Legendary or a Python runtime. Epic Games integ
 The upstream Legendary README currently requires 64-bit Python 3.10+ and `requests`. Its standalone Linux PyInstaller executable requires glibc >= 2.25. This app's imagefs is not a conventional glibc distribution: the `usr/lib/libc.so` entry is a symlink to Android's `/system/lib64/libc.so`, and the imagefs inventory contains no Python interpreter. Therefore do not bundle Legendary's Linux standalone executable into this Bionic-based guest and assume it will run.
 
 Preferred investigation path: build a relocatable ARM64 Android/Bionic CPython runtime for MaliWinlator's app-private directory, using the Termux Bionic build recipes as a technical reference rather than copying their fixed-prefix packages blindly. The Termux Python recipe documents its Android-specific NDK toolchain and native dependencies. Verify relocation, interpreter startup, `ssl`, `ctypes`, `zlib`, `sqlite3`, subprocesses, and TLS before adding Legendary. Keep this runtime separate from the base imagefs and from the Wine prefix.
+
+
+## Android-native CPython integration decision (2026-11-19)
+
+The official CPython Android documentation provides a better-supported route than trying to execute a generic Linux Python binary: cross-build CPython for Android, package `libpython*.so` and its extension shared libraries as JNI libraries, package the standard library/site-packages as app assets, extract them to app-private storage, and initialize Python in embedded mode through JNI. This is the preferred implementation path for MaliWinlator's Android host process, subject to a working proof of concept on the project's NDK/API level.
+
+The official CPython Android build guide documents the configure/build/package flow and JNI embedding model. Use a pinned CPython 3.12 or 3.13 release initially (not an unpinned moving main branch), then confirm Legendary's minimum Python requirement and dependency compatibility against that exact release before locking versions. Build Android-compatible wheels/extensions for ARM64; ordinary Linux wheels are not assumed compatible.
+
+The current app already has a native CMake target (`winlator`) and ARM64 NDK build, so add a separate `epicpython` JNI shared library/target rather than mixing Python runtime code into the renderer library. Keep its runtime data in an app-private `files/epic-runtime` directory. Add an explicit initialization API that sets Python home/module search paths, disables bytecode writes into packaged assets, and returns structured errors.
+
+Do not use the existing `ProcessHelper` as the Epic command adapter: its current implementation logs the full environment array and command string. Epic authentication material must never flow through that logger. Prefer an embedded-Python Java/JNI bridge that invokes Legendary's CLI entrypoint with a controlled argv and captures output in memory, with redaction and cancellation. If a separate executable process is ultimately needed, implement a new hardened process adapter that never logs credentials or authorization-bearing arguments.
+
+Proof-of-concept gates before UI work:
+1. Build CPython Android ARM64 with the selected NDK/API and produce JNI libraries plus standard library payload.
+2. Load the JNI library on Xiaomi 15T and initialize Python without changing Winlator's base imagefs or Wine prefixes.
+3. Import/test `ssl`, `sqlite3`, `ctypes`, `zlib`, `hashlib`, `subprocess`, and filesystem paths; validate HTTPS, CA trust and DNS.
+4. Build/install pinned Android-compatible `requests`, `filelock`, and `pycryptodomex` dependencies; validate imports.
+5. Invoke pinned Legendary's CLI entrypoint in-process for `--version` and a non-authenticated help/list command. Authentication must be tested only after output redaction, token storage and lifecycle are in place.
+
+This is a design decision based on official CPython Android packaging guidance, not yet a successful build or runtime test.
