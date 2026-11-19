@@ -1,6 +1,11 @@
 name: Epic runtime — CPython Android ARM64 POC
 
 on:
+  push:
+    branches:
+      - 'development/**'
+    paths:
+      - '.github/workflows/epic-python-runtime-poc.yml'
   workflow_dispatch:
 
 permissions:
@@ -72,8 +77,6 @@ jobs:
 
       - name: Build CPython Android ARM64
         working-directory: cpython
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
         run: |
           python3 Platforms/Android build aarch64-linux-android
           python3 Platforms/Android package aarch64-linux-android
