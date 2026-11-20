@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Binder;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
 
