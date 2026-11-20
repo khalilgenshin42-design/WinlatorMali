@@ -581,3 +581,17 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Found a defensive edge case in `_library()`: non-asset DLC results could reference a catalog ID absent from the primary asset DLC map, causing a `KeyError`. The previous generator-based non-asset game merge also did not add newly appended names to the deduplication set, so duplicate non-asset records could pass through.
 - Fixed both cases in commit `e7a9c90ddf3f1cc5a49f37275cc73483cddebee0` (`fix: merge non-asset Epic DLC catalogs defensively`): non-asset games are now appended with incremental deduplication, and DLC lists use `setdefault` before extension.
 - This is a source-level correctness hardening only. It has not yet been exercised against Epic's live library API or by the Android runtime CI. The next validation should add/execute focused fake-catalog tests, then observe the dual-ABI CPython workflow and downstream Android instrumentation/APK pipeline.
+
+
+## Engineering continuation — 2026-11-20: Epic library regression coverage
+
+- Added focused host-side unit tests at `epicbridge/poc/test_epicbridge_runner.py` covering: non-asset DLC catalogs missing from the primary catalog map; duplicate non-asset game records; primary/non-asset duplicate suppression; case-insensitive game sorting; and merging primary plus non-asset DLC entries.
+- Added the test file to the CPython workflow's push path filters and inserted a dedicated regression-test step before the patched-Legendary host smoke test. The test command sets `PYTHONPATH` to the bridge runner package and uses Python's standard-library unittest runner; it does not need Epic credentials or network access.
+- Test addition commit: `6d8c08365c894bd40fcf51fad074ddb648b17526`. Workflow integration commit: `76cb60361b5900baab923357c6055e90ed2594ee`. Test fixture cleanup commit: `d390725c5d71c8398917ac53a1470ab0a71089b2`.
+- These tests are committed but have not yet been executed by CI in this session. A source commit or workflow trigger is not a test pass. The full Android runtime and downstream APK gates remain outstanding.
+
+### Next validation
+
+1. Confirm the new workflow run executes the five library regression tests and inspect the actual job log.
+2. If they pass, continue with patched Legendary worker shutdown/cancellation tests and the Android CPython emulator runtime smoke.
+3. Require both x86_64 test-runtime and ARM64 production-runtime archives, hashes, JNI instrumentation, embedded companion verification, and final APK artifact upload before requesting phone-side installation.
