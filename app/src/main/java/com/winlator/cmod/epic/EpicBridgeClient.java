@@ -56,6 +56,13 @@ public final class EpicBridgeClient {
         }
     }
 
+    public static void requestUninstall(Context context) {
+        Intent uninstall = new Intent(Intent.ACTION_DELETE);
+        uninstall.setData(Uri.parse("package:" + PACKAGE_NAME));
+        uninstall.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(uninstall);
+    }
+
     public static boolean requestInstall(Context context) {
         if (Build.VERSION.SDK_INT >= 26 && !context.getPackageManager().canRequestPackageInstalls()) {
             Intent settings = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
