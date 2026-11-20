@@ -1436,3 +1436,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The managed x86_64 Android emulator prerequisite smoke failed before runtime execution because Gradle could not resolve Android testbed dependencies from Maven Central: repeated HTTP 429 Too Many Requests responses. Production ARM64 runtime build, APK packaging, and instrumentation were skipped. This is an external dependency-resolution failure, not a runtime pass or runtime defect diagnosis.
 - Reran the failed GitHub Actions job (job ID `136547498390`) to retry dependency resolution. Await its result before touching workflow/source files.
 - No installable Epic APK is verified. The asset ZIP-entry assertions remain unresolved until the Android instrumentation packaging stage executes successfully.
+
+
+## 2026-11-20 — APK archive assertion diagnostics
+- Retried Epic runtime workflow #44811089521 (attempt 2). The Maven Central 429 issue cleared. CPython x86_64 runtime build, managed emulator prerequisite smoke, production ARM64 runtime build, and runtime audit all passed.
+- Instrumentation job then built `epicbridge-debug.apk` successfully, but exited immediately after `:epicbridge:assembleDebug` and before `connectedDebugAndroidTest`. Therefore the failure is in the three subsequent ZIP-entry assertions, not emulator startup. The previous report that this failure was caused by the instrumentation emulator going offline was incorrect; the offline messages occurred transiently in the earlier prerequisite smoke and that step ultimately passed.
+- Updated `tools/ci/run-epic-android-instrumentation.sh` at commit `f3604947263e561dc827a677129989bbd5a260e0` to print a distinct pass/fail for each required APK entry and list related entries when one is absent. Checks remain strict for the CPython zipfile helper, stdlib `os.py`, and x86_64 JNI library.
+- Next: allow the workflow triggered by this diagnostic change to run, identify the exact absent archive entry, correct its staging/packaging source, then run instrumentation before proceeding to ARM64 host/companion APK audit.
+- No Epic APK is installable/verified yet.
