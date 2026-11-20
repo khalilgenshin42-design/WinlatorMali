@@ -907,3 +907,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added a 30-second unknown-state grace to the host job tracker. If the companion no longer has a record for a persisted job ID (for example, after the companion was reinstalled or the service failed before recording its job), the host now clears the orphaned ID and reports that the operation may not have started instead of polling indefinitely.
 - Commit: 72d760aabd76a88ba05a956bf30b57ce8a577c13.
+
+## Engineering continuation — 2026-11-20: preserve Epic prerequisite and compatibility metadata
+
+- The install runner previously discarded the dictionary returned by Legendary's `core.install_game()`, which can identify a game's prerequisite installer. It now returns that metadata alongside install path/version and the existing anti-cheat/offline warnings.
+- The Epic UI now surfaces prerequisite requirements and compatibility warnings instead of silently implying every installed title is immediately launch-ready. It explicitly notes that prerequisite installers are not yet launched automatically.
+- Commits: 9a737c11a931ec0c60c5d5da4e939a947e8e60f2 (runner result); 69e0a5852c89933a7e069ef7958580492a0de70c (UI warnings).
