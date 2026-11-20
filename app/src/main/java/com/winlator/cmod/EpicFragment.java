@@ -317,6 +317,12 @@ public final class EpicFragment extends Fragment {
             try {
                 Thread.sleep(1500);
                 Bundle state = EpicBridgeClient.call(appContext, "job_status", jobId, "{}");
+                if (!state.getBoolean("ok", false)) {
+                    result.put("ok", false);
+                    result.put("message", state.getString("message",
+                            "Epic Bridge is unavailable or no longer authorizes this host"));
+                    return result;
+                }
                 String jobState = state.getString("state", "unknown");
                 if ("complete".equals(jobState) || "failed".equals(jobState)
                         || "interrupted".equals(jobState)) {
