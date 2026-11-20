@@ -1,0 +1,40 @@
+package com.maliwinlator.epicbridge;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import android.content.Context;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import org.json.JSONObject;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public final class EpicRuntimeInstrumentedTest {
+    @Test
+    public void bundledRuntimeLoadsAndPassesNativeSelfTest() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        assertTrue("CPython/Legendary assets or JNI library are missing",
+                EpicPythonRuntime.isPackaged(context));
+
+        String response = EpicPythonRuntime.call(context, "runtime_self_test", "{}");
+        JSONObject result = new JSONObject(response);
+        assertTrue("Runtime self-test failed: " + result.optString("message", response),
+                result.optBoolean("ok", false));
+
+        JSONObject selfTest = result.getJSONObject("self_test");
+        assertEquals("0.21.1", selfTest.getString("legendary"));
+        assertTrue("Android JCA AES-GCM was not exercised",
+                selfTest.getBoolean("android_jca_aes_gcm"));
+        assertTrue("JCA callback from a Python worker thread failed",
+                selfTest.getBoolean("android_jca_aes_gcm_worker_thread"));
+        assertTrue("Legendary workers are not using the thread backend",
+                selfTest.getBoolean("thread_workers"));
+        assertTrue("Anonymous mmap test failed",
+                selfTest.getBoolean("anonymous_mmap"));
+    }
+}
