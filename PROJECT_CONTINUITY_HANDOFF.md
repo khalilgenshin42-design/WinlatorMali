@@ -691,3 +691,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The extraction preflight also verifies the required Legendary crypto shim, requests, certifi CA bundle, and filelock files before reusing an existing extracted tree; a stale or incomplete tree is refreshed.
 - Commit: cbcb4f3110f688036c2afb7998f560ace4a0c892.
 - This final packaging/readiness check is part of the next Android instrumentation build. No runtime-ready result is claimed until that test passes on the managed x86_64 emulator.
+
+## Engineering continuation — 2026-11-20: serialize JNI entry into the embedded interpreter
+
+- Serialized EpicPythonRuntime.call() at the Java boundary. Provider requests and foreground install jobs can otherwise enter the same persistent CPython interpreter concurrently while downloader threads release the GIL for network I/O; the Java monitor now ensures one top-level bridge command at a time while Python's own worker threads continue normally inside an install.
+- The synchronized call safely re-enters synchronized initialize() on the same Java monitor and does not affect JNI AES-GCM callbacks.
+- Commit: 04b4ce63ddaa31d2851b77a1dc54f76a34865d5f.
+- This source change triggers the Epic POC/integration validation pipeline; the Android runtime instrumentation still needs to pass.
