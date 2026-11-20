@@ -851,3 +851,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - The Epic library success message now names the exact Winlator container that owns the shared game directory and instructs the user to select that container for launch. The library also auto-selects the owning container on launch/update based on Legendary's recorded install path.
 - Commit: 9c97f674672e9282c58c6f2db0a2f0baade4275d.
+
+## Engineering continuation — 2026-11-20: preserve pre-existing Wine path data during Epic link setup
+
+- Hardened the per-container Wine C: symlink setup: if `.wine/drive_c/Games/Epic` is occupied by a regular file, setup now fails safely instead of deleting it. An existing real directory is replaced only when it is empty; non-empty directories and symlinks to other targets are preserved and reported.
+- Commit: 87769948f07afc738de5f0a27837500171123f4a.
