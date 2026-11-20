@@ -428,7 +428,7 @@ public final class EpicFragment extends Fragment {
             payload.put("max_workers", 4);
             payload.put("max_shared_memory_mib", 512);
         } catch (Exception ignored) {}
-        statusText.setText("Installing " + title + ". Keep MaliWinlator open until the download finishes.");
+        statusText.setText("Installing " + title + ". The foreground download service keeps working if you leave this tab.");
         runCommand("install", payload.toString(), result -> {
             if (!result.optBoolean("ok", false)) {
                 statusText.setText("Install failed: " + result.optString("message"));
