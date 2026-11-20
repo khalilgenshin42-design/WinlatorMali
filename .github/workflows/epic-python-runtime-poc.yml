@@ -175,6 +175,33 @@ jobs:
           print("LEGENDARY_ANDROID_THREAD_BACKEND_HOST_SMOKE_OK")
           PY
 
+      - name: Stage Legendary into the x86_64 Android test runtime
+        working-directory: cpython
+        run: |
+          set -euo pipefail
+          PREFIX="$PWD/cross-build/x86_64-linux-android/prefix"
+          SITE_PACKAGES="$PREFIX/lib/python3.15/site-packages"
+          mkdir -p "$SITE_PACKAGES" "$RUNNER_TEMP/epic-wheels"
+          python3 -m pip download --disable-pip-version-check --no-deps \
+            --only-binary=:all: --python-version 3.15 --implementation py --abi none \
+            --dest "$RUNNER_TEMP/epic-wheels" \
+            -r "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/requirements-android.txt"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          from zipfile import ZipFile
+          wheels = Path(os.environ["RUNNER_TEMP"]) / "epic-wheels"
+          target = Path(os.environ["GITHUB_WORKSPACE"]) / "cpython/cross-build/x86_64-linux-android/prefix/lib/python3.15/site-packages"
+          for wheel in sorted(wheels.glob("*.whl")):
+              with ZipFile(wheel) as archive:
+                  archive.extractall(target)
+          PY
+          python3 -m pip install --disable-pip-version-check --target "$SITE_PACKAGES" --no-deps "$GITHUB_WORKSPACE/legendary"
+          test -f "$SITE_PACKAGES/legendary/__init__.py"
+          test -f "$SITE_PACKAGES/legendary_gl-0.21.1.dist-info/METADATA"
+          rm -f cross-build/x86_64-linux-android/dist/*.tar.gz
+          python3 Platforms/Android package x86_64-linux-android
+
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
         run: |
@@ -211,13 +238,17 @@ jobs:
         working-directory: cpython
         run: |
           set -euo pipefail
+          X86_PACKAGE="$(find cross-build/x86_64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$X86_PACKAGE"
+          tar -tzf "$X86_PACKAGE" | grep -E '(^|/)libpython.*\\.so'
+          tar -tzf "$X86_PACKAGE" | grep -E 'site-packages/legendary_gl-0\\.21\\.1\\.dist-info/METADATA'
           PACKAGE="$(find cross-build/aarch64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
           test -n "$PACKAGE"
           tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
           tar -tzf "$PACKAGE" | grep -E 'python3\.15'
           ! tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_posixshmem.*\.so'
           ! tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_multiprocessing.*\.so'
-          sha256sum "$PACKAGE" | tee runtime-sha256.txt
+          sha256sum "$X86_PACKAGE" "$PACKAGE" | tee runtime-sha256.txt
           {
             echo "CPython tag: v3.15.2"
             echo "CPython commit: $(git rev-parse HEAD)"
@@ -227,6 +258,7 @@ jobs:
             echo "NDK from upstream android-env.sh: 27.3.13750724"
             echo "Emulator test: x86_64-linux-android via upstream Platforms/Android ci --fast-ci"
             echo "Android compatibility: Bionic thread backend; no POSIX named shared memory required"
+            echo "Test target: separately built x86_64-linux-android"
             echo "Shipped target: separately built aarch64-linux-android"
             cat runtime-sha256.txt
           } > runtime-build-info.txt
@@ -237,6 +269,7 @@ jobs:
         with:
           name: maliwinlator-cpython-3.15.2-android-arm64-poc
           path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
             cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
             cpython/runtime-build-info.txt
           if-no-files-found: error
