@@ -369,3 +369,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Resolved the exact Legendary source pin: commit `42f6bdeadde3a9526dc8eb713763476999ac217b`, message `release: 0.21.1 Lowlife`. The companion README's abbreviated pin should be expanded to this full hash before the runtime source is vendored/built.
 
 - Follow-up APK CI run **44645970680** completed successfully at source commit `ef0449db0f793f84d49610e38899016cad0ce03a`, including the secure one-shot Epic launch payload path, GPL companion docs, matching release-signing configuration, embedded APK integrity, package-ID, and signer checks. Artifact ID `14589465267`, size 446,638,120 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44645970680/artifacts/14589465267
+
+- Documentation-only pin update to the full Legendary 0.21.1 commit triggered APK CI run **44646484072**, which completed successfully including embedded companion integrity and signer verification. Artifact ID `14588732112`, size 446,638,088 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44646484072/artifacts/14588732112
