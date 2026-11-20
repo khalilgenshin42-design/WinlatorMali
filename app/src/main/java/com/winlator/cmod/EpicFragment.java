@@ -516,6 +516,9 @@ public final class EpicFragment extends Fragment {
         if (!target.exists() && !target.mkdirs()) {
             throw new java.io.IOException("Unable to create shared Epic game directory: " + target);
         }
+        if (!target.isDirectory()) {
+            throw new java.io.IOException("Shared Epic game path is not a directory: " + target);
+        }
 
         File games = new File(container.getRootDir(), ".wine/drive_c/Games");
         if (!games.exists() && !games.mkdirs()) {
