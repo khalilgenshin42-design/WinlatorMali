@@ -52,6 +52,11 @@ def main() -> None:
     )
     replace_once(
         manager,
+        "self.max_shared_memory = max_shared_memory  # 1 GiB by default",
+        "self.max_shared_memory = min(max_shared_memory, 512 * 1024 * 1024)  # Android 512 MiB cap",
+    )
+    replace_once(
+        manager,
         "self.shared_memory = SharedMemory(create=True, size=self.max_shared_memory)",
         "self.shared_memory = AndroidSharedBuffer(self.max_shared_memory)",
     )
