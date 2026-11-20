@@ -86,6 +86,13 @@ public final class EpicBridgeClient {
                 unavailable.putString("error", "PROVIDER_UNAVAILABLE");
                 return unavailable;
             }
+            if (result.getInt("protocol_version", -1) != PROTOCOL_VERSION) {
+                Bundle mismatch = new Bundle();
+                mismatch.putBoolean("ok", false);
+                mismatch.putString("error", "PROTOCOL_MISMATCH");
+                mismatch.putString("message", "Reinstall the matching Epic Bridge companion package");
+                return mismatch;
+            }
             return result;
         } catch (Exception e) {
             Bundle unavailable = new Bundle();
