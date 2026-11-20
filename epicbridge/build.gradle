@@ -112,7 +112,7 @@ tasks.register('stageEpicPythonRuntime', Sync) {
         if (epicRuntimePrefix && pythonAssets.isDirectory()) {
             MessageDigest digest = MessageDigest.getInstance('SHA-256')
             List<File> files = []
-            pythonAssets.eachFileRecurse { file -> if (file.isFile() && file.name != '.runtime-version') files.add(file) }
+            pythonAssets.eachFileRecurse { file -> if (file.isFile() && file.name != 'runtime-version.txt') files.add(file) }
             files.sort { a, b ->
                 pythonAssets.toPath().relativize(a.toPath()).toString() <=>
                     pythonAssets.toPath().relativize(b.toPath()).toString()
@@ -127,7 +127,7 @@ tasks.register('stageEpicPythonRuntime', Sync) {
                 }
             }
             String version = digest.digest().collect { String.format('%02x', it & 0xff) }.join()
-            new File(pythonAssets, '.runtime-version').setText(version + '\n', 'UTF-8')
+            new File(pythonAssets, 'runtime-version.txt').setText(version + '\n', 'UTF-8')
         }
     }
 }
