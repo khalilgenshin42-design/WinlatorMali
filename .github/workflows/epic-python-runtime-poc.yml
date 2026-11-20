@@ -195,7 +195,7 @@ jobs:
               with ZipFile(wheel) as archive:
                   archive.extractall(target)
           PY
-          python3 -m pip install --disable-pip-version-check --target "$SITE_PACKAGES" --no-deps "$GITHUB_WORKSPACE/legendary"
+          python3 -m pip install --disable-pip-version-check --no-compile --target "$SITE_PACKAGES" --no-deps "$GITHUB_WORKSPACE/legendary"
           test -f "$SITE_PACKAGES/legendary/__init__.py"
           test -f "$SITE_PACKAGES/legendary_gl-0.21.1.dist-info/METADATA"
           rm -f cross-build/x86_64-linux-android/dist/*.tar.gz
@@ -227,7 +227,7 @@ jobs:
               with ZipFile(wheel) as archive:
                   archive.extractall(target)
           PY
-          python3 -m pip install --disable-pip-version-check --target "$SITE_PACKAGES" --no-deps ./../legendary
+          python3 -m pip install --disable-pip-version-check --no-compile --target "$SITE_PACKAGES" --no-deps ./../legendary
           test -f "$SITE_PACKAGES/legendary/__init__.py"
           test -d "$SITE_PACKAGES/requests"
           ! find "$SITE_PACKAGES" -type d -name __pycache__ -print -quit | grep .
