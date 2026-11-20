@@ -61,19 +61,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            pkg-config \
-            curl \
-            git \
-            libbz2-dev \
-            libffi-dev \
-            liblzma-dev \
-            libncurses-dev \
-            libreadline-dev \
-            libsqlite3-dev \
-            libssl-dev \
-            uuid-dev \
-            zlib1g-dev
+            build-essential pkg-config curl git libbz2-dev libffi-dev liblzma-dev \
+            libncurses-dev libreadline-dev libsqlite3-dev libssl-dev uuid-dev zlib1g-dev
 
       - name: Set Android API baseline to MaliWinlator minSdk
         run: echo "ANDROID_API_LEVEL=26" >> "$GITHUB_ENV"
@@ -108,18 +97,14 @@ jobs:
           set -euo pipefail
           python3 maliwinlator/epicbridge/poc/patch_legendary_android.py legendary
           python3 -m compileall -q legendary/legendary
-          ! grep -R -n -E 'from multiprocessing|multiprocessing\.shared_memory' \
-            legendary/legendary/downloader/mp legendary/legendary/core.py legendary/legendary/cli.py
+          ! grep -R -n -E 'from multiprocessing|multiprocessing\.shared_memory' legendary/legendary/downloader/mp legendary/legendary/core.py legendary/legendary/cli.py
           ! grep -R -n --include='*.py' 'Cryptodome' legendary/legendary
           test -f legendary/legendary/downloader/mp/android_shared_buffer.py
 
       - name: Run Epic library aggregation regression tests
         run: |
           set -euo pipefail
-          PYTHONPATH="$GITHUB_WORKSPACE/maliwinlator/epicbridge/src/main/python" \
-            python3 -m unittest discover \
-              -s maliwinlator/epicbridge/poc \
-              -p 'test_epicbridge_runner.py' -v
+          PYTHONPATH="$GITHUB_WORKSPACE/maliwinlator/epicbridge/src/main/python" python3 -m unittest discover -s maliwinlator/epicbridge/poc -p 'test_epicbridge_runner.py' -v
 
       - name: Smoke-test patched Legendary on host Python
         run: |
@@ -141,13 +126,10 @@ jobs:
           from legendary.downloader.mp.workers import DLWorker, FileWorker
           from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
           from legendary.models.downloading import TerminateWorkerTask
-          # NIST AES-128-GCM known-answer vector (zero key and nonce).
           ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
           tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
           assert AES.new(bytes(16), AES.MODE_GCM, nonce=bytes(12)).decrypt_and_verify(ciphertext, tag) == bytes(16)
-          assert issubclass(DLManager, Thread)
-          assert issubclass(DLWorker, Thread)
-          assert issubclass(FileWorker, Thread)
+          assert issubclass(DLManager, Thread) and issubclass(DLWorker, Thread) and issubclass(FileWorker, Thread)
           manager = DLManager("/tmp/epic-smoke", "https://cdn.invalid", {})
           assert manager.error is None
           manager.stop()
@@ -157,21 +139,14 @@ jobs:
           assert buffer.buf[:8] == b"MALIWINL"
           log_queue, download_queue, download_results = Queue(), Queue(), Queue()
           writer_queue, writer_results = Queue(), Queue()
-          download_worker = DLWorker("epic-download-smoke", download_queue, download_results,
-                                     buffer, logging_queue=log_queue)
-          writer_worker = FileWorker(writer_queue, writer_results, "/tmp/epic-smoke",
-                                     buffer, logging_queue=log_queue)
-          download_worker.start()
-          writer_worker.start()
-          download_queue.put(TerminateWorkerTask())
-          writer_queue.put(TerminateWorkerTask())
-          download_worker.join(timeout=5)
-          writer_worker.join(timeout=5)
-          assert not download_worker.is_alive(), "download worker did not stop"
-          assert not writer_worker.is_alive(), "writer worker did not stop"
+          download_worker = DLWorker("epic-download-smoke", download_queue, download_results, buffer, logging_queue=log_queue)
+          writer_worker = FileWorker(writer_queue, writer_results, "/tmp/epic-smoke", buffer, logging_queue=log_queue)
+          download_worker.start(); writer_worker.start()
+          download_queue.put(TerminateWorkerTask()); writer_queue.put(TerminateWorkerTask())
+          download_worker.join(timeout=5); writer_worker.join(timeout=5)
+          assert not download_worker.is_alive() and not writer_worker.is_alive()
           assert isinstance(writer_results.get(timeout=1), TerminateWorkerTask)
-          buffer.close()
-          buffer.unlink()
+          buffer.close(); buffer.unlink()
           print("LEGENDARY_ANDROID_THREAD_BACKEND_HOST_SMOKE_OK")
           PY
 
@@ -182,10 +157,7 @@ jobs:
           PREFIX="$PWD/cross-build/x86_64-linux-android/prefix"
           SITE_PACKAGES="$PREFIX/lib/python3.15/site-packages"
           mkdir -p "$SITE_PACKAGES" "$RUNNER_TEMP/epic-wheels"
-          python3 -m pip download --disable-pip-version-check --no-deps \
-            --only-binary=:all: --python-version 3.15 --implementation py --abi none \
-            --dest "$RUNNER_TEMP/epic-wheels" \
-            -r "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/requirements-android.txt"
+          python3 -m pip download --disable-pip-version-check --no-deps --only-binary=:all: --python-version 3.15 --implementation py --abi none --dest "$RUNNER_TEMP/epic-wheels" -r "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/requirements-android.txt"
           python3 - <<'PY'
           from pathlib import Path
           import os
@@ -193,8 +165,7 @@ jobs:
           wheels = Path(os.environ["RUNNER_TEMP"]) / "epic-wheels"
           target = Path(os.environ["GITHUB_WORKSPACE"]) / "cpython/cross-build/x86_64-linux-android/prefix/lib/python3.15/site-packages"
           for wheel in sorted(wheels.glob("*.whl")):
-              with ZipFile(wheel) as archive:
-                  archive.extractall(target)
+              with ZipFile(wheel) as archive: archive.extractall(target)
           PY
           python3 -m pip install --disable-pip-version-check --no-compile --target "$SITE_PACKAGES" --no-deps "$GITHUB_WORKSPACE/legendary"
           test -f "$SITE_PACKAGES/legendary/__init__.py"
@@ -208,8 +179,7 @@ jobs:
           set -euo pipefail
           SITE_PACKAGES="$PWD/cross-build/x86_64-linux-android/prefix/lib/python3.15/site-packages"
           cp "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages/epic_runtime_smoke.py" "$SITE_PACKAGES/"
-          python3 Platforms/Android test --managed maxVersion \
-            --site-packages "$SITE_PACKAGES" -- -m epic_runtime_smoke
+          python3 Platforms/Android test --managed maxVersion --site-packages "$SITE_PACKAGES" -- -m epic_runtime_smoke
 
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
@@ -217,16 +187,10 @@ jobs:
           set -euo pipefail
           python3 Platforms/Android configure-host aarch64-linux-android
           python3 Platforms/Android make-host aarch64-linux-android
-
-          # Stage only universal pure-Python wheels; never copy host-native wheels
-          # into the Android ARM64 runtime.
           PREFIX="$PWD/cross-build/aarch64-linux-android/prefix"
           SITE_PACKAGES="$PREFIX/lib/python3.15/site-packages"
           mkdir -p "$SITE_PACKAGES" "$RUNNER_TEMP/epic-wheels"
-          python3 -m pip download --disable-pip-version-check --no-deps \
-            --only-binary=:all: --python-version 3.15 --implementation py --abi none \
-            --dest "$RUNNER_TEMP/epic-wheels" \
-            -r "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/requirements-android.txt"
+          python3 -m pip download --disable-pip-version-check --no-deps --only-binary=:all: --python-version 3.15 --implementation py --abi none --dest "$RUNNER_TEMP/epic-wheels" -r "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/requirements-android.txt"
           python3 - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
@@ -234,8 +198,7 @@ jobs:
           wheels = Path(os.environ["RUNNER_TEMP"]) / "epic-wheels"
           target = Path(os.environ["GITHUB_WORKSPACE"]) / "cpython/cross-build/aarch64-linux-android/prefix/lib/python3.15/site-packages"
           for wheel in sorted(wheels.glob("*.whl")):
-              with ZipFile(wheel) as archive:
-                  archive.extractall(target)
+              with ZipFile(wheel) as archive: archive.extractall(target)
           PY
           python3 -m pip install --disable-pip-version-check --no-compile --target "$SITE_PACKAGES" --no-deps ./../legendary
           test -f "$SITE_PACKAGES/legendary/__init__.py"
@@ -250,7 +213,7 @@ jobs:
           X86_PACKAGE="$(find cross-build/x86_64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
           test -n "$X86_PACKAGE"
           tar -tzf "$X86_PACKAGE" | grep -E '(^|/)libpython.*\.so'
-          tar -tzf "$X86_PACKAGE" | grep -E 'site-packages/legendary_gl-0\.21\.1\.dist-info/METADATA'
+          tar -tzf "$X86_PACKAGE" | grep -E 'site-packages/legendary_gl-0\.21\.1.dist-info/METADATA'
           PACKAGE="$(find cross-build/aarch64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
           test -n "$PACKAGE"
           tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
@@ -276,16 +239,10 @@ jobs:
       - name: Install MaliWinlator Android build toolchain
         run: |
           set -euo pipefail
-          # sdkmanager exits after consuming the required answers; disable
-          # pipefail only for this pipeline so yes receiving SIGPIPE is harmless.
           set +o pipefail
           yes | sdkmanager --licenses >/dev/null
           set -o pipefail
-          sdkmanager --install \
-            "platforms;android-34" \
-            "build-tools;35.0.0" \
-            "ndk;29.0.14206865" \
-            "cmake;3.22.1"
+          sdkmanager --install "platforms;android-34" "build-tools;35.0.0" "ndk;29.0.14206865" "cmake;3.22.1"
 
       - name: Run Epic Bridge x86_64 Android instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -296,38 +253,27 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: bash tools/ci/run-epic-android-instrumentation.sh
+          script: bash maliwinlator/tools/ci/run-epic-android-instrumentation.sh
 
       - name: Build ARM64 Epic companion and MaliWinlator host APK
         working-directory: maliwinlator
         run: |
           set -euo pipefail
-          ./gradlew --no-daemon --stacktrace \
-            :app:assembleStandardDebug \
-            -PepicRuntimeAbi=arm64-v8a \
-            -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
+          ./gradlew --no-daemon --stacktrace :app:assembleStandardDebug -PepicRuntimeAbi=arm64-v8a -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
           BRIDGE_APK="$PWD/epicbridge/build/outputs/apk/debug/epicbridge-debug.apk"
           HOST_APK="$PWD/app/build/outputs/apk/standard/debug/app-standard-debug.apk"
-          test -s "$BRIDGE_APK"
-          test -s "$HOST_APK"
-
+          test -s "$BRIDGE_APK" && test -s "$HOST_APK"
           BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
           "$BUILD_TOOLS/apksigner" verify --verbose "$BRIDGE_APK"
           "$BUILD_TOOLS/apksigner" verify --verbose "$HOST_APK"
           "$BUILD_TOOLS/aapt" dump badging "$BRIDGE_APK" | grep -F "package: name='com.maliwinlator.epicbridge'"
           "$BUILD_TOOLS/aapt" dump badging "$HOST_APK" | grep -F "package: name='com.maliwinlator.app'"
-
           BRIDGE_CERT=$("$BUILD_TOOLS/apksigner" verify --print-certs "$BRIDGE_APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {print $2}')
           HOST_CERT=$("$BUILD_TOOLS/apksigner" verify --print-certs "$HOST_APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {print $2}')
-          test -n "$BRIDGE_CERT"
-          test "$BRIDGE_CERT" = "$HOST_CERT"
-
+          test -n "$BRIDGE_CERT" && test "$BRIDGE_CERT" = "$HOST_CERT"
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'lib/arm64-v8a/libepic_python.so'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'lib/arm64-v8a/libpython3.15.so'
           ! unzip -Z1 "$BRIDGE_APK" | grep -E '^lib/(x86|x86_64|armeabi-v7a)/'
-
-          # Verify every ELF DT_NEEDED dependency of the packaged JNI libraries
-          # and CPython extension modules resolves either from the APK or Android's API 35 NDK stubs.
           NDK_ROOT="$ANDROID_HOME/ndk/29.0.14206865"
           READELF="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
           SYSROOT_LIB="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/35"
@@ -339,13 +285,9 @@ jobs:
           test -n "$(find "$PYTHON_LIB_DIR/lib-dynload" -type f \( -name '*.so' -o -name '*.so.*' \) -print -quit)"
           while IFS= read -r -d '' ELF; do
             while IFS= read -r NEEDED; do
-              if [ ! -f "$NATIVE_LIB_DIR/$NEEDED" ] && [ ! -f "$SYSROOT_LIB/$NEEDED" ]; then
-                echo "Unresolved Android ELF dependency: $NEEDED required by $ELF"
-                exit 1
-              fi
+              if [ ! -f "$NATIVE_LIB_DIR/$NEEDED" ] && [ ! -f "$SYSROOT_LIB/$NEEDED" ]; then echo "Unresolved Android ELF dependency: $NEEDED required by $ELF"; exit 1; fi
             done < <("$READELF" -d "$ELF" | sed -n 's/.*Shared library: \[\(.*\)\].*/\1/p')
           done < <(find "$NATIVE_LIB_DIR" "$PYTHON_LIB_DIR" -type f \( -name '*.so' -o -name '*.so.*' \) -print0)
-
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/runtime-version.txt'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/os.py'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/site-packages/legendary/__init__.py'
@@ -354,13 +296,9 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
           unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
           cmp "$BRIDGE_APK" "$RUNNER_TEMP/embedded-epicbridge.apk"
-
           cp "$BRIDGE_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
           cp "$HOST_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
-          (
-            cd "$GITHUB_WORKSPACE/epic-apk-output"
-            sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS
-          )
+          (cd "$GITHUB_WORKSPACE/epic-apk-output" && sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS)
 
       - name: Upload installable MaliWinlator Epic APKs
         id: epic_apks
@@ -413,11 +351,9 @@ jobs:
             gh release upload "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --clobber
             gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
           else
-            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" \
-              --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
+            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
           fi
           echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
-
 
       - name: Publish successful Epic build status to repository
         if: success()
@@ -428,17 +364,10 @@ jobs:
           EPIC_RELEASE_URL: ${{ steps.epic_release.outputs.url }}
         run: |
           set -euo pipefail
-          if ! git fetch origin "$GITHUB_REF_NAME"; then
-            echo "Unable to fetch branch for CI status publication; APK build itself passed."
-            exit 0
-          fi
-          if ! git reset --hard FETCH_HEAD; then
-            echo "Unable to synchronize branch for CI status publication; APK build itself passed."
-            exit 0
-          fi
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI status publication; APK build itself passed."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI status publication; APK build itself passed."; exit 0; fi
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
           # Epic APK CI status
-
           - Result: **SUCCESS**
           - Run attempt: $GITHUB_RUN_ATTEMPT
           - Source commit: $GITHUB_SHA
@@ -450,18 +379,11 @@ jobs:
           - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
           - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
           EOF
-          {
-            echo
-            echo "## APK SHA-256"
-            awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"
-          } >> PROJECT_EPIC_CI_STATUS.md
+          { echo; echo "## APK SHA-256"; awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"; } >> PROJECT_EPIC_CI_STATUS.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT_EPIC_CI_STATUS.md
-          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then
-            echo "Unable to commit CI status report; APK build itself passed."
-            exit 0
-          fi
+          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then echo "Unable to commit CI status report; APK build itself passed."; exit 0; fi
           git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI status commit could not be pushed; inspect this workflow run directly."
 
       - name: Publish failed Epic build status to repository
@@ -469,17 +391,10 @@ jobs:
         working-directory: maliwinlator
         run: |
           set -euo pipefail
-          if ! git fetch origin "$GITHUB_REF_NAME"; then
-            echo "Unable to fetch branch for CI failure report."
-            exit 0
-          fi
-          if ! git reset --hard FETCH_HEAD; then
-            echo "Unable to synchronize branch for CI failure report."
-            exit 0
-          fi
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI failure report."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI failure report."; exit 0; fi
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
           # Epic APK CI status
-
           - Result: **FAILURE**
           - Run attempt: $GITHUB_RUN_ATTEMPT
           - Source commit: $GITHUB_SHA
@@ -492,4 +407,3 @@ jobs:
           git add PROJECT_EPIC_CI_STATUS.md
           git commit -m "ci: record Epic APK validation failure [skip ci]" || echo "Unable to commit CI failure report."
           git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
-
