@@ -352,7 +352,7 @@ jobs:
                 echo "Unresolved Android ELF dependency: $NEEDED required by $ELF"
                 exit 1
               fi
-            done < <("$READELF" -d "$ELF" | sed -n 's/.*Shared library: \\[(.*)\\].*/\\1/p')
+            done < <("$READELF" -d "$ELF" | sed -n 's/.*Shared library: \[\(.*\)\].*/\1/p')
           done < <(find "$NATIVE_LIB_DIR" "$DYNLOAD_DIR" -type f -name '*.so' -print0)
 
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/runtime-version.txt'
