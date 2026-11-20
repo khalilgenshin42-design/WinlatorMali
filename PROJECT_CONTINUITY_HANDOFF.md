@@ -705,3 +705,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added pip's --no-compile option to both x86_64 and ARM64 Legendary target installs. The runtime packages remain source-only and the existing no-__pycache__ audit is now deterministic.
 - Commit: 9e5db51998bf5ab72a4a7c0482009d26cfa1cac7.
 - This updates the watched CPython workflow, so the next POC run will include the corrected staging behavior.
+
+## Engineering continuation — 2026-11-20: increment host package version for the Epic build
+
+- Bumped the standard host APK versionCode from 23 to 24 and labeled the versionName "1.2.1 MaliWinlator Epic". This prevents Android from treating the Epic-enabled build as an equal-version reinstall when updating the previous 1.2.1 development APK.
+- Commit: 3f0d4682e78422c398be857884b88d9a32cb60c6.
+- The integration workflow still compares APK signing certificates before publication; versionCode advancement does not bypass Android's signature requirement.
