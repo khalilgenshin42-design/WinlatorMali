@@ -5,6 +5,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Base64;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +36,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -510,10 +514,17 @@ public final class EpicFragment extends Fragment {
                 return;
             }
 
+            String ownershipTokenPath;
+            try {
+                ownershipTokenPath = materializeOwnershipToken(launch, container);
+            } catch (Exception e) {
+                statusText.setText("Unable to prepare Epic ownership token for Wine: " + e.getMessage());
+                return;
+            }
             List<String> args = new ArrayList<>();
-            appendArguments(args, launch.optJSONArray("game_parameters"));
-            appendArguments(args, launch.optJSONArray("egl_parameters"));
-            appendArguments(args, launch.optJSONArray("user_parameters"));
+            appendArguments(args, launch.optJSONArray("game_parameters"), null);
+            appendArguments(args, launch.optJSONArray("egl_parameters"), ownershipTokenPath);
+            appendArguments(args, launch.optJSONArray("user_parameters"), null);
             String commandLine = joinArguments(args);
             EnvVars environment = new EnvVars();
             JSONObject env = launch.optJSONObject("environment");
@@ -534,10 +545,54 @@ public final class EpicFragment extends Fragment {
         });
     }
 
-    private static void appendArguments(List<String> output, JSONArray input) {
+    private String materializeOwnershipToken(JSONObject launch, Container container) throws Exception {
+        JSONArray secretFiles = launch.optJSONArray("secret_files");
+        if (secretFiles == null || secretFiles.length() == 0) return null;
+
+        File secretDir = new File(container.getRootDir(), "tmp/epic-secrets");
+        if (!secretDir.exists() && !secretDir.mkdirs()) {
+            throw new java.io.IOException("Unable to create container-private Epic token directory");
+        }
+        File[] stale = secretDir.listFiles();
+        if (stale != null) {
+            long cutoff = System.currentTimeMillis() - 30L * 60L * 1000L;
+            for (File file : stale) if (file.lastModified() < cutoff) file.delete();
+        }
+
+        String winePath = null;
+        for (int i = 0; i < secretFiles.length(); i++) {
+            JSONObject secret = secretFiles.optJSONObject(i);
+            if (secret == null) continue;
+            String name = secret.optString("name", "");
+            if (!name.matches("epic-[A-Za-z0-9_-]+\\.ovt")) {
+                throw new java.io.IOException("Invalid Epic ownership-token filename");
+            }
+            byte[] data = Base64.decode(secret.optString("data_base64", ""), Base64.DEFAULT);
+            if (data.length == 0 || data.length > 256 * 1024) {
+                throw new java.io.IOException("Epic ownership token has an invalid size");
+            }
+            File target = new File(secretDir, name);
+            try (FileOutputStream output = new FileOutputStream(target, false)) {
+                output.write(data);
+                output.getFD().sync();
+            }
+            target.setReadable(false, false);
+            target.setReadable(true, true);
+            winePath = "Z:\\tmp\\epic-secrets\\" + name;
+            File cleanupTarget = target;
+            new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 15L * 60L * 1000L);
+        }
+        return winePath;
+    }
+
+    private static void appendArguments(List<String> output, JSONArray input, String ownershipTokenPath) {
         if (input == null) return;
         for (int i = 0; i < input.length(); i++) {
             String value = input.optString(i, "");
+            if (value.equals("-epicovt=__EPIC_OVT_PLACEHOLDER__")) {
+                if (ownershipTokenPath == null) continue;
+                value = "-epicovt=" + ownershipTokenPath;
+            }
             if (!value.isEmpty()) output.add(value);
         }
     }
