@@ -752,3 +752,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Changed EpicPythonRuntime.initialize() to abort when Android cannot set HOME or TMPDIR, instead of logging a warning and continuing with a potentially invalid Legendary configuration path. This prevents silent writes to an inaccessible default home directory and ensures the companion never reports a usable interpreter with misdirected account/session storage.
 - Commit: cb4b2b5a651df36177485aee554a8b34cbf89b98.
 - The updated initialization path will be exercised by the managed x86_64 Android instrumentation test.
+
+## Engineering continuation — 2026-11-20: restore the missing managed emulator gate after Legendary staging
+
+- Re-audited the current POC YAML rather than relying on the earlier handoff note and found that the managed x86_64 smoke step was absent from the live workflow file. The previous insertion had not survived subsequent workflow edits, so the metadata line claiming emulator validation was not backed by an executing step.
+- Reinserted the test at the correct point: after the x86_64 runtime has Legendary and all pinned pure-Python dependencies staged, and before the ARM64 runtime is built. It copies epic_runtime_smoke.py into that staged site-packages tree and runs the upstream documented Platforms/Android test --managed maxVersion command.
+- Corrected runtime-build metadata to describe the actual managed-emulator command.
+- Commits: c7a02bef54249bce2a9448ef66fb5cf5da03ad6f (real smoke step); c08687643953043a0c432db3305b0430af67ab87 (metadata correction).
+- The POC workflow itself is now the source of truth; the emulator step must visibly pass before the downstream Android JNI test and ARM64 APK build can proceed.
