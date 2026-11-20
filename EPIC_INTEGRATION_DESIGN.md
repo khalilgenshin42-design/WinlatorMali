@@ -147,3 +147,9 @@ Legendary 0.21.1's `launch` command supports `--json` and `--no-wine`. Its CLI r
 4. Any transient Epic/EOS environment values returned by Legendary are memory-only, never logged or persisted in shortcuts/preferences, and are cleared after launch setup. IPC errors and launch payloads must redact token-like values.
 
 This preserves Legendary's online authentication/launch preparation while retaining Winlator's proot, Wine, Box64/FEXCore, graphics wrapper, audio, input, and container setup. The handoff still requires an implementation-level validation against real game launch metadata and the exact existing launcher API.
+
+### Critical Android multiprocessing requirement
+
+The earlier CPython 3.15.2 ARM64 package built with the upstream default Android API level 24 was inspected directly. It contains `multiprocessing/shared_memory.py` but does **not** contain the native `_posixshmem` extension. Legendary 0.21.1's downloader imports `multiprocessing.shared_memory.SharedMemory` in both its manager and worker modules, so that package cannot run Legendary correctly even though CPython itself builds.
+
+The CPython workflow now targets Android API 26 (matching MaliWinlator's minSdk) and requires the ARM64 package to contain `lib-dynload/_posixshmem*.so`. It also runs a managed-emulator smoke test that creates POSIX shared memory, starts a multiprocessing child, attaches by shared-memory name, verifies the transferred bytes, and cleans up. Until that test and ARM64 module audit pass, CPython/Legendary runtime integration remains blocked.
