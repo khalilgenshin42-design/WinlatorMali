@@ -24,7 +24,7 @@ public final class EpicBridgeProvider extends ContentProvider {
         String[] packages = getContext().getPackageManager().getPackagesForUid(Binder.getCallingUid());
         if (packages == null) return false;
         for (String packageName : packages) {
-            if ("com.maliwinlator.app".equals(packageName)) return true;
+            if ("com.winlator.cmod".equals(packageName)) return true;
         }
         return false;
     }
