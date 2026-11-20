@@ -383,3 +383,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - The separate CPython Android runtime gate remains active in workflow run **44644433739**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44644433739. The job is still in its upstream CPython build/package/test step; the managed Android shared-memory/multiprocessing smoke test has not started. Its result is therefore pending, not passed. The GitHub job-log endpoint currently returns BlobNotFound while the job is active; monitor job state and retrieve logs after completion.
 - Handoff update commit: `a3d531b1cea7dbfd6a7512f63848fd25205f9fb3`. Continue updating this file after each meaningful code/build/test milestone.
+
+## Engineering step log — 2026-11-20: Epic companion IPC caller restriction
+
+- Hardened `EpicBridgeProvider.call()` in commits `56f24666e1384c12fbf2e36f2e464f7818b6c6bc` and cleanup `8bd865051c0d1203f8015693c945e77f96b70377`.
+- The provider now checks the Binder caller UID's package list and permits calls only from the standard host package `com.maliwinlator.app`, in addition to the existing signature-level permission. Unauthorized callers receive a typed `CALLER_NOT_ALLOWED` response.
+- This is source-level IPC hardening; no Android device test has yet exercised the cross-package signature permission or caller-UID check. The companion remains a status-only bootstrap and does not yet execute Legendary.
+- The Epic CPython workflow run `44644433739` remains in progress at the upstream Android CI build step; the Android shared-memory/multiprocessing test has not started. No runtime compatibility result is claimed.
