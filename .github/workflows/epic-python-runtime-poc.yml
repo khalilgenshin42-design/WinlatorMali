@@ -104,9 +104,9 @@ jobs:
           import multiprocessing
           from multiprocessing.shared_memory import SharedMemory
           from epic_mp_smoke import read_shared_memory
-          shm = SharedMemory(create=True, size=4096)
-          shm.buf[:8] = b"MALIWINL"
           if __name__ == "__main__":
+              shm = SharedMemory(create=True, size=4096)
+              shm.buf[:8] = b"MALIWINL"
               queue = multiprocessing.Queue()
               process = multiprocessing.Process(target=read_shared_memory, args=(shm.name, queue))
               process.start()
