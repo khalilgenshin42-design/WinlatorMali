@@ -115,6 +115,11 @@ jobs:
           unzip -l "$BRIDGE_APK" | grep -E 'lib/arm64-v8a/libepic_python.so'
           unzip -l "$BRIDGE_APK" | grep -E 'assets/python/lib/python3.15/os.py'
           unzip -l "$HOST_APK" | grep -E 'assets/epicbridge.apk'
+          HOST_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$HOST_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
+          BRIDGE_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$BRIDGE_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
+          test -n "$HOST_CERT"
+          test "$HOST_CERT" = "$BRIDGE_CERT"
+          echo "Host/companion signer SHA-256: $HOST_CERT" >> epic-runtime-build.txt
           echo "Epic Bridge companion: $BRIDGE_APK" >> epic-runtime-build.txt
           echo "MaliWinlator host: $HOST_APK" >> epic-runtime-build.txt
           sha256sum "$BRIDGE_APK" "$HOST_APK" >> epic-runtime-build.txt
