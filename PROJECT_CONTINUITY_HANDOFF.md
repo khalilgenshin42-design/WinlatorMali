@@ -1065,3 +1065,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - The companion now requires `runtime-version.txt` to contain exactly a lowercase 64-character SHA-256 hex digest before it will reuse or extract the runtime. A truncated/empty/corrupt identity asset can no longer be accepted as a valid package marker.
 - Commit: e472a26e4ef7f94fb787027404a5826147d58333.
+
+## Engineering continuation — 2026-11-20: include third-party native Python extensions in permission and ELF audits
+
+- Expanded runtime preflight/postflight to recursively check executable mode for every `.so` under the entire CPython 3.15 tree, including any native modules nested inside site-packages rather than only top-level `lib-dynload`.
+- Expanded the final APK ELF audit to extract the companion APK's full CPython 3.15 tree and verify dependencies for all shared extensions in both stdlib and site-packages.
+- Commits: 0483c0f8af8837c74f184700db03e59652bdb670 (recursive runtime check); 7c7e909e23f11656ace53511d7f7393f68984cd1 (regex correction); 2ba045d4a6f620b24bbca329d01b38055ee2c5b9 (full-tree APK ELF scan).
