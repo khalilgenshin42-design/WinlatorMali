@@ -9,6 +9,7 @@ on:
       - 'epicbridge/poc/site-packages/epic_runtime_smoke.py'
       - 'epicbridge/poc/patch_legendary_android.py'
       - 'epicbridge/poc/requirements-android.txt'
+      - 'epicbridge/poc/test_epicbridge_runner.py'
   workflow_dispatch:
 
 permissions:
@@ -120,6 +121,14 @@ jobs:
           ! grep -R -n -E 'from multiprocessing|multiprocessing\.shared_memory' \
             legendary/legendary/downloader/mp legendary/legendary/core.py legendary/legendary/cli.py
           test -f legendary/legendary/downloader/mp/android_shared_buffer.py
+
+      - name: Run Epic library aggregation regression tests
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/maliwinlator/epicbridge/src/main/python" \
+            python3 -m unittest discover \
+              -s maliwinlator/epicbridge/poc \
+              -p 'test_epicbridge_runner.py' -v
 
       - name: Smoke-test patched Legendary on host Python
         run: |
