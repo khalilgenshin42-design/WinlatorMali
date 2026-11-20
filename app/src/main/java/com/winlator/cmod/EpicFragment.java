@@ -58,6 +58,7 @@ public final class EpicFragment extends Fragment {
     private LinearLayout gamesContainer;
     private final List<Container> containers = new ArrayList<>();
     private final Set<String> installedApps = new HashSet<>();
+    private final java.util.Map<String, String> installedPaths = new java.util.HashMap<>();
     private boolean replaceCompanion;
     private boolean storageReady;
     private boolean hostStorageReady;
@@ -373,11 +374,16 @@ public final class EpicFragment extends Fragment {
     private void loadInstalledThenRender(JSONArray games) {
         runCommand("installed", "{}", installed -> {
             installedApps.clear();
+            installedPaths.clear();
             JSONArray current = installed.optJSONArray("games");
             if (current != null) {
                 for (int i = 0; i < current.length(); i++) {
                     JSONObject game = current.optJSONObject(i);
-                    if (game != null) installedApps.add(game.optString("app_name"));
+                    if (game != null) {
+                        String appName = game.optString("app_name");
+                        installedApps.add(appName);
+                        installedPaths.put(appName, game.optString("install_path", ""));
+                    }
                 }
             }
             for (int i = 0; i < games.length(); i++) {
@@ -453,9 +459,29 @@ public final class EpicFragment extends Fragment {
             statusText.setText("Grant shared-storage access to both MaliWinlator and Epic Bridge before installing games.");
             return;
         }
-        File basePath = new File(SettingsFragment.DEFAULT_WINLATOR_PATH, "drive_c/Games/Epic");
+        if (containers.isEmpty()) {
+            statusText.setText("Create a Winlator container before installing Epic games.");
+            return;
+        }
+        if (update) {
+            int ownerIndex = findContainerIndex(installedPaths.get(appName));
+            if (ownerIndex < 0) {
+                statusText.setText("This game's install path is not inside a managed Wine container. Reinstall it into a selected container before updating.");
+                return;
+            }
+            containerSpinner.setSelection(ownerIndex);
+        }
+        int selected = containerSpinner.getSelectedItemPosition();
+        if (selected < 0 || selected >= containers.size()) {
+            statusText.setText("Select a valid Winlator container before installing.");
+            return;
+        }
+        Container targetContainer = containers.get(selected);
+        File driveC = new File(targetContainer.getRootDir(), ".wine/drive_c");
+        File basePath = new File(driveC, "Games/Epic");
         if (!basePath.exists() && !basePath.mkdirs()) {
-            statusText.setText("Unable to create Epic game install directory: " + basePath);
+            statusText.setText("Unable to create Epic game directory inside container " +
+                    targetContainer.getName() + ": " + basePath);
             return;
         }
         JSONObject payload = new JSONObject();
@@ -479,6 +505,19 @@ public final class EpicFragment extends Fragment {
         });
     }
 
+    private int findContainerIndex(String installPath) {
+        if (installPath == null || installPath.isEmpty()) return -1;
+        try {
+            String candidate = new File(installPath).getCanonicalPath();
+            for (int i = 0; i < containers.size(); i++) {
+                File driveC = new File(containers.get(i).getRootDir(), ".wine/drive_c");
+                String root = driveC.getCanonicalPath();
+                if (candidate.startsWith(root + File.separator)) return i;
+            }
+        } catch (Exception ignored) {}
+        return -1;
+    }
+
     private void uninstallGame(String appName, String title) {
         JSONObject payload = new JSONObject();
         try { payload.put("app_name", appName); }
@@ -496,9 +535,13 @@ public final class EpicFragment extends Fragment {
             statusText.setText("Create a Winlator container before launching Epic games.");
             return;
         }
-        int selected = containerSpinner.getSelectedItemPosition();
-        if (selected < 0 || selected >= containers.size()) selected = 0;
-        Container container = containers.get(selected);
+        int ownerIndex = findContainerIndex(installedPaths.get(appName));
+        if (ownerIndex < 0) {
+            statusText.setText("This game's install path is not inside a managed Wine container. Reinstall it into a selected container before launching.");
+            return;
+        }
+        containerSpinner.setSelection(ownerIndex);
+        Container container = containers.get(ownerIndex);
 
         JSONObject payload = new JSONObject();
         try { payload.put("app_name", appName); }
