@@ -207,6 +207,40 @@ def main() -> None:
         "            self.stop()",
     )
 
+    # Process-only cleanup is invalid for threads. Stop workers cooperatively,
+    # join them, and leave queue lifetime to Python's in-process queue objects.
+    replace_once(
+        manager,
+        "            # forcibly kill DL workers that are not actually dead yet\\n"
+        "            for child in self.children:\\n"
+        "                child.join(timeout=5.0)\\n"
+        "                if child.exitcode is None:\\n"
+        "                    child.terminate()\\n\\n"
+        "            # clean up all the queues, otherwise this process won't terminate properly\\n"
+        "            for name, q in zip(('Download jobs', 'Writer jobs', 'Download results', 'Writer results'),\\n"
+        "                               (self.dl_worker_queue, self.writer_queue, self.dl_result_q, self.writer_result_q)):\\n"
+        "                self.log.debug(f'Cleaning up queue \\"{name}\\"')\\n"
+        "                try:\\n"
+        "                    while True:\\n"
+        "                        _ = q.get_nowait()\\n"
+        "                except Empty:\\n"
+        "                    q.close()\\n"
+        "                    q.join_thread()",
+        "            for child in self.children:\\n"
+        "                child.join(timeout=30.0)\\n"
+        "                if child.is_alive():\\n"
+        "                    self.log.warning(f'Worker thread did not terminate: {child!r}')",
+    )
+    replace_once(manager, "        exit(0)", "        return")
+
+    # Every worker receives the same mmap object. Only the manager may close it.
+    replace_once(
+        workers,
+        "        self.shm.close()",
+        "        # Shared mmap lifetime is owned by DLManager.",
+        expected=2,
+    )
+
     # Ensure every patched Python file parses before reporting success.
     import ast
 
