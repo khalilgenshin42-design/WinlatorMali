@@ -1229,3 +1229,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - No installable Epic APK pair has been produced or published at this checkpoint. The independent baseline host APK is not a substitute.
 - Next action: poll run #179; once instrumentation completes, retrieve logcat diagnostics on failure and fix the concrete exception, or proceed to verify both APKs and all release audits if it passes.
 - Run URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44739838824
+
+
+## CI failure analysis and shell-script isolation fix — 2026-11-20
+
+- Epic runtime run **44739838824** (run #179) completed with failure at step 20, before Gradle or any instrumentation test ran. Steps 1–19 passed, including managed x86_64 CPython smoke, production ARM64 CPython build, runtime archive audit, and Android SDK/NDK/CMake installation.
+- Exact failure from the completed job log: `/usr/bin/sh: 1: Syntax error: end of file unexpected (expecting "fi")`. The Android emulator action runs each newline-delimited script command as a separate `/usr/bin/sh -c` process. The multiline `if/then/else/fi` block therefore could not be parsed as one shell program. The earlier parenthesized command fixed directory scope but did not solve this action-specific script execution model.
+- This is a CI orchestration failure, **not** a CPython/JNI/Python runtime failure. The newly added exception diagnostics were not reached, so the original two runtime test failures from run #176 remain undiagnosed.
+- Added `tools/ci/run-epic-android-instrumentation.sh`, a dedicated Bash script that runs Gradle and captures filtered logcat on failure in one process. Updated the emulator action to invoke it as a single command: `bash tools/ci/run-epic-android-instrumentation.sh`.
+- Commits: `c5ffae24bfe84ed862750b9bf2e3afc6d5a511a7` (isolated Bash test/diagnostic script); `4956279731d299f4e9e361b9a12af44ad81d1925` (workflow invokes script).
+- Expected new Epic runtime run is triggered by the workflow update. Next: verify it passes step 20 and retrieve the actual `EpicBridgePython` logcat exception if either CPython test still fails. Only then proceed to the ARM64 companion/host APK build and gated release audits.
+- Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44739838824
