@@ -29,7 +29,7 @@ require_apk_entry() {
   esac
   return 1
 }
-require_apk_entry 'assets/python/lib/python3.15/zipfile/_path/__init__.py'
+require_apk_entry 'assets/python/lib/python3.15/zipfile/path_pkg/__init__.py'
 require_apk_entry 'assets/python/lib/python3.15/os.py'
 require_apk_entry 'lib/x86_64/libepic_python.so'
 
