@@ -90,6 +90,9 @@ android {
 
 
 tasks.register('stageEpicPythonRuntime', Sync) {
+    // The explicit zipfile/_path source overlaps the stdlib tree by design.
+    // Keep the first copy and allow the explicit source to fill missing entries.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     doFirst {
         if (!epicRuntimePrefix) {
             throw new GradleException('Epic CPython prefix is required; refusing to package a stub-only companion APK')
