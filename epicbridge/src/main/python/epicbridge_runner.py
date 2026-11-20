@@ -243,6 +243,7 @@ def _runtime_self_test():
             raise RuntimeError("Legendary file-only install did not create its output")
 
     failed_manager = DLManager("/tmp/epic-runtime-failure-smoke", "https://cdn.invalid", {})
+    failed_manager.analysis = AnalysisResult()
     def fail_download_manager():
         raise RuntimeError("intentional download-manager cleanup probe")
     failed_manager.run_real = fail_download_manager
