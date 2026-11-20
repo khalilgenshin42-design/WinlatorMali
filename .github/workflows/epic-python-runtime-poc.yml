@@ -114,6 +114,24 @@ jobs:
             legendary/legendary/downloader/mp legendary/legendary/core.py legendary/legendary/cli.py
           test -f legendary/legendary/downloader/mp/android_shared_buffer.py
 
+      - name: Smoke-test patched Legendary on host Python
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check requests filelock pycryptodomex==3.23.0
+          PYTHONPATH="$GITHUB_WORKSPACE/legendary" python3 -m legendary --version
+          PYTHONPATH="$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
+          from threading import Thread
+          from legendary.downloader.mp.manager import DLManager
+          from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
+          assert issubclass(DLManager, Thread)
+          buffer = AndroidSharedBuffer(4096)
+          buffer.buf[:8] = b"MALIWINL"
+          assert buffer.buf[:8] == b"MALIWINL"
+          buffer.close()
+          buffer.unlink()
+          print("LEGENDARY_ANDROID_THREAD_BACKEND_HOST_SMOKE_OK")
+          PY
+
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
         run: |
