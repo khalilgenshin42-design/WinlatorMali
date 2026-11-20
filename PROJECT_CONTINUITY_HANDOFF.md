@@ -1040,3 +1040,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added a post-extraction completeness check before writing the runtime marker. The companion now verifies the CPython stdlib entry point, Legendary package, Android crypto shim, runner, lib-dynload directory, and executable mode of every extracted shared extension. An incomplete extraction is deleted and retried on the next initialization rather than being marked valid.
 - Corrected over-escaped Java regular expressions in both the extraction chmod pass and the preflight/postflight checks. They now match actual `.so` and versioned `.so.*` filenames.
 - Commits: 37f6fd141715a746c38d220aba9fa12daab78d4e (post-extraction verification); 933dc0bae1f31480eb6bb21607f02a91ecd44bde (regex correction).
+
+## Engineering continuation — 2026-11-20: fail closed if stale runtime cleanup is incomplete
+
+- Changed recursive runtime deletion to report failure if a directory cannot be listed or any stale file cannot be removed. Runtime extraction now aborts before staging a new tree if the previous incomplete CPython tree could not be fully removed, avoiding a mixed-version runtime being marked current.
+- Commit: 04c4402c47013b02bd71769fc70caf42095b8cf0.
