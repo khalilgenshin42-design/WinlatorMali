@@ -510,3 +510,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Validation triggered as expected: GitHub Actions run **44655229853** (run number 37) is now running from patcher-fix commit `86d583f96fa479c8a7411e9a36fac1b245cb0620`. At the latest observed poll, the job had checked out MaliWinlator and was checking out pinned CPython source; later steps were still pending. This is a live run, not a success. Track it before making further code changes.
 - The handoff documentation update itself is commit `c7e71263f70398600ebd71b127a1873105d8c770`; it does not alter the source revision under test.
+
+## Engineering continuation — 2026-11-20: CPython Android smoke passed; Legendary host packaging metadata fixed
+
+- Run **44655229853** reached and passed the Android CPython runtime prerequisite smoke test. This verifies on the managed Android emulator: 64-bit runtime, zlib, anonymous mmap shared between threads, SQLite, TLS/CA trust via requests, advisory file locks, and Bionic subprocess creation.
+- The Legendary source patch step also passed: `LEGENDARY_ANDROID_THREAD_BACKEND_PATCHED`; patched source passed `compileall` and the no-multiprocessing-import static check.
+- The next host smoke step failed before the actual thread/AES test because the checked-out Legendary source had not been installed as a Python distribution. Its `legendary/__init__.py` resolves `__version__` via `importlib.metadata.version('legendary-gl')`, which raised `PackageNotFoundError`.
+- Corrected `.github/workflows/epic-python-runtime-poc.yml` to install the checked-out pinned source with `python3 -m pip install --no-deps ./legendary` before running `python -m legendary --version` and the host backend smoke.
+- Workflow correction commit: `66ec0a5687be74be8e23f26222060726de86ff24`. This workflow file is a configured push trigger, so a fresh POC run should start from this commit. It is not yet validated.
+- The failure is packaging metadata only; no failure was observed in the Android runtime smoke or patcher transformation. Production ARM64 CPython packaging remains gated on the next successful host smoke.
