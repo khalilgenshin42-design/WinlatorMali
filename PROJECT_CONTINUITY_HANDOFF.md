@@ -638,3 +638,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The smoke covers 64-bit process, zlib, concurrent anonymous mmap, SQLite, CA/TLS, POSIX advisory locks, and Bionic subprocess creation. The step is required to pass before the ARM64 production runtime is built and uploaded.
 - Workflow commit: 811e56367c254e6439170cf0ba1633a83b27bc64. Because the workflow file itself is in its push path filter, this commit should trigger a fresh POC run on the development branch.
 - This is a CI-gate correction, not a test result. The new managed emulator step has not yet been observed passing; no runtime artifact or device-ready APK is claimed.
+
+## Engineering continuation — 2026-11-20: pin downstream APK build to tested source SHA
+
+- Audited the downstream workflow-run integration gate. It previously checked out the moving development branch after the CPython runtime workflow completed. If the branch advanced while the integration job was queued, the resulting APK could contain source that was not the source revision whose runtime had just passed CI.
+- Changed the downstream checkout to use github.event.workflow_run.head_sha. The Android instrumentation test and ARM64 APK now build from the exact source commit that produced the CPython runtime artifact.
+- Default-branch workflow commit: bc3c4dbc484e8ced1d02c52f0a5cd0f887e9b477 (on bionic-mali-1.2). This is intentionally a workflow-only update on the default branch; the app remains on development/maliwinlator-1.2.1-bootstrap.
+- The workflow change is source-controlled but has not yet been exercised by a completed successful workflow_run. It does not constitute a packaged APK or a device-test invitation.
