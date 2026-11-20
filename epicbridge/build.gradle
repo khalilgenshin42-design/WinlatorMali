@@ -112,14 +112,14 @@ tasks.register('stageEpicPythonRuntime', Sync) {
     inputs.property('epicRuntimePrefix', epicRuntimePrefix ?: '')
     if (epicRuntimePrefix) {
         from("${epicRuntimePrefix}/lib/python3.15") {
-            into 'python/lib/python3.15'
+            into 'assets/python/lib/python3.15'
             exclude '**/__pycache__/**'
             exclude '**/*.pyc'
         }
         // Gradle's directory traversal can omit the relocated CPython 3.15
         // zipfile helper directory on some filesystems. Stage it explicitly.
         from("${epicRuntimePrefix}/lib/python3.15/zipfile/_path") {
-            into 'python/lib/python3.15/zipfile/_path'
+            into 'assets/python/lib/python3.15/zipfile/_path'
             exclude '**/__pycache__/**'
             exclude '**/*.pyc'
         }
@@ -128,7 +128,7 @@ tasks.register('stageEpicPythonRuntime', Sync) {
             include 'lib*.so*'
         }
         from('src/main/python') {
-            into 'python/lib/python3.15/site-packages'
+            into 'assets/python/lib/python3.15/site-packages'
         }
     }
     doLast {
