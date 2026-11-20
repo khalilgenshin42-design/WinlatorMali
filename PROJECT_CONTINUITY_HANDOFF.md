@@ -1124,3 +1124,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Exact error: the patcher expected a 16-space-indented `except Empty: continue` block, but pinned Legendary 0.21.1 has that handler indented at 12 spaces inside `fw_results_handler`. The patch intent was correct; the source anchor indentation was wrong.
 - Corrected the patcher's exact anchor and replacement indentation in commit `937947ced07a3b1ccac569b96e4f92061c6cef78`. This source change triggers a fresh full workflow run. It is not yet confirmed passing.
 - Run log: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44667199952
+
+## CI verification — 2026-11-20: standard 1.2.1 host APK build
+
+- The independent standard-debug workflow triggered by source commit `937947ced07a3b1ccac569b96e4f92061c6cef78` completed its actual build, embedded Epic Bridge APK/signer audit, and APK upload steps successfully (run `44731340295`). This verifies the host Java/Gradle integration compiles and the companion asset is embedded with a matching signer.
+- This is **not** the Epic-specific runtime package verification: the separate CPython/Legendary workflow `44731340221` is still building its Android runtime. No Epic companion ARM64 runtime APK is yet declared ready.
