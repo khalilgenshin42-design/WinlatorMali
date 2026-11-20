@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <jni.h>
+#include <limits.h>
 #include <Python.h>
 #include <android/log.h>
 #include <pthread.h>
