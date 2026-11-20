@@ -393,6 +393,11 @@ jobs:
           - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
           - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/embedded companion audits.
           EOF
+          {
+            echo
+            echo "## APK SHA-256"
+            awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"
+          } >> PROJECT_EPIC_CI_STATUS.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT_EPIC_CI_STATUS.md
