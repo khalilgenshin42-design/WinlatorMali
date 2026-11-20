@@ -1091,3 +1091,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added an explicit post-extraction check that CPython's `lib-dynload` directory exists and can be listed before the runtime identity marker is committed. This complements the recursive shared-library permission check and prevents a missing extension directory from being accepted as a complete runtime.
 - Commit: 00d2ef52ef6ef475f07fca473805187929df0136.
+
+## Engineering continuation — 2026-11-20: publish verified APKs as a downloadable prerelease
+
+- Added a per-source-commit GitHub prerelease after **both** the APK and CPython runtime artifacts upload successfully. The release contains the host APK, companion APK, and SHA-256 manifest; reruns update the same commit-tagged release assets.
+- The generated branch CI status file now includes both the direct GitHub Releases URL and the Actions artifact URL. The prerelease notes explicitly label the APKs as experimental debug builds and document the possible signature mismatch with prior CI debug APKs.
+- Changed SHA-256 generation to use relative APK filenames so the published manifest can be checked with `sha256sum -c SHA256SUMS` after extracting the release assets.
+- Commits: 03bd358518eea4636a0c7aae404d4c2b94b004f2 (release publishing); ed83fb5282dc756f39b13309c68bae6682d020e2 (publish only after all uploads); 66a18c9a8399795de2f2af27c5533c0f776a9e53 (portable checksums).
