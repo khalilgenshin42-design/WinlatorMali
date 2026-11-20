@@ -134,6 +134,7 @@ jobs:
           test -n "$PACKAGE"
           tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
           tar -tzf "$PACKAGE" | grep -E 'python3\.15'
+          tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_posixshmem.*\.so'
           sha256sum "$PACKAGE" | tee runtime-sha256.txt
           {
             echo "CPython tag: v3.15.2"
