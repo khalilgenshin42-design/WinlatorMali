@@ -846,3 +846,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Incremented the Epic Bridge companion package from versionCode 1 / versionName 0.1.0 to versionCode 2 / 0.2.0. This ensures a runtime-enabled companion can replace an earlier bootstrap/P0C companion as a normal Android package update, provided the signing certificate matches.
 - Commit: 6d43399a252d3be1f42c30da69f50705cd4490e8.
 - The host APK remains MaliWinlator 1.2.1 Epic, versionCode 24. The final CI audit verifies both package identities and signer equality.
+
+## Engineering continuation — 2026-11-20: clarify container ownership after Epic install/update
+
+- The Epic library success message now names the exact Winlator container that owns the shared game directory and instructs the user to select that container for launch. The library also auto-selects the owning container on launch/update based on Legendary's recorded install path.
+- Commit: 9c97f674672e9282c58c6f2db0a2f0baade4275d.
