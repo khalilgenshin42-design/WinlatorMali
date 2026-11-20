@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment;
 
 import com.winlator.cmod.container.Container;
 import com.winlator.cmod.container.ContainerManager;
+import com.winlator.cmod.container.ImageFs;
 import com.winlator.cmod.core.EnvVars;
 import com.winlator.cmod.epic.EpicBridgeClient;
 import com.winlator.cmod.epic.EpicLaunchPayloadStore;
@@ -578,7 +579,14 @@ public final class EpicFragment extends Fragment {
             }
             target.setReadable(false, false);
             target.setReadable(true, true);
-            winePath = "Z:\\tmp\\epic-secrets\\" + name;
+            String imageRoot = ImageFs.find(requireContext()).getRootDir().getCanonicalPath();
+            String targetPath = target.getCanonicalPath();
+            if (!targetPath.startsWith(imageRoot + File.separator)) {
+                throw new java.io.IOException("Epic ownership token escaped the container image root");
+            }
+            String relativePath = targetPath.substring(imageRoot.length() + 1)
+                    .replace(File.separatorChar, '\\\\');
+            winePath = "Z:\\" + relativePath;
             File cleanupTarget = target;
             new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 15L * 60L * 1000L);
         }
