@@ -1,6 +1,7 @@
 package com.maliwinlator.epicbridge;
 
 import android.app.Activity;
+import android.Manifest;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -57,6 +58,7 @@ public class MainActivity extends Activity {
 
         setContentView(root);
         refreshStatus();
+        requestNotificationPermission();
     }
 
     @Override
@@ -80,6 +82,14 @@ public class MainActivity extends Activity {
         noticeView.setText(runtimePackaged
                 ? "Epic account data and Legendary run in this separate companion package. Return to MaliWinlator to sign in and manage your Epic library."
                 : "This is a bootstrap companion build. Epic login, library, downloads and launch features become available when the Android CPython/Legendary runtime is bundled.");
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1002);
+        }
     }
 
     private void runRuntimeSelfTest() {
