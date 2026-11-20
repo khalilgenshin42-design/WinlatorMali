@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Binder;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
 
@@ -17,10 +19,26 @@ public final class EpicBridgeProvider extends ContentProvider {
         return true;
     }
 
+    private boolean isAuthorizedHost() {
+        if (getContext() == null) return false;
+        String[] packages = getContext().getPackageManager().getPackagesForUid(Binder.getCallingUid());
+        if (packages == null) return false;
+        for (String packageName : packages) {
+            if ("com.maliwinlator.app".equals(packageName)) return true;
+        }
+        return false;
+    }
+
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
         Bundle result = new Bundle();
         result.putInt("protocol_version", PROTOCOL_VERSION);
+        if (!isAuthorizedHost()) {
+            result.putBoolean("ok", false);
+            result.putString("error", "CALLER_NOT_ALLOWED");
+            result.putString("message", "Only the MaliWinlator host application may access this bridge");
+            return result;
+        }
 
         if ("status".equals(method) || "ping".equals(method)) {
             result.putBoolean("installed", true);
