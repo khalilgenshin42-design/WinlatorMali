@@ -110,6 +110,7 @@ jobs:
           python3 -m compileall -q legendary/legendary
           ! grep -R -n -E 'from multiprocessing|multiprocessing\.shared_memory' \
             legendary/legendary/downloader/mp legendary/legendary/core.py legendary/legendary/cli.py
+          ! grep -R -n --include='*.py' 'Cryptodome' legendary/legendary
           test -f legendary/legendary/downloader/mp/android_shared_buffer.py
 
       - name: Run Epic library aggregation regression tests
