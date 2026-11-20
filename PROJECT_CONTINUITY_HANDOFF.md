@@ -1024,3 +1024,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Updated the generated CI status report's verification scope to explicitly include the final ARM64 ELF dependency-closure audit, alongside emulator tests, JNI instrumentation, APK signing, package identity, ABI, assets, and embedded companion byte-for-byte comparison.
 - Commit: c208c3f908854bedfc0f12f4f41540901e80b0bc.
+
+## Engineering continuation — 2026-11-20: isolate CI status publication from the APK build result
+
+- Marked the successful-build status publisher as `continue-on-error`. The artifact upload and verification steps remain authoritative; a branch-protection or GitHub-token issue while publishing the convenience status file can no longer turn an otherwise verified APK build red.
+- Commit: fef0e0e9caa5bb39ea9985d0cf77c42961bdd0d0.
