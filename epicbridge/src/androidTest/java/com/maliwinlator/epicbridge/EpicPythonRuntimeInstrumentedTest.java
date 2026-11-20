@@ -25,7 +25,9 @@ public final class EpicPythonRuntimeInstrumentedTest {
 
         JSONObject checks = result.getJSONObject("self_test");
         assertTrue(checks.optBoolean("android_jca_aes_gcm", false));
+        assertTrue(checks.optBoolean("android_jca_aes_gcm_worker_thread", false));
         assertTrue(checks.optBoolean("thread_workers", false));
+        assertTrue(checks.optBoolean("download_failure_cleanup", false));
         assertTrue(checks.optBoolean("anonymous_mmap", false));
         assertTrue("Legendary 0.21.1 must be installed",
                 "0.21.1".equals(checks.optString("legendary")));
