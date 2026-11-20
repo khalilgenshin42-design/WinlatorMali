@@ -1117,3 +1117,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The catch path also clears the volatile polling flag while preserving the stored job ID, allowing the next Epic-tab resume to retry status tracking for a job that may still be active in the companion service.
 - Commits: 91fcb2da009df9e7bc1707a391e2049fb147fff3 (IPC exception boundary); fe3dc476c9a350aa1e48db39a38900f8b3fda598 and f3d52b37737ea4403042b0e2f90948e5b9bbd69b (formatting); 938bb7d610d97ebae46cf3859648613e3fb48a6a (polling recovery).
 - Android build/instrumentation remains pending; these changes are not yet device-verified.
+
+## CI failure analysis — 2026-11-20: Legendary writer-result handler patch anchor
+
+- Retrieved failed Actions run **44667199952** (source commit `9f3f8b2ee5d9f1c49bf06dc957e1143629218f3a`). CPython x86_64 Android runtime build passed; the first failure was step 12, "Apply and statically validate Android thread backend". No APKs or runtime artifacts were produced.
+- Exact error: the patcher expected a 16-space-indented `except Empty: continue` block, but pinned Legendary 0.21.1 has that handler indented at 12 spaces inside `fw_results_handler`. The patch intent was correct; the source anchor indentation was wrong.
+- Corrected the patcher's exact anchor and replacement indentation in commit `937947ced07a3b1ccac569b96e4f92061c6cef78`. This source change triggers a fresh full workflow run. It is not yet confirmed passing.
+- Run log: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44667199952
