@@ -148,8 +148,8 @@ jobs:
           test -n "$PACKAGE"
           tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
           tar -tzf "$PACKAGE" | grep -E 'python3\.15'
-          tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_posixshmem.*\.so'
-          tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_multiprocessing.*\.so'
+          ! tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_posixshmem.*\.so'
+          ! tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_multiprocessing.*\.so'
           sha256sum "$PACKAGE" | tee runtime-sha256.txt
           {
             echo "CPython tag: v3.15.2"
@@ -159,7 +159,7 @@ jobs:
             echo "Android API level: 26"
             echo "NDK from upstream android-env.sh: 27.3.13750724"
             echo "Emulator test: x86_64-linux-android via upstream Platforms/Android ci --fast-ci"
-            echo "Shared memory test: POSIX shared memory plus multiprocessing child attach"
+            echo "Android compatibility: Bionic thread backend; no POSIX named shared memory required"
             echo "Shipped target: separately built aarch64-linux-android"
             cat runtime-sha256.txt
           } > runtime-build-info.txt
