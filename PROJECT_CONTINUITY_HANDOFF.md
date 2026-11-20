@@ -343,3 +343,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Legacy API-24 run **44641730025** completed successfully, including upstream CPython x86_64 Android emulator fast-CI and ARM64 package audit. Artifact `14588280495` (24,189,595 bytes): https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44641730025/artifacts/14588280495. This is retained as build evidence only; do not ship it because its API-24 build omits `_posixshmem` and `_multiprocessing`.
 - Corrected API-26 workflow run **44644433739** has now started. It adds the POSIX shared-memory/multiprocessing emulator smoke test and requires both native modules in the ARM64 package.
+
+## Engineering step log — 2026-11-20: secret-safe Epic-to-Wine launch plumbing
+
+- Added `ProcessHelper.execSecure` in commit `bdb4f2c0...` (exact source commit recorded in Git history): launches with a per-process environment overlay, redirects output to `/dev/null`, and never logs argv/environment or mutates global `EnvironmentManager`.
+- Updated `GuestProgramLauncherComponent` to keep Epic secret environment variables separate from ordinary container environment, apply them only after Wine prefix setup, suppress command logging for secure launches, and clear its secret reference after handoff.
+- Added `EpicLaunchPayloadStore`, a five-minute, one-shot in-memory store for launch args, working directory, and ephemeral environment. Updated `XServerDisplayActivity` to consume a token from the intent, apply launch metadata to the in-memory shortcut, and configure secure execution. No credentials are persisted in shortcut files.
+- These are host-side launch safety primitives only. The companion does not yet return Legendary launch parameters, and end-to-end Epic game launch is not implemented.
