@@ -297,6 +297,24 @@ def main() -> None:
         "        while True:",
     )
 
+    # If every downloader thread dies without returning its in-flight chunk,
+    # fail the manager instead of waiting indefinitely on an empty result queue.
+    replace_once(
+        manager,
+        "                except Empty:\n"
+        "                    pass\n"
+        "                except Exception as e:\n"
+        "                    self.log.warning(f'Unhandled exception when trying to read download result queue: {e!r}')\n",
+        "                except Empty:\n"
+        "                    download_workers = self.children[:-1]\n"
+        "                    if self.running and download_workers and not any(worker.is_alive() for worker in download_workers):\n"
+        "                        self.error = RuntimeError('All Legendary download threads exited without returning their results')\n"
+        "                        self.stop()\n"
+        "                        break\n"
+        "                except Exception as e:\n"
+        "                    self.log.warning(f'Unhandled exception when trying to read download result queue: {e!r}')\n",
+    )
+
     # A dead writer that exits without its sentinel must not leave the result
     # handler spinning forever after the manager has stopped.
     replace_once(
