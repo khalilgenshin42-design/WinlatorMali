@@ -477,11 +477,12 @@ public final class EpicFragment extends Fragment {
             return;
         }
         Container targetContainer = containers.get(selected);
-        File driveC = new File(targetContainer.getRootDir(), ".wine/drive_c");
-        File basePath = new File(driveC, "Games/Epic");
-        if (!basePath.exists() && !basePath.mkdirs()) {
-            statusText.setText("Unable to create Epic game directory inside container " +
-                    targetContainer.getName() + ": " + basePath);
+        File basePath = getEpicContainerDirectory(targetContainer);
+        try {
+            ensureEpicDriveLink(targetContainer);
+        } catch (Exception e) {
+            statusText.setText("Unable to connect Epic storage to container " +
+                    targetContainer.getName() + ": " + e.getMessage());
             return;
         }
         JSONObject payload = new JSONObject();
@@ -505,17 +506,69 @@ public final class EpicFragment extends Fragment {
         });
     }
 
+    private File getEpicContainerDirectory(Container container) {
+        return new File(SettingsFragment.DEFAULT_WINLATOR_PATH,
+                "EpicGames/container-" + container.id);
+    }
+
+    private void ensureEpicDriveLink(Container container) throws java.io.IOException {
+        File target = getEpicContainerDirectory(container);
+        if (!target.exists() && !target.mkdirs()) {
+            throw new java.io.IOException("Unable to create shared Epic game directory: " + target);
+        }
+
+        File games = new File(container.getRootDir(), ".wine/drive_c/Games");
+        if (!games.exists() && !games.mkdirs()) {
+            throw new java.io.IOException("Unable to create Wine C:/Games directory: " + games);
+        }
+        File link = new File(games, "Epic");
+        java.nio.file.Path linkPath = link.toPath();
+        java.nio.file.Path targetPath = target.toPath();
+
+        if (java.nio.file.Files.isSymbolicLink(linkPath)) {
+            java.nio.file.Path existing = java.nio.file.Files.readSymbolicLink(linkPath);
+            File resolved = existing.isAbsolute()
+                    ? existing.toFile() : new File(games, existing.toString());
+            if (!resolved.getCanonicalPath().equals(target.getCanonicalPath())) {
+                throw new java.io.IOException("Wine C:/Games/Epic already points to a different directory");
+            }
+            return;
+        }
+
+        if (link.exists()) {
+            File[] children = link.listFiles();
+            if (children != null && children.length > 0) {
+                throw new java.io.IOException("Wine C:/Games/Epic already contains files; refusing to replace it");
+            }
+            if (!link.delete()) {
+                throw new java.io.IOException("Unable to replace empty Wine C:/Games/Epic directory");
+            }
+        }
+        java.nio.file.Files.createSymbolicLink(linkPath, targetPath);
+    }
+
     private int findContainerIndex(String installPath) {
         if (installPath == null || installPath.isEmpty()) return -1;
         try {
             String candidate = new File(installPath).getCanonicalPath();
             for (int i = 0; i < containers.size(); i++) {
-                File driveC = new File(containers.get(i).getRootDir(), ".wine/drive_c");
-                String root = driveC.getCanonicalPath();
+                String root = getEpicContainerDirectory(containers.get(i)).getCanonicalPath();
                 if (candidate.startsWith(root + File.separator)) return i;
             }
         } catch (Exception ignored) {}
         return -1;
+    }
+
+    private String getWineEpicDirectory(Container container, String gameDirectory)
+            throws java.io.IOException {
+        String root = getEpicContainerDirectory(container).getCanonicalPath();
+        String actual = new File(gameDirectory).getCanonicalPath();
+        if (!actual.startsWith(root + File.separator)) {
+            throw new java.io.IOException("Epic game directory is outside its container-specific shared folder");
+        }
+        String relative = actual.substring(root.length() + 1)
+                .replace(File.separatorChar, '\\');
+        return "C:\\Games\\Epic\\" + relative;
     }
 
     private void uninstallGame(String appName, String title) {
@@ -595,7 +648,14 @@ public final class EpicFragment extends Fragment {
                     environment.put(key, env.optString(key, ""));
                 }
             }
-            String token = EpicLaunchPayloadStore.put(commandLine, workingDir, environment);
+            final String wineWorkingDirectory;
+            try {
+                wineWorkingDirectory = getWineEpicDirectory(container, gameDir);
+            } catch (Exception e) {
+                statusText.setText("Unable to map Epic game directory into Wine C:: " + e.getMessage());
+                return;
+            }
+            String token = EpicLaunchPayloadStore.put(commandLine, wineWorkingDirectory, environment);
             Intent intent = new Intent(requireContext(), XServerDisplayActivity.class);
             intent.putExtra("container_id", container.id);
             intent.putExtra("shortcut_path", executable.getAbsolutePath());
