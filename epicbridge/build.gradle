@@ -15,6 +15,7 @@ android {
         targetSdk 34
         versionCode 1
         versionName '0.1.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         ndk {
             abiFilters 'arm64-v8a'
@@ -102,3 +103,8 @@ tasks.register('stageEpicPythonRuntime', Sync) {
 }
 
 preBuild.dependsOn(stageEpicPythonRuntime)
+
+dependencies {
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+}
