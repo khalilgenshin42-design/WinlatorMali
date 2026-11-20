@@ -42,6 +42,8 @@ public final class EpicRuntimeInstrumentedTest {
                 selfTest.getBoolean("android_jca_aes_gcm"));
         assertTrue("JCA callback from a Python worker thread failed",
                 selfTest.getBoolean("android_jca_aes_gcm_worker_thread"));
+        assertTrue("JNI AES-GCM accepted a corrupted authentication tag",
+                selfTest.getBoolean("android_jca_aes_gcm_bad_tag_rejected"));
         assertTrue("Legendary workers are not using the thread backend",
                 selfTest.getBoolean("thread_workers"));
         assertTrue("Download-manager exception cleanup test failed",
