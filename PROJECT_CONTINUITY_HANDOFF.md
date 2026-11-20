@@ -997,3 +997,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added a main progress-loop watchdog for the final FileWorker thread. If the writer exits while Legendary still has unprocessed file tasks, the manager records an error and stops rather than waiting indefinitely for writer-result notifications that can never arrive.
 - Commit: 7e7653580613964b455883ec5eb06816403116cb.
+
+## Engineering continuation — 2026-11-20: detect premature writer-result handler exit
+
+- Extended the main progress-loop watchdog to monitor the third helper thread (`fw_results_handler`) as well as the FileWorker itself. That handler should remain alive until the manager queues the writer termination marker after all file tasks finish; an early exit now produces a clear manager error instead of an unbounded wait.
+- Commit: 0bb099742d72e84ba1bffb58d6c958a03ac97956.
