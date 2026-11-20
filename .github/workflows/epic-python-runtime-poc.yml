@@ -331,6 +331,7 @@ jobs:
 
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'lib/arm64-v8a/libepic_python.so'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'lib/arm64-v8a/libpython3.15.so'
+          ! unzip -Z1 "$BRIDGE_APK" | grep -E '^lib/(x86|x86_64|armeabi-v7a)/'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/runtime-version.txt'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/os.py'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/site-packages/legendary/__init__.py'
