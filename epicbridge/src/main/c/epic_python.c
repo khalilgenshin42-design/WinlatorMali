@@ -59,8 +59,13 @@ static PyObject *py_decrypt_aes_gcm(PyObject *self, PyObject *args) {
         goto cleanup;
     }
 
-    jbyteArray output = (jbyteArray) (*env)->CallStaticObjectMethod(
+    jbyteArray output;
+    // JCA performs the CPU-heavy chunk authentication/decryption. Release the
+    // CPython GIL so other Legendary download threads can continue concurrently.
+    Py_BEGIN_ALLOW_THREADS
+    output = (jbyteArray) (*env)->CallStaticObjectMethod(
             env, g_crypto_class, g_decrypt_method, jkey, jnonce, jciphertext, jtag);
+    Py_END_ALLOW_THREADS
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         PyErr_SetString(PyExc_ValueError, "AES-GCM authentication failed or Android JCA rejected the input");
