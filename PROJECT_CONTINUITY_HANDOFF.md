@@ -438,3 +438,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Corrected the worker-side mmap close patch anchor after checking the pinned upstream source: only DLWorker closes its attached shared-memory handle; FileWorker does not. The transformation now expects exactly one close site, avoiding a false patch failure. Commit `2bdadb0403a822108ce92000f06569d634834797`.
 
 - The failing Android probe executes checks sequentially. Before reaching TLS, it successfully passed 64-bit pointer size, hashlib SHA-256, zlib round-trip, and SQLite create/insert/select. The run therefore positively validates those four APIs on the Android emulator; fcntl locking and subprocess were not reached because TLS failed first.
+
+- Standard MaliWinlator 1.2.1 debug APK CI completed successfully at run **44649327523**, source commit `2bdadb0403a822108ce92000f06569d634834797`. The job verified the embedded Epic Bridge APK and shared signer, then uploaded artifact ID `14590995035` (446,639,150 bytes). This validates the separate companion packaging/installer asset build path, not runtime readiness or Epic login/store operations.
