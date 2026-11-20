@@ -316,3 +316,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Important limitation: the companion is still only a bootstrap shell. Its provider reports `runtime_not_installed`; it has no CPython/Legendary code yet. The Epic screen is not a functioning store at this stage.
 
 - Added a companion-replacement path for debug/release signing-certificate changes: the Epic screen detects signature mismatch and asks the user to uninstall the stale companion before installing the companion APK embedded in the current host build. Commits `ae47e8500e06a837779d1bf2045efb57e73a9fa4` and `c5831785aae607f7ea222df65cca0ffc8de2824a`.
+
+- Static navigation audit caught that the Epic menu ID was in the controller section cycle but the selection switch case had not been inserted (the earlier replacement missed CRLF line endings). Added the missing `main_menu_epic` route in commit `08a9893fa1b1e35860c14de1df7d37418a68eb3b`; verified the source now contains the case. A new APK CI run is expected for this fix.
