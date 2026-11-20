@@ -18,7 +18,7 @@ public final class EpicBridgeClient {
     public static final String PACKAGE_NAME = "com.maliwinlator.epicbridge";
     public static final String AUTHORITY = PACKAGE_NAME + ".provider";
     private static final String ASSET_NAME = "epicbridge.apk";
-    private static final int PROTOCOL_VERSION = 1;
+    private static final int PROTOCOL_VERSION = 2;
 
     private EpicBridgeClient() {}
 
@@ -71,6 +71,28 @@ public final class EpicBridgeClient {
             result.putString("state", "provider_unavailable");
             result.putString("message", "Epic Bridge provider is unavailable");
             return result;
+        }
+    }
+
+    public static Bundle call(Context context, String method, String payloadJson) {
+        Bundle extras = new Bundle();
+        extras.putString("payload_json", payloadJson == null ? "{}" : payloadJson);
+        try {
+            Bundle result = context.getContentResolver().call(
+                    Uri.parse("content://" + AUTHORITY), method, null, extras);
+            if (result == null) {
+                Bundle unavailable = new Bundle();
+                unavailable.putBoolean("ok", false);
+                unavailable.putString("error", "PROVIDER_UNAVAILABLE");
+                return unavailable;
+            }
+            return result;
+        } catch (Exception e) {
+            Bundle unavailable = new Bundle();
+            unavailable.putBoolean("ok", false);
+            unavailable.putString("error", "PROVIDER_CALL_FAILED");
+            unavailable.putString("message", e.getMessage());
+            return unavailable;
         }
     }
 
