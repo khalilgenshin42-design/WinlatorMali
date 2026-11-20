@@ -228,6 +228,22 @@ def main() -> None:
         expected=2,
     )
 
+    # CTRL-C is delivered to the CLI's main thread, not the downloader thread.
+    # Convert it into an explicit cooperative stop before allowing process exit.
+    replace_once(
+        cli,
+        "            dlm.start()\\n"
+        "            dlm.join()",
+        "            dlm.start()\\n"
+        "            try:\\n"
+        "                dlm.join()\\n"
+        "            except KeyboardInterrupt:\\n"
+        "                logger.warning('Interrupt requested; stopping Android download threads...')\\n"
+        "                dlm.stop()\\n"
+        "                dlm.join(timeout=60.0)\\n"
+        "                raise",
+    )
+
     # Ensure every patched Python file parses before reporting success.
     import ast
 
