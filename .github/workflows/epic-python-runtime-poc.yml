@@ -125,12 +125,23 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --disable-pip-version-check requests filelock pycryptodomex==3.23.0
-          PYTHONPATH="$GITHUB_WORKSPACE/legendary" python3 -m legendary --version
-          PYTHONPATH="$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
+          mkdir -p "$RUNNER_TEMP/epic-host-shim"
+          cat > "$RUNNER_TEMP/epic-host-shim/_epiccrypto.py" <<'PY'
+          from Cryptodome.Cipher import AES
+          def decrypt_aes_gcm(key, nonce, data, tag):
+              return AES.new(key, AES.MODE_GCM, nonce=nonce).decrypt_and_verify(data, tag)
+          PY
+          PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 -m legendary --version
+          PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
           from threading import Thread
+          from legendary.android_crypto import AES
           from legendary.downloader.mp.manager import DLManager
           from legendary.downloader.mp.workers import DLWorker, FileWorker
           from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
+          # NIST AES-128-GCM known-answer vector (zero key and nonce).
+          ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
+          tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
+          assert AES.new(bytes(16), AES.MODE_GCM, nonce=bytes(12)).decrypt_and_verify(ciphertext, tag) == bytes(16)
           assert issubclass(DLManager, Thread)
           assert issubclass(DLWorker, Thread)
           assert issubclass(FileWorker, Thread)
