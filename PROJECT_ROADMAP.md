@@ -29,15 +29,18 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - [x] User installed the isolated-storage build on Xiaomi 15T and reported on 2026-11-19 that it works. Scope confirmed: successful basic install/launch smoke test; deeper game/container regression tests remain pending.
 
 ### M1 — Reproducible baseline
-- Validate submodule checkout and external root-filesystem asset download.
-- Fix only reproducible build blockers; keep upstream runtime behavior unchanged.
-- Produce a debug APK artifact before changing product functionality.
+- [x] Validate submodule checkout and external root-filesystem asset download.
+- [x] Produce reproducible standard debug APK builds with the 1.2.1 ancestry check.
+- [x] Package the separately installable Epic Bridge APK inside the host APK; CI verifies the companion APK and shared signer (run 44649327523).
+- [ ] Complete device regression checks after the next installable APK is provided.
 
 ### M2 — Epic integration proof of concept
-- Keep Legendary as a separate GPL-3.0 executable/process; do not link its implementation into the MIT Android app.
-- Verify a compatible Python/runtime environment inside the app's Bionic/proot guest.
-- Prove command execution, cancellation, stdout/stderr capture, exit status, and safe token handling.
-- Implement account status and owned-game metadata before download/installation UI.
+- [x] Create a separate GPL-3.0 Epic Bridge companion package with signature-protected ContentProvider IPC and a host Epic Games navigation screen.
+- [x] Build CPython 3.15.2 for Android x86_64 and run it on the managed emulator.
+- [x] Validate Android TLS/CA trust through Requests + certifi, plus ctypes, SQLite, zlib, SHA-256, fcntl locks and subprocess execution (run 44649787558).
+- [ ] Apply and validate the pinned Legendary 0.21.1 Android thread/anonymous-mmap backend; source patching currently has a cleanup-anchor mismatch being corrected.
+- [ ] Build and validate Legendary dependencies for Android ARM64, including pycryptodomex; do not assume host Linux wheels work.
+- [ ] Integrate the runtime into the companion and prove safe command output, cancellation, token handling, account status and owned-game metadata.
 
 ### M3 — Game library and lifecycle
 - Model Epic catalog entries separately from existing Wine shortcuts.
@@ -94,3 +97,7 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 The user confirmed that the latest MaliWinlator 1.2.1 build works after installation on the Xiaomi 15T. This closes the basic install/launch gate. No claim is made yet about Epic functionality, game installation, or full Winlator regression coverage.
 
 Continuity log: [PROJECT_CONTINUITY_HANDOFF.md](PROJECT_CONTINUITY_HANDOFF.md).
+
+## Current Epic implementation status (2026-11-20)
+
+The Epic UI entry point, companion APK packaging, signature-protected IPC bootstrap, and Android CPython runtime probe are in place. The emulator has successfully validated the APIs needed for the Legendary control plane and HTTPS. Legendary itself is not yet running in the Android companion: its downloader uses POSIX shared memory and multiprocessing, which are unavailable in the selected Bionic build, so an Android-specific thread backend is being validated. PyCryptodomex native ARM64 compatibility and the embedded JNI runtime are also outstanding. Epic login, owned-game listing, installation, updates, uninstall and Wine-container launch are not yet implemented or claimed.
