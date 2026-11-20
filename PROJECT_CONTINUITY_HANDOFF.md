@@ -1460,3 +1460,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - `EpicPythonRuntime.isPackaged()` validates the neutral asset path. During extraction, the bridge renames app-private `zipfile/path_pkg` to CPython's required `zipfile/_path` before runtime completeness checks and Python initialization. The runtime marker hash changes with the staged asset path, forcing a refresh of previously extracted incomplete runtimes.
 - Commits: `701ab4f` Gradle staging, `c166e0b` runtime restore, `7364056` archive audit. The three intermediate CI runs were cancelled by subsequent pushes; no validation result exists for this combined source state yet.
 - Next gate: run one workflow on the final combined commit; require APK archive audit, extraction/instrumentation imports (`zipfile._path`), and ARM64 production packaging to pass. Do not distribute either APK until the full audit passes.
+
+
+## 2026-11-21 AES-GCM instrumentation finding and correction
+- Run `44816407487` passed all APK archive-entry assertions, installed/launched the x86_64 bridge on Android API 35 emulator, and reached all 4 instrumentation tests. Two runtime tests failed at the negative AES-GCM authentication check.
+- The NIST AES-128-GCM positive known-answer vector had already succeeded; the traceback showed failure only when deliberately passing a corrupted tag. JNI maps the Android JCA authentication exception to Python `ValueError`, but `epicbridge_runner._runtime_self_test()` incorrectly caught only `RuntimeError`. The production crypto path was not shown to be failing; the self-test expected the wrong exception type.
+- Fixed the negative-tag assertion to catch the shim's documented `ValueError`, preserving the security requirement that a corrupted tag must be rejected. Commit: `84c1d67`.
+- Next: run the full Epic workflow again. Require positive NIST vector, corrupted-tag rejection, worker-thread JCA callback, runtime imports, manager lifecycle tests, ARM64 production runtime, companion APK audit, and host APK audit. Do not call this ready until all pass.
