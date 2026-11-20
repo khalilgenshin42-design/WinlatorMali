@@ -948,3 +948,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Changed the workflow checkout from the moving branch ref to `github.sha`. Each run now builds and tests the exact commit that triggered it, and the generated CI status record identifies that same source SHA. The final status publisher separately fetches the current branch head before committing its report.
 - Commit: e60a60d5af11b7241486268a577ad4c92c7708a0.
+
+## Engineering continuation — 2026-11-20: include APK checksums in the branch-published CI record
+
+- Extended the successful CI status record to include the SHA-256 digest of each published APK, so the final install pair can be checked against the exact artifact bytes without extracting the workflow artifact first.
+- Commit: b495bcef96cfdda6199ba372721fab84af6c2176.
