@@ -327,6 +327,10 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.secureLaunch = secureLaunch;
     }
 
+    public void setEpicLaunchPayloadToken(String token) {
+        this.epicLaunchPayloadToken = token;
+    }
+
     public String getBox64Preset() {
         return box64Preset;
     }
