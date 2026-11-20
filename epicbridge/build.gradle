@@ -94,13 +94,13 @@ tasks.register('stageEpicPythonRuntime', Sync) {
         if (!epicRuntimePrefix) {
             throw new GradleException('Epic CPython prefix is required; refusing to package a stub-only companion APK')
         }
-        File prefix = file(epicRuntimePrefix)
+        File prefix = new File(epicRuntimePrefix)
         ['include/python3.15/Python.h', 'lib/libpython3.15.so', 'lib/python3.15/os.py', 'lib/python3.15/zipfile/__init__.py', 'lib/python3.15/zipfile/_path/__init__.py'].each { relative ->
             if (!new File(prefix, relative).isFile()) {
                 throw new GradleException("Epic CPython prefix is incomplete: ${new File(prefix, relative)}")
             }
         }
-        logger.lifecycle("Staging Epic CPython runtime from ${prefix.absolutePath} for ABI ${epicRuntimeAbi}")
+        System.out.println("Staging Epic CPython runtime from ${prefix.absolutePath} for ABI ${epicRuntimeAbi}")
     }
     into(epicRuntimeGenerated)
     // The same build directory is used first for x86_64 instrumentation and
