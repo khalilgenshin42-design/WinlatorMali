@@ -1055,3 +1055,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Hardened installed-game serialization so a missing executable or install path in Legendary's metadata no longer crashes the entire installed-library response. Entries retain their title/path metadata, and launch validation still rejects a game with no usable executable.
 - Commit: 8a2645f946dcbf2de83bccc6312ff5a5321e7d0e.
+
+## Engineering continuation — 2026-11-20: harden Epic library display-title fallbacks
+
+- Added stable app-name fallbacks for missing base-game and DLC display titles, including the sort key. A malformed or sparse catalog entry can no longer abort the entire Epic library response during sorting or JSON serialization.
+- Commit: 71847ce5803022cb247e10c7a666a6609142931b.
