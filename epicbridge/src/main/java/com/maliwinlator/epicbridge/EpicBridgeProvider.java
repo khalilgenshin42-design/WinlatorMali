@@ -11,7 +11,7 @@ import android.os.Environment;
 
 public final class EpicBridgeProvider extends ContentProvider {
     public static final String AUTHORITY = "com.maliwinlator.epicbridge.provider";
-    public static final int PROTOCOL_VERSION = 1;
+    public static final int PROTOCOL_VERSION = 2;
     private static volatile Boolean cryptoSelfTest;
 
     @Override
@@ -53,21 +53,52 @@ public final class EpicBridgeProvider extends ContentProvider {
 
         if ("status".equals(method) || "ping".equals(method)) {
             boolean cryptoReady = cryptoSelfTest();
+            boolean runtimePackaged = EpicPythonRuntime.isPackaged(getContext());
             result.putBoolean("installed", true);
             result.putBoolean("crypto_supported", cryptoReady);
-            result.putBoolean("runtime_ready", false);
+            result.putBoolean("runtime_ready", runtimePackaged && cryptoReady);
             result.putBoolean("storage_access",
                     Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager());
-            result.putString("state", "runtime_not_installed");
-            result.putString("crypto_status", cryptoReady ? "Android AES-GCM self-test passed" : "Android AES-GCM unavailable");
-            result.putString("message", "Epic runtime bootstrap is not installed yet");
+            result.putString("state", runtimePackaged
+                    ? (cryptoReady ? "runtime_ready" : "crypto_unavailable")
+                    : "runtime_not_installed");
+            result.putString("crypto_status", cryptoReady
+                    ? "Android AES-GCM self-test passed" : "Android AES-GCM unavailable");
+            result.putString("message", runtimePackaged
+                    ? (cryptoReady ? "Legendary Android runtime is packaged" : "Android AES-GCM self-test failed")
+                    : "Epic runtime is not bundled in this companion build");
             return result;
         }
 
-        result.putBoolean("ok", false);
-        result.putString("error", "RUNTIME_NOT_READY");
-        result.putString("message", "Epic runtime is not installed in this companion build");
-        return result;
+        if (!EpicPythonRuntime.isPackaged(getContext())) {
+            result.putBoolean("ok", false);
+            result.putString("error", "RUNTIME_NOT_READY");
+            result.putString("message", "This Epic Bridge package does not contain the Android CPython runtime");
+            return result;
+        }
+
+        switch (method) {
+            case "begin_login":
+            case "finish_login":
+            case "status_account":
+            case "logout":
+            case "library":
+            case "installed":
+            case "install":
+            case "uninstall":
+            case "launch_info": {
+                String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
+                String response = EpicPythonRuntime.call(getContext(), method, payload);
+                result.putString("result_json", response);
+                result.putBoolean("ok", response != null);
+                return result;
+            }
+            default:
+                result.putBoolean("ok", false);
+                result.putString("error", "UNKNOWN_METHOD");
+                result.putString("message", "Unsupported Epic Bridge operation");
+                return result;
+        }
     }
 
     @Override public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) { return null; }
