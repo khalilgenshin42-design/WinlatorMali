@@ -360,6 +360,10 @@ def main() -> None:
         "            if self.children and not self.children[-1].is_alive():\n"
         "                self.error = RuntimeError('Epic file writer thread exited before completing its tasks')\n"
         "                self.stop()\n"
+        "                break\n"
+        "            if len(self.threads) > 2 and not self.threads[2].is_alive():\n"
+        "                self.error = RuntimeError('Epic writer-result handler exited before all files completed')\n"
+        "                self.stop()\n"
         "                break\n",
     )
 
