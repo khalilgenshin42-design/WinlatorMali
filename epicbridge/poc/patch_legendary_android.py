@@ -330,6 +330,13 @@ def main() -> None:
         "        self.shared_memory = AndroidSharedBuffer(self.max_shared_memory)\n",
     )
 
+    # Manifests containing only empty files/deletions have no chunk denominator.
+    replace_once(
+        manager,
+        "            perc = (processed_chunks / num_chunk_tasks) * 100\n",
+        "            perc = (processed_chunks / num_chunk_tasks) * 100 if num_chunk_tasks else 100.0\n",
+    )
+
     # Surface permanent chunk failures instead of retrying forever.
     replace_once(
         manager,
