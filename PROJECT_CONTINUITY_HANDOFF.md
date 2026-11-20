@@ -1343,3 +1343,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Verified the Kotlin 2.3.20 artifact is published on Maven Central; therefore the failure is consistent with repository/network resolution trouble during this run, not an invalid Kotlin version. Do not pin/downgrade CPython's upstream Android Gradle Plugin or alter its testbed just to bypass a transient resolution failure.
 - Requested a retry of the failed workflow job **136450907387** to distinguish a transient Maven repository failure from a persistent infrastructure problem.
 - Next: if retry gets past dependency resolution, resume the managed x86_64 runtime smoke and inspect the newly explicit extraction diagnostics if initialization fails. No Epic APK pair was built by run #194.
+
+
+## 2026-11-20 — CPython nested-asset extraction fix
+
+- CPython Android build retry job `136455278919` in workflow run `44783162888` passed the previously blocked Maven dependency resolution and reached the managed Android x86_64 emulator.
+- Instrumentation failed during Java-side runtime extraction, before CPython native initialization. Exact missing extracted path: `files/epic-runtime/python/lib/python3.15/zipfile/_path/__init__.py`. The runtime archive audit had already verified this path exists in the upstream package, so the failure was narrowed to Android APK asset traversal/extraction rather than CPython build staging.
+- Root cause hypothesis: extractor attempted `AssetManager.open(childAsset)` before checking whether the child is a directory. Android asset directory entries are exposed via `AssetManager.list()`; opening a directory is not a reliable directory test and can lead to a directory entry being materialized as a file, skipping descendants.
+- Fix committed in `8de605ca765dd8f9dba589638b7cddf387f0ed4f`: `EpicPythonRuntime.extractAssetDirectory()` now checks `AssetManager.list(childAsset)` first, recursively handles non-empty directories, explicitly creates empty directories, and opens only leaf assets as files. `isPackaged()` now also requires the nested `zipfile/_path/__init__.py` APK asset, so packaging omission and extraction failure are distinguished earlier.
+- Next gate: rerun the Android instrumentation workflow and confirm both the packaged-asset preflight and post-extraction checks pass, then reach the CPython JNI/self-test assertions. No Epic APK is ready for user installation until the full CI artifact and signing/ABI/dependency audits pass.
