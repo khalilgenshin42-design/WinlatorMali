@@ -1157,3 +1157,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The independent standard 1.2.1 host build workflow **44731972310** completed successfully and uploaded artifact `maliwinlator-1.2.1-standard-debug-2394c6509c96011a991b2959361b35f6da317837` (SHA-256 `6c695f70192dd9e1d7079c6130f70e297425028d5fc0ee1e7874e3df5547b643`). This is the host APK build only; it is not the validated Epic host+companion pair and must not be represented as a ready Epic build.
 - Current test instructions remain in `EPIC_GAMES_TESTING_GUIDE.md`. Install only the matched host/companion pair from a successful Epic runtime workflow after all validation and prerelease publication steps complete.
 - Next action: poll run **44731972181** and inspect the first failing step if it fails; if ARM64 packaging and all later validations pass, inspect the prerelease assets and SHA-256 manifest, then hand the matched APK pair to the user for device testing. Do not rerun or duplicate the long ARM64 build while it is still active.
+
+## Live CI update — 2026-11-20: production ARM64 runtime built and audited
+
+- Follow-up poll of Epic workflow run **44731972181** confirms step 17, **Build the production Android ARM64 runtime**, completed successfully, and step 18, **Audit packaged runtime**, also completed successfully.
+- The workflow has advanced to step 19, **Install MaliWinlator Android build toolchain**. Epic Bridge x86_64 instrumentation (step 20), ARM64 companion + host APK build (step 21), uploads (steps 22–23), and prerelease publication (step 24) remain pending.
+- This is meaningful progress beyond the earlier x86_64 emulator smoke: the production ARM64 CPython runtime has now compiled and passed its package audit. It is still not a downloadable/validated Epic APK pair until all remaining steps succeed.
+- Handoff documentation was updated in commit `30eaf220f8faa48d23239bdb31911810341879dc`; this follow-up records the newly completed ARM64 stages.
