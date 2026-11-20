@@ -180,7 +180,7 @@ jobs:
           if grep -q 'UPDATE_SIGNATURE_MATCH=false' epic-runtime-build.txt; then
             NOTES="Pre-release test build for MaliWinlator 1.2.1 with Epic Games integration. WARNING: the signing certificate differs from the previous 1.2.1 APK; do not uninstall an existing installation until its containers are backed up."
           else
-            NOTES="Pre-release test build for MaliWinlator 1.2.1 with Epic Games integration. The host APK embeds the matching Epic Bridge companion. Install the host APK, open the Epic tab, grant storage access, sign in through the browser, then refresh your library. Android emulator runtime instrumentation passed before publication."
+            NOTES="Pre-release test build for MaliWinlator 1.2.1 with Epic Games integration. The host APK embeds the matching Epic Bridge companion. Install the host APK, open the Epic tab, allow MaliWinlator to install the Epic Bridge companion when prompted, grant all-files access to both apps, sign in through the browser, then refresh your library. Android emulator runtime instrumentation passed before publication."
           fi
           gh release create "$TAG" \
             "$HOST_APK#MaliWinlator 1.2.1 Epic ARM64 APK" \
