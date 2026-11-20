@@ -116,9 +116,10 @@ def _install(core, payload):
     worker_error = getattr(dlm, "error", None)
     if worker_error:
         raise RuntimeError(f"Legendary download failed: {worker_error}")
-    core.install_game(installed_game)
+    prerequisites = core.install_game(installed_game) or {}
     return {
         "app_name": installed_game.app_name,
+        "prerequisites": prerequisites,
         "title": installed_game.title,
         "install_path": installed_game.install_path,
         "executable": installed_game.executable,
