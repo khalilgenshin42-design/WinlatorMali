@@ -123,7 +123,8 @@ public final class EpicPythonRuntime {
             Os.setenv("TMPDIR", tempDir.getAbsolutePath(), true);
             Os.setenv("HOME", homeDir.getAbsolutePath(), true);
         } catch (Exception e) {
-            Log.w(TAG, "Unable to set optional Python environment variables", e);
+            Log.e(TAG, "Unable to configure Python HOME/TMPDIR", e);
+            return false;
         }
 
         if (!ensureNativeLibraryLoaded()) return false;
