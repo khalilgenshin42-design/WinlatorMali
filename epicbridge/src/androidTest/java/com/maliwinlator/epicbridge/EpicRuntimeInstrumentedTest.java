@@ -23,6 +23,22 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void onlyOneEpicBackgroundJobCanBeReservedAtATime() {
+        String first = java.util.UUID.randomUUID().toString();
+        String second = java.util.UUID.randomUUID().toString();
+        assertTrue(EpicRuntimeService.reserveJob(first));
+        try {
+            assertFalse(EpicRuntimeService.reserveJob(second));
+            assertTrue(EpicRuntimeService.isJobActive(first));
+            assertFalse(EpicRuntimeService.isJobActive(second));
+        } finally {
+            EpicRuntimeService.releaseJobReservation(first);
+        }
+        assertTrue(EpicRuntimeService.reserveJob(second));
+        EpicRuntimeService.releaseJobReservation(second);
+    }
+
+    @Test
     public void bundledRuntimeLoadsAndPassesNativeSelfTest() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
