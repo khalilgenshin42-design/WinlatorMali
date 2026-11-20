@@ -603,3 +603,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Fix commit: `225f114058551832def9467f55f72344cf87cb5d`.
 - The test command runs before installing Legendary, but this is valid for these five focused tests: importing `epicbridge_runner` does not import Legendary; `_core()` is not called because each test supplies a fake core.
 - This is a source-level fixture correction only. The tests have not yet been observed passing in GitHub Actions, and no Epic account/library/download/install/launch functionality is claimed as device-validated.
+
+## Engineering continuation — 2026-11-20: downloader cancellation deadlock audit
+
+- Audited the pinned Legendary 0.21.1 downloader source against the Android thread/mmap patcher. The manager's main progress loop originally remained `while processed_tasks < num_tasks`; the existing cooperative `stop()` only stopped helper threads, so a user interrupt could leave the manager loop waiting forever for work that had deliberately been cancelled.
+- Added a strict patcher transformation to make that loop also test `self.running`. This lets cancellation fall through to the existing ordered shutdown path: stop helper threads, drain queued-but-not-started download work, signal downloader/writer workers, join threads, and release the manager-owned mmap.
+- Commits: `cfd10042324a918c1bb918b3caf1758db282573f` (initial cancellation guard) and `17067817fd0647b45c6d0d46bd15e44b17534aaf` (corrected the patcher's newline anchor escaping).
+- This closes a source-level deadlock found during review; it does not yet prove cancellation behavior under a live download. The CPython/Legendary workflow must apply the patch to the pinned source, compile it, and run worker lifecycle tests before the integration APK can be considered ready.
