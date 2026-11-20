@@ -1393,3 +1393,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Follow-up Epic run #44795609873 failed the same Android instrumentation gate. Logcat confirms the same exact missing APK asset: `assets/python/lib/python3.15/zipfile/_path/__init__.py`. The source CPython prefix and both runtime tarballs contain the file, and workflow checks confirm the staged source is a real directory/file (not symlinks). Therefore the prior symlink-only theory was incomplete: the missing file is lost during Gradle runtime asset staging/packaging.
 - Added a dedicated Gradle `from(.../zipfile/_path)` copy specification in `epicbridge/build.gradle`, targeting the exact generated asset path `assets/python/lib/python3.15/zipfile/_path`, in addition to the full stdlib copy. Commit: `388540ea99190a57db9408c1132babc2ba0d691d`.
 - Re-run Android instrumentation. If this still fails, inspect the generated Gradle asset merge output and APK archive before emulator startup; add an explicit APK zip-entry assertion for the nested _path package (not just os.py/Legendary/JNI) so packaging fails at build time with a precise cause.
+
+
+## 2026-11-20 — CPython runtime staging duplicate-source correction
+- Epic runtime workflow #44801339991 failed before instrumentation could run: Gradle task `:epicbridge:stageEpicPythonRuntime` rejected `assets/python/lib/python3.15/zipfile/_path/glob.py` as a duplicate.
+- Evidence: both CPython x86_64 and ARM64 runtime archives contain `zipfile/_path/__init__.py`; the failure is caused by the explicit `zipfile/_path` staging source overlapping the full Python stdlib staging source, not by a missing source file.
+- Fixed `epicbridge/build.gradle` in commit `f73f5990726b34719177b153a55d03906e7dbd83` by setting `duplicatesStrategy = DuplicatesStrategy.EXCLUDE` on the Sync task. This preserves the broad stdlib copy while allowing the explicit path source to fill any omitted nested files.
+- Standard host APK workflow #44801340002 passed, including embedded companion APK byte-match and shared signer audit. It is not evidence that Epic runtime works.
+- Next gate: rerun Epic instrumentation; verify actual staged assets and APK contents, then confirm Android CPython initializes and imports `zipfile._path` and Legendary. No Epic-enabled APK is approved yet.
