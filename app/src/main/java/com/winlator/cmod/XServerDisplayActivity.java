@@ -1497,7 +1497,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                 shortcut
         );
 
-                if (epicLaunchPayload != null) {
+        if (epicLaunchPayload != null) {
             guestProgramLauncherComponent.setSecureLaunch(true);
             guestProgramLauncherComponent.setSecretEnvVars(epicLaunchPayload.environment);
             epicLaunchPayload = null;
