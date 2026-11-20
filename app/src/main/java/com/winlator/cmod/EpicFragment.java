@@ -55,6 +55,8 @@ public final class EpicFragment extends Fragment {
     private final Set<String> installedApps = new HashSet<>();
     private boolean replaceCompanion;
     private boolean storageReady;
+    private boolean hostStorageReady;
+    private boolean bridgeStorageReady;
 
     @Nullable
     @Override
@@ -84,7 +86,7 @@ public final class EpicFragment extends Fragment {
 
         storageButton = new Button(requireContext());
         storageButton.setText("Open Epic Bridge storage settings");
-        storageButton.setOnClickListener(v -> openBridge());
+        storageButton.setOnClickListener(v -> requestStorageAccess());
         root.addView(storageButton);
 
         signInButton = new Button(requireContext());
@@ -172,9 +174,12 @@ public final class EpicFragment extends Fragment {
 
         Bundle bridge = EpicBridgeClient.getStatus(requireContext());
         boolean ready = bridge.getBoolean("runtime_ready", false);
-        boolean bridgeStorage = bridge.getBoolean("storage_access", false);
-        boolean hostStorage = Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager();
-        storageReady = bridgeStorage && hostStorage;
+        bridgeStorageReady = bridge.getBoolean("storage_access", false);
+        hostStorageReady = Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager();
+        storageReady = bridgeStorageReady && hostStorageReady;
+        storageButton.setText(!hostStorageReady
+                ? "Grant MaliWinlator storage access"
+                : "Open Epic Bridge storage settings");
         String state = bridge.getString("state", "");
         replaceCompanion = "signature_mismatch".equals(state) || "protocol_mismatch".equals(state) || "runtime_not_installed".equals(state);
         installBridgeButton.setVisibility(replaceCompanion ? View.VISIBLE : View.GONE);
@@ -548,6 +553,21 @@ public final class EpicFragment extends Fragment {
             EpicBridgeClient.requestInstall(requireContext());
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Unable to open Epic Bridge installer: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void requestStorageAccess() {
+        try {
+            if (!hostStorageReady && Build.VERSION.SDK_INT >= 30) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Uri.parse("package:" + requireContext().getPackageName()));
+                startActivity(intent);
+            } else {
+                openBridge();
+            }
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Unable to open storage settings: " + e.getMessage(),
                     Toast.LENGTH_LONG).show();
         }
     }
