@@ -96,6 +96,12 @@ public final class EpicBridgeProvider extends ContentProvider {
                 return result;
             }
             String jobId = java.util.UUID.randomUUID().toString();
+            if (!EpicRuntimeService.reserveJob(jobId)) {
+                result.putBoolean("ok", false);
+                result.putString("error", "JOB_ALREADY_RUNNING");
+                result.putString("message", "Another Epic install or uninstall operation is already running");
+                return result;
+            }
             String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
             android.content.Intent intent = new android.content.Intent(getContext(), EpicRuntimeService.class);
             intent.setAction(EpicRuntimeService.ACTION_RUN_JOB);
@@ -108,6 +114,7 @@ public final class EpicBridgeProvider extends ContentProvider {
                 result.putString("job_id", jobId);
                 result.putString("state", "queued");
             } catch (Exception e) {
+                EpicRuntimeService.releaseJobReservation(jobId);
                 result.putBoolean("ok", false);
                 result.putString("error", "JOB_START_FAILED");
                 result.putString("message", e.getMessage());
