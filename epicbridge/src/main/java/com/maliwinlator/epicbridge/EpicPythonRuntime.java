@@ -96,16 +96,17 @@ public final class EpicPythonRuntime {
                 File extractedPythonLib = new File(pythonHome, "lib/python3.15");
                 File extractedSitePackages = new File(extractedPythonLib, "site-packages");
                 File extractedExtensionDir = new File(extractedPythonLib, "lib-dynload");
-                if (!new File(extractedPythonLib, "os.py").isFile()
-                        || !new File(extractedPythonLib, "zipfile/__init__.py").isFile()
-                        || !new File(extractedPythonLib, "zipfile/_path/__init__.py").isFile()
-                        || !new File(extractedSitePackages, "legendary/__init__.py").isFile()
-                        || !new File(extractedSitePackages, "legendary/android_crypto.py").isFile()
-                        || !new File(extractedSitePackages, "epicbridge_runner.py").isFile()
-                        || !extractedExtensionDir.isDirectory()
-                        || extractedExtensionDir.listFiles() == null
-                        || !sharedLibrariesExecutable(extractedPythonLib)) {
-                    throw new IOException("Extracted CPython runtime is incomplete or contains a non-executable shared extension");
+                String missingRuntimeFile = firstMissingRuntimeFile(extractedPythonLib, extractedSitePackages);
+                if (missingRuntimeFile != null) {
+                    throw new IOException("Extracted CPython runtime is missing required file: " + missingRuntimeFile);
+                }
+                if (!extractedExtensionDir.isDirectory() || extractedExtensionDir.listFiles() == null) {
+                    throw new IOException("CPython extension directory is missing or unreadable: " + extractedExtensionDir);
+                }
+                makeSharedLibrariesExecutable(extractedPythonLib);
+                String nonExecutableLibrary = firstNonExecutableSharedLibrary(extractedPythonLib);
+                if (nonExecutableLibrary != null) {
+                    throw new IOException("CPython shared library is not executable after chmod: " + nonExecutableLibrary);
                 }
                 File cwd = new File(pythonHome, "cwd");
                 if (!cwd.mkdirs() && !cwd.isDirectory()) {
@@ -210,20 +211,54 @@ public final class EpicPythonRuntime {
         }
     }
 
-    private static boolean sharedLibrariesExecutable(File directory) {
-        if (directory == null || !directory.isDirectory()) return false;
+    private static String firstMissingRuntimeFile(File pythonLib, File sitePackages) {
+        String[] required = {
+                new File(pythonLib, "os.py").getAbsolutePath(),
+                new File(pythonLib, "zipfile/__init__.py").getAbsolutePath(),
+                new File(pythonLib, "zipfile/_path/__init__.py").getAbsolutePath(),
+                new File(sitePackages, "legendary/__init__.py").getAbsolutePath(),
+                new File(sitePackages, "legendary/android_crypto.py").getAbsolutePath(),
+                new File(sitePackages, "epicbridge_runner.py").getAbsolutePath()
+        };
+        for (String path : required) if (!new File(path).isFile()) return path;
+        return null;
+    }
+
+    private static void makeSharedLibrariesExecutable(File directory) throws IOException {
+        if (directory == null || !directory.isDirectory()) {
+            throw new IOException("Runtime directory is missing: " + directory);
+        }
         File[] children = directory.listFiles();
-        if (children == null) return false;
+        if (children == null) throw new IOException("Unable to list runtime directory: " + directory);
         for (File child : children) {
             if (child.isDirectory()) {
-                if (!sharedLibrariesExecutable(child)) return false;
-            } else if (child.isFile()
-                    && child.getName().matches(".*\\.so(?:\\..*)?$")
-                    && !child.canExecute()) {
-                return false;
+                makeSharedLibrariesExecutable(child);
+            } else if (child.isFile() && child.getName().matches(".*\\.so(?:\\..*)?$")
+                    && !child.canExecute() && !child.setExecutable(true, true)) {
+                throw new IOException("Unable to set executable permission on CPython shared library: "
+                        + child.getAbsolutePath());
             }
         }
-        return true;
+    }
+
+    private static String firstNonExecutableSharedLibrary(File directory) {
+        if (directory == null || !directory.isDirectory()) return directory == null ? "null" : directory.getAbsolutePath();
+        File[] children = directory.listFiles();
+        if (children == null) return directory.getAbsolutePath() + " (unreadable directory)";
+        for (File child : children) {
+            if (child.isDirectory()) {
+                String nested = firstNonExecutableSharedLibrary(child);
+                if (nested != null) return nested;
+            } else if (child.isFile() && child.getName().matches(".*\\.so(?:\\..*)?$")
+                    && !child.canExecute()) {
+                return child.getAbsolutePath();
+            }
+        }
+        return null;
+    }
+
+    private static boolean sharedLibrariesExecutable(File directory) {
+        return firstNonExecutableSharedLibrary(directory) == null;
     }
 
     private static boolean deleteRecursively(File file) {
