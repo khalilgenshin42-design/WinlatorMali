@@ -1086,3 +1086,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Changed the companion service's queued/running, complete/failed, and interrupted SharedPreferences writes to synchronous commits. The host's durable job ID and the companion's job state/result now have a much smaller process-death window during long installs and service teardown.
 - Commit: 3f593220f3a8f6f553386be426f34698360f6f01.
+
+## Engineering continuation — 2026-11-20: require lib-dynload before committing extraction state
+
+- Added an explicit post-extraction check that CPython's `lib-dynload` directory exists and can be listed before the runtime identity marker is committed. This complements the recursive shared-library permission check and prevents a missing extension directory from being accepted as a complete runtime.
+- Commit: 00d2ef52ef6ef475f07fca473805187929df0136.
