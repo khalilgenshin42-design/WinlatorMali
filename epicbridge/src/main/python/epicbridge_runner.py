@@ -217,6 +217,15 @@ def _runtime_self_test():
         raise RuntimeError("Legendary download manager thread backend is invalid")
     manager.stop()
 
+    failed_manager = DLManager("/tmp/epic-runtime-failure-smoke", "https://cdn.invalid", {})
+    def fail_download_manager():
+        raise RuntimeError("intentional download-manager cleanup probe")
+    failed_manager.run_real = fail_download_manager
+    failed_manager.start()
+    failed_manager.join(timeout=5)
+    if failed_manager.is_alive() or not isinstance(failed_manager.error, RuntimeError):
+        raise RuntimeError("Legendary download-manager exception cleanup failed")
+
     buffer = AndroidSharedBuffer(4096)
     try:
         buffer.buf[:8] = b"MALIWINL"
@@ -250,6 +259,7 @@ def _runtime_self_test():
         "android_jca_aes_gcm": True,
         "android_jca_aes_gcm_worker_thread": True,
         "thread_workers": True,
+        "download_failure_cleanup": True,
         "anonymous_mmap": True,
     }
 
