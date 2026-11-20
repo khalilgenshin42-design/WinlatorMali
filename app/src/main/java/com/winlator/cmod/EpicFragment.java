@@ -405,7 +405,7 @@ public final class EpicFragment extends Fragment {
             install.setOnClickListener(v -> installGame(appName, title));
             actions.addView(install);
         }
-        if (installed) {
+        if (installed && storageReady) {
             Button launch = new Button(requireContext());
             launch.setText("Launch");
             launch.setOnClickListener(v -> launchGame(appName, title));
@@ -420,6 +420,11 @@ public final class EpicFragment extends Fragment {
             TextView unsupported = new TextView(requireContext());
             unsupported.setText("Not directly installable with Legendary (third-party or no Windows build).");
             actions.addView(unsupported);
+        }
+        if (installed && !storageReady) {
+            TextView permission = new TextView(requireContext());
+            permission.setText("Grant shared-storage access to launch or uninstall this game.");
+            actions.addView(permission);
         }
         row.addView(actions);
         View divider = new View(requireContext());
