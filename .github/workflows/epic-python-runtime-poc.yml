@@ -9,7 +9,11 @@ on:
       - 'epicbridge/poc/site-packages/epic_runtime_smoke.py'
       - 'epicbridge/poc/patch_legendary_android.py'
       - 'epicbridge/poc/requirements-android.txt'
-      - 'epicbridge/poc/test_epicbridge_runner.py'
+      - 'epicbridge/**'
+      - 'app/src/main/java/**/Epic*.java'
+      - 'app/src/main/AndroidManifest.xml'
+      - 'app/build.gradle'
+      - 'settings.gradle'
   workflow_dispatch:
 
 permissions:
