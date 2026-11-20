@@ -47,18 +47,18 @@ def _library(core):
         # from the primary asset catalog map.
         dlc_by_catalog.setdefault(catalog_id, []).extend(dlcs)
     result = []
-    for game in sorted(games, key=lambda item: item.app_title.casefold()):
+    for game in sorted(games, key=lambda item: (item.app_title or item.app_name).casefold()):
         dlcs = []
         for dlc in dlc_by_catalog.get(game.catalog_item_id, []):
             dlcs.append({
                 "app_name": dlc.app_name,
-                "title": dlc.app_title,
+                "title": dlc.app_title or dlc.app_name,
                 "version": dlc.app_version("Windows") or "",
                 "is_dlc": True,
             })
         result.append({
             "app_name": game.app_name,
-            "title": game.app_title,
+            "title": game.app_title or game.app_name,
             "version": game.app_version("Windows") or "",
             "is_dlc": bool(game.is_dlc),
             "third_party_store": game.third_party_store or "",
