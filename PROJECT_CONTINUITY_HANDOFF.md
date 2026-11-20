@@ -361,3 +361,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Secure Epic launch plumbing compiles successfully in APK run **44645674170** at commit `d9401d7bb52ee63b60a11a705385e58f4a363b6e`. The embedded-companion integrity, package ID, and shared signer verification also passed. Artifact ID `14587364935`, size 446,638,103 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44645674170/artifacts/14587364935
 - This artifact still contains only the Epic companion bootstrap shell; it is not a working Epic Store runtime.
+
+- Added `epicbridge/LICENSE` (full GPL-3.0 text copied from the pinned Legendary source) and `epicbridge/README.md` in commits `4f9b332c6f7822f48e638fb9244197e77016726e` and `19253af3eb3b1d2a5f6ec86dc6a257c52d87ae95`. The companion module is explicitly GPL-3.0-or-later; the host remains MIT. The README documents the separate-package/signature boundary and records that no runtime is bundled yet.
