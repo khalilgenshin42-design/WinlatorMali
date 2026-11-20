@@ -819,3 +819,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Installed-game metadata is mapped back to its owning container using the per-container shared directory. Update and launch automatically select that container; launch rejects a game directory outside its selected container's shared tree and converts its working directory to the corresponding Wine C: path.
 - Commits: b58bc1b8184a7f997f28d928fbfaa02e900d235e (initial container ownership/path validation); 0b8eb2441f1541812e480f779f878c7b7c3ac914 (launch path guard); 8526603928a0e21f79c8fb8cc347da607c6f8ad9 (shared storage + Wine C: symlink mapping).
 - Source-level architecture correction only. Symlink behavior, cross-package shared-storage access, install, and game launch still require emulator/device validation.
+
+## Engineering continuation — 2026-11-20: preserve the actual Epic executable working directory
+
+- Checked the launch contract against Legendary 0.21.1 `get_launch_parameters()`: `game_directory` is the install root, while `working_directory` is the executable's parent directory. The first C: mapping implementation used the install root for both.
+- Updated the host to validate both paths against the same container-owned shared directory and translate Legendary's actual `working_directory` into the matching `C:\\Games\\Epic\\...` path. The executable itself remains checked using its real shared-storage path before the Winlator launch begins.
+- Commit: f71f066f4641c5049a1f348a8f13c3f3efe9b2b5.
+- Static contract correction only; game launch still needs runtime verification.
