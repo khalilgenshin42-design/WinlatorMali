@@ -601,8 +601,19 @@ public final class EpicFragment extends Fragment {
                         result.optString("message"));
                 return;
             }
-            statusText.setText(title + (update ? " updated in " : " installed in ") +
-                    targetContainer.getName() + ". Select that container to launch the game.");
+            String installMessage = title + (update ? " updated in " : " installed in ") +
+                    targetContainer.getName() + ". Select that container to launch the game.";
+            JSONObject prerequisites = result.optJSONObject("prerequisites");
+            if (prerequisites != null && !prerequisites.optString("path", "").isEmpty()) {
+                installMessage += " Epic lists a prerequisite installer (" +
+                        prerequisites.optString("name", "required component") +
+                        "); it is not launched automatically by this build.";
+            }
+            JSONArray warnings = result.optJSONArray("warnings");
+            if (warnings != null && warnings.length() > 0) {
+                installMessage += " Compatibility warnings: " + warnings.toString();
+            }
+            statusText.setText(installMessage);
             refreshLibrary();
         });
     }
