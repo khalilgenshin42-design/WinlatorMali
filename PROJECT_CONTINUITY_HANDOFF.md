@@ -968,3 +968,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Applied the same Android 11+ all-files-access gate to the legacy synchronous `install`/`uninstall` provider methods as to foreground job creation. Both public IPC routes now fail closed if the companion lacks storage permission.
 - Commit: 001733aca7333d1cac4b92a1c5881d151a3c986a.
+
+## Engineering continuation — 2026-11-20: allow concurrent AES-GCM work across Legendary download threads
+
+- The JNI AES-GCM bridge previously held the CPython GIL while Android JCA performed chunk authentication/decryption. This serialized CPU-heavy decryptions despite the Android thread backend.
+- Wrapped the Java JCA call in `Py_BEGIN_ALLOW_THREADS` / `Py_END_ALLOW_THREADS`, allowing other Python download/writer threads to progress while a chunk is being authenticated. The JNI local references remain thread-local and are cleaned up before any attached worker detaches.
+- Commit: 921bb0647843c0b5d8d21ac4c73abfb417ab3c9a.
+- Performance gain is expected but unmeasured; the Android worker-thread crypto test must validate safety before benchmarking.
