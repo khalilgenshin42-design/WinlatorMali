@@ -73,6 +73,12 @@ static PyObject *py_decrypt_aes_gcm(PyObject *self, PyObject *args) {
 
     jsize output_len = (*env)->GetArrayLength(env, output);
     jbyte *output_bytes = (*env)->GetByteArrayElements(env, output, NULL);
+    if (!output_bytes) {
+        if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, output);
+        PyErr_NoMemory();
+        goto cleanup;
+    }
     PyObject *result = PyBytes_FromStringAndSize((const char *) output_bytes, output_len);
     (*env)->ReleaseByteArrayElements(env, output, output_bytes, JNI_ABORT);
     (*env)->DeleteLocalRef(env, output);
