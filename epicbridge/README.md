@@ -15,7 +15,7 @@ This module is distributed under **GNU GPL version 3 or later**. See [LICENSE](L
 - CPython tag: `v3.15.2`
 - CPython target: `aarch64-linux-android`, Android API 26, app ABI `arm64-v8a`
 
-The companion bootstrap currently contains only the provider and setup activity. CPython, Legendary, and their native dependencies are not yet bundled; the runtime is gated on the API-26 POSIX shared-memory and multiprocessing validation documented in `PROJECT_CONTINUITY_HANDOFF.md`.
+The companion bootstrap currently contains the provider and setup activity. CPython, Legendary, and their native dependencies are not yet bundled. CPython Android validation is underway; Legendary's downloader requires an Android-only thread/anonymous-mmap adaptation because Bionic does not provide the POSIX named shared-memory APIs used by CPython multiprocessing.
 
 ## IPC contract
 
