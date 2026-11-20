@@ -595,3 +595,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 1. Confirm the new workflow run executes the five library regression tests and inspect the actual job log.
 2. If they pass, continue with patched Legendary worker shutdown/cancellation tests and the Android CPython emulator runtime smoke.
 3. Require both x86_64 test-runtime and ARM64 production-runtime archives, hashes, JNI instrumentation, embedded companion verification, and final APK artifact upload before requesting phone-side installation.
+
+## Engineering continuation — 2026-11-20: Epic library regression fixture correction
+
+- Re-inspected the current branch's actual runner, regression tests, and CPython workflow. The repository checkout path in CI is `maliwinlator/`, so the workflow's runner/test paths and `PYTHONPATH` are consistent with its explicit checkout destination.
+- Found and fixed a defect in the new fake Legendary core: its `get_game_and_dlc_list()` method incorrectly called `self.assertEqual()`, although the fake core is not a unittest case. It now raises a direct assertion if the runner requests a non-Windows platform.
+- Fix commit: `225f114058551832def9467f55f72344cf87cb5d`.
+- The test command runs before installing Legendary, but this is valid for these five focused tests: importing `epicbridge_runner` does not import Legendary; `_core()` is not called because each test supplies a fake core.
+- This is a source-level fixture correction only. The tests have not yet been observed passing in GitHub Actions, and no Epic account/library/download/install/launch functionality is claimed as device-validated.
