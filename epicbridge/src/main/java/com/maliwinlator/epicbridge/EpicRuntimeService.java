@@ -7,6 +7,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.util.Log;
 
@@ -27,6 +29,7 @@ public final class EpicRuntimeService extends Service {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicInteger activeJobs = new AtomicInteger();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private PowerManager.WakeLock wakeLock;
     private NotificationManager notificationManager;
 
@@ -92,12 +95,14 @@ public final class EpicRuntimeService extends Service {
 
             int remaining = activeJobs.decrementAndGet();
             if (remaining <= 0) {
-                if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
-                stopForeground(STOP_FOREGROUND_REMOVE);
-                stopSelfResult(startId);
+                mainHandler.post(() -> {
+                    if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+                    stopForeground(STOP_FOREGROUND_REMOVE);
+                    stopSelfResult(startId);
+                });
             } else {
                 notificationManager.notify(notificationId(jobId),
-                        buildNotification(success ? "Epic download complete" : "Epic download failed", false));
+                        buildNotification("Another Epic download is running", true));
             }
         });
         return START_NOT_STICKY;
