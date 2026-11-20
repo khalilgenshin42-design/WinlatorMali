@@ -1452,3 +1452,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Confirmed native CMake build and `:epicbridge:assembleDebug` succeed for x86_64. Instrumentation is not reached because archive audit correctly blocks the incomplete APK.
 - Next experiment: avoid relying on an underscore-prefixed directory as an Android asset-source path. Stage the `zipfile/_path` package into a deterministic archive with a non-underscore asset filename, verify that archive entry in the APK, then extract it into the app-private CPython `lib/python3.15/zipfile/_path` directory before Python initialization. Preserve file hashes and add instrumentation assertions for all extracted helper modules. Do not relax the APK audit or mark the companion installable until extraction and Python import tests pass.
 - Workflow link: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44814450227
+
+
+## 2026-11-20 CPython zipfile asset-path workaround
+- Run `44814450227` proved the runtime prefix and staged output both contain `zipfile/_path/__init__.py`, but the APK omitted that directory after Android asset packaging. The APK audit stopped before instrumentation.
+- Implemented an isolated packaging workaround: Gradle excludes the original `zipfile/_path` subtree from the broad stdlib copy and stages it under the neutral asset path `zipfile/path_pkg`. The final APK audit now checks `assets/python/lib/python3.15/zipfile/path_pkg/__init__.py`.
+- `EpicPythonRuntime.isPackaged()` validates the neutral asset path. During extraction, the bridge renames app-private `zipfile/path_pkg` to CPython's required `zipfile/_path` before runtime completeness checks and Python initialization. The runtime marker hash changes with the staged asset path, forcing a refresh of previously extracted incomplete runtimes.
+- Commits: `701ab4f` Gradle staging, `c166e0b` runtime restore, `7364056` archive audit. The three intermediate CI runs were cancelled by subsequent pushes; no validation result exists for this combined source state yet.
+- Next gate: run one workflow on the final combined commit; require APK archive audit, extraction/instrumentation imports (`zipfile._path`), and ARM64 production packaging to pass. Do not distribute either APK until the full audit passes.
