@@ -833,3 +833,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated extraction to mark shared-object extension files executable for the companion app's own UID and fail extraction if that permission cannot be set. The native CPython/libpython dependencies packaged under `jniLibs` remain handled by Android's native-library installer.
 - Commit: b0709de06f88e1f4c4824e3c9ccd87008e39d56b.
 - This is a loader-readiness hardening change; the Android runtime instrumentation must still prove that CPython imports its native modules successfully.
+
+## Engineering continuation — 2026-11-20: recover previously extracted runtimes with bad extension permissions
+
+- Closed the stale-extraction case introduced by the native-module permission fix: a matching content marker alone would otherwise allow an older extracted tree with non-executable `lib-dynload/*.so` files to be reused.
+- Runtime preflight now verifies that the lib-dynload directory exists and every shared-object extension is executable. If any module fails that check, the companion refreshes the extracted tree and applies the corrected file mode.
+- Commit: ce3e2197175203b881f42f90fcd03c049993e0a0.
+- The check is source-reviewed but not yet exercised on Android.
