@@ -51,8 +51,8 @@ public final class EpicPythonRuntime {
             Log.e(TAG, "The packaged Python runtime has no build identity", e);
             return false;
         }
-        if (packagedVersion.isEmpty()) {
-            Log.e(TAG, "The packaged Python runtime identity is empty");
+        if (!packagedVersion.matches("[0-9a-f]{64}")) {
+            Log.e(TAG, "The packaged Python runtime identity is missing or malformed");
             return false;
         }
 
