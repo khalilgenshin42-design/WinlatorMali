@@ -16,13 +16,12 @@ public final class EpicPythonRuntime {
     private static final String ASSET_ROOT = "python";
     private static final String RUNTIME_MARKER = ".maliwinlator-runtime-3.15.2-legendary-0.21.1";
     private static volatile boolean initialized;
+    private static volatile boolean nativeLibraryLoaded;
 
     private EpicPythonRuntime() {}
 
     public static boolean isPackaged(Context context) {
-        File nativeDir = new File(context.getApplicationInfo().nativeLibraryDir);
-        if (!new File(nativeDir, "libepic_python.so").isFile()
-                || !new File(nativeDir, "libpython3.15.so").isFile()) return false;
+        if (!ensureNativeLibraryLoaded()) return false;
         try (InputStream ignored = context.getAssets().open(
                     ASSET_ROOT + "/lib/python3.15/os.py");
              InputStream legendary = context.getAssets().open(
@@ -84,13 +83,7 @@ public final class EpicPythonRuntime {
             Log.w(TAG, "Unable to set optional Python environment variables", e);
         }
 
-        try {
-            System.loadLibrary("epic_python");
-        } catch (UnsatisfiedLinkError e) {
-            Log.e(TAG, "CPython JNI library is missing", e);
-            return false;
-        }
-
+        if (!ensureNativeLibraryLoaded()) return false;
         initialized = nativeInitialize(pythonHome.getAbsolutePath(), tempDir.getAbsolutePath());
         return initialized;
     }
@@ -133,6 +126,18 @@ public final class EpicPythonRuntime {
             if (children != null) for (File child : children) deleteRecursively(child);
         }
         if (!file.delete()) Log.w(TAG, "Unable to delete " + file);
+    }
+
+    private static synchronized boolean ensureNativeLibraryLoaded() {
+        if (nativeLibraryLoaded) return true;
+        try {
+            System.loadLibrary("epic_python");
+            nativeLibraryLoaded = true;
+            return true;
+        } catch (UnsatisfiedLinkError e) {
+            Log.e(TAG, "CPython JNI library or one of its dependencies is missing", e);
+            return false;
+        }
     }
 
     private static native boolean nativeInitialize(String pythonHome, String tempDir);
