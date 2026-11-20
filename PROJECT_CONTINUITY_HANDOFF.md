@@ -519,3 +519,29 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Corrected `.github/workflows/epic-python-runtime-poc.yml` to install the checked-out pinned source with `python3 -m pip install --no-deps ./legendary` before running `python -m legendary --version` and the host backend smoke.
 - Workflow correction commit: `66ec0a5687be74be8e23f26222060726de86ff24`. This workflow file is a configured push trigger, so a fresh POC run should start from this commit. It is not yet validated.
 - The failure is packaging metadata only; no failure was observed in the Android runtime smoke or patcher transformation. Production ARM64 CPython packaging remains gated on the next successful host smoke.
+
+## Engineering continuation — 2026-11-20: embedded Legendary runtime and Epic UI integration work
+
+### Runtime POC evidence and correction
+- Run **44656813830** (run 44) passed the managed Android x86_64 CPython prerequisite smoke and the pinned Legendary Android thread-backend patch/static validation.
+- Its host smoke failed at the CLI version command: Legendary 0.21.1 has no `legendary.__main__`, so `python -m legendary --version` is not a valid invocation. The installed distribution metadata was present; the failure was not another metadata failure.
+- Corrected the workflow to invoke `python -m legendary.cli --version` in commit `716fe32f9532ecd6ee515fcd29ff23658e6a5af6`.
+- Run **44657178582** (run 45) was started from the previous workflow revision and is not sufficient to validate that correction. Run **46** is queued as **44657880743** and includes the corrected CLI invocation plus the dual-ABI runtime packaging changes.
+- The POC workflow now stages pinned Legendary 0.21.1 and universal pure-Python dependencies into Android x86_64 and ARM64 CPython prefixes, then packages both runtimes for the downstream integration build. This packaging change has not yet passed CI.
+
+### Implemented source work — validation still pending
+- Added an embedded CPython JNI runtime in `epicbridge/src/main/c`, with an explicit no-runtime stub for bootstrap builds. Runtime-enabled builds link against the Android CPython prefix and package its shared libraries and standard library.
+- Added a built-in `_epiccrypto` Python module whose AES-GCM decrypt operation calls the companion's Android JCA implementation through JNI. The existing JCA NIST known-answer self-test remains the Java-side check.
+- Added `EpicPythonRuntime` extraction/initialization, persistent Python interpreter calls, and a Python command module for Epic account status, authorization-code login, owned-library enumeration (including non-asset items), install/uninstall, and Wine launch metadata.
+- Kept Legendary account/config data under a separate app-private HOME directory. Runtime refreshes replace only the Python tree, preserving saved Epic account data.
+- Added a runtime self-test for Legendary distribution metadata, requests/certifi TLS setup, JCA AES-GCM, anonymous mmap, and thread-worker shutdown, plus an Android instrumentation test. Neither the JNI runtime nor the instrumentation test has yet passed on an emulator.
+- Added version-2 signed-provider IPC, host Epic tab controls, Epic sign-in code entry, library listing, install/uninstall actions, container selection, and launch handoff through `EpicLaunchPayloadStore` into Winlator's existing secure Wine launch path.
+- Added a foreground `dataSync` service and partial wake lock for Epic installs, with job-state polling from the host UI. The install path is the shared Winlator directory `MaliWinlator/drive_c/Games/Epic`.
+- Added Android 11 package visibility for the companion and separate storage-permission handling for the host and companion apps.
+- Added `.github/workflows/epic-integration-build.yml` on the repository default branch. It is gated to successful dual-ABI POC runs (run number >=45), downloads that run's runtime artifact, runs the x86_64 Android instrumentation test, and builds the ARM64 MaliWinlator 1.2.1 APK with the runtime-enabled Epic Bridge embedded.
+
+### Current validation and blockers
+- Standard MaliWinlator 1.2.1 APK workflow run **44657783606** (run 115) is building the source/companion after the Java, provider, service, and CMake-stub changes; it has not yet completed.
+- The production integration workflow must still validate: extraction of both runtime tarballs, CMake linking against `libpython3.15.so`, Android JNI loading, Legendary imports, JNI AES-GCM NIST vector, worker-thread lifecycle, and packaging of the embedded companion APK.
+- After CI passes, the actual Xiaomi 15T test must still confirm Epic browser authentication, account/library retrieval, a real game download and install, and launch into a selected Winlator container. Do not describe Epic integration as ready until those device-level checks pass.
+- Latest workflow fix commit: `716fe32f9532ecd6ee515fcd29ff23658e6a5af6`. Subsequent runtime/UI source commits are on `development/maliwinlator-1.2.1-bootstrap`; the default-branch integration workflow is on `bionic-mali-1.2`.
