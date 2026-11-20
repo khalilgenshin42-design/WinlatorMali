@@ -72,6 +72,26 @@ jobs:
       - name: Build standard debug APK
         run: ./gradlew :app:assembleStandardDebug :epicbridge:assembleDebug --no-daemon --stacktrace
 
+
+      - name: Verify embedded Epic Bridge APK and shared signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST_APK="$(find app/build/outputs/apk/standard/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          BRIDGE_APK="$(find epicbridge/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$HOST_APK"
+          test -n "$BRIDGE_APK"
+          EMBEDDED_APK="$RUNNER_TEMP/epicbridge-embedded.apk"
+          unzip -p "$HOST_APK" assets/epicbridge.apk > "$EMBEDDED_APK"
+          unzip -t "$EMBEDDED_APK"
+          cmp "$BRIDGE_APK" "$EMBEDDED_APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$BRIDGE_APK" | grep -F "package: name='com.maliwinlator.epicbridge'"
+          HOST_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$HOST_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
+          BRIDGE_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$BRIDGE_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
+          test -n "$HOST_CERT"
+          test "$HOST_CERT" = "$BRIDGE_CERT"
+          echo "Embedded Epic Bridge APK verified; host and companion signer SHA-256: $HOST_CERT"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
