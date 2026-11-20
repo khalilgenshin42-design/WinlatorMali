@@ -332,6 +332,29 @@ jobs:
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'lib/arm64-v8a/libepic_python.so'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'lib/arm64-v8a/libpython3.15.so'
           ! unzip -Z1 "$BRIDGE_APK" | grep -E '^lib/(x86|x86_64|armeabi-v7a)/'
+
+          # Verify every ELF DT_NEEDED dependency of the packaged JNI libraries
+          # and CPython extension modules resolves either from the APK or Android's API 35 NDK stubs.
+          NDK_ROOT="$ANDROID_HOME/ndk/29.0.14206865"
+          READELF="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          SYSROOT_LIB="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/35"
+          NATIVE_ROOT="$RUNNER_TEMP/epic-native"
+          DYNLOAD_ROOT="$RUNNER_TEMP/epic-dynload"
+          unzip -qq "$BRIDGE_APK" 'lib/arm64-v8a/*.so' -d "$NATIVE_ROOT"
+          unzip -qq "$BRIDGE_APK" 'assets/python/lib/python3.15/lib-dynload/*.so' -d "$DYNLOAD_ROOT"
+          NATIVE_LIB_DIR="$NATIVE_ROOT/lib/arm64-v8a"
+          DYNLOAD_DIR="$DYNLOAD_ROOT/assets/python/lib/python3.15/lib-dynload"
+          test -n "$(find "$NATIVE_LIB_DIR" -type f -name '*.so' -print -quit)"
+          test -n "$(find "$DYNLOAD_DIR" -type f -name '*.so' -print -quit)"
+          while IFS= read -r -d '' ELF; do
+            while IFS= read -r NEEDED; do
+              if [ ! -f "$NATIVE_LIB_DIR/$NEEDED" ] && [ ! -f "$SYSROOT_LIB/$NEEDED" ]; then
+                echo "Unresolved Android ELF dependency: $NEEDED required by $ELF"
+                exit 1
+              fi
+            done < <("$READELF" -d "$ELF" | sed -n 's/.*Shared library: \\[(.*)\\].*/\\1/p')
+          done < <(find "$NATIVE_LIB_DIR" "$DYNLOAD_DIR" -type f -name '*.so' -print0)
+
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/runtime-version.txt'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/os.py'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/site-packages/legendary/__init__.py'
