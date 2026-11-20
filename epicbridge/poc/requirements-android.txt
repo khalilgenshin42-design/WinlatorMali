@@ -1,0 +1,10 @@
+# Legendary 0.21.1 runtime dependency pins for the Android companion.
+# Pure-Python wheels must be staged from source / pure-Python distributions;
+# never copy host Linux native wheels into the Android runtime.
+requests==2.32.4
+certifi==2025.1.31
+charset-normalizer==3.4.1
+idna==3.10
+urllib3==2.3.0
+filelock==3.18.0
+pycryptodomex==3.23.0
