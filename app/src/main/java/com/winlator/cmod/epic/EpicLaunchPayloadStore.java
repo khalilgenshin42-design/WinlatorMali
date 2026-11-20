@@ -23,10 +23,20 @@ public final class EpicLaunchPayloadStore {
         return token;
     }
 
-    public static Payload take(String token) {
+    public static Payload get(String token) {
         if (token == null || token.isEmpty()) return null;
-        Payload payload = PAYLOADS.remove(token);
-        if (payload == null || System.currentTimeMillis() - payload.createdAt > MAX_AGE_MS) return null;
+        Payload payload = PAYLOADS.get(token);
+        if (payload == null) return null;
+        if (System.currentTimeMillis() - payload.createdAt > MAX_AGE_MS) {
+            PAYLOADS.remove(token, payload);
+            return null;
+        }
+        return payload;
+    }
+
+    public static Payload take(String token) {
+        Payload payload = get(token);
+        if (payload != null) PAYLOADS.remove(token, payload);
         return payload;
     }
 
