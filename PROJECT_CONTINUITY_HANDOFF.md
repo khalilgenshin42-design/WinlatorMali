@@ -1362,3 +1362,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Fix committed in this change: resolve `epicRuntimePrefix` explicitly from `rootProject.findProperty` first; make `stageEpicPythonRuntime` fail closed unless the CPython headers, shared library, stdlib and nested zipfile package exist; print the selected prefix/ABI; and fail if generated Python assets were not staged. This prevents stub-only companion packaging from passing as a runtime build.
 - The separate standard MaliWinlator 1.2.1 debug APK workflow **44786427834** succeeded, including embedded companion byte comparison and shared signer validation. It is a standard build, not a verified Epic-enabled release.
 - Next gate: rerun the CPython workflow. Confirm its log prints the correct x86_64 prefix and ABI, verify `libepic_python.so` links against the real `libpython3.15.so`, then pass all Android instrumentation tests before ARM64 APK packaging/release. No Epic-enabled APK pair is ready yet.
+
+
+## 2026-11-20 — Configuration-cache compatibility in fail-closed staging
+
+- Run **44788442078** reached the corrected `stageEpicPythonRuntime` preflight, proving the runtime packaging guard is active, but the task failed before checking the prefix contents.
+- Exact Gradle error at `epicbridge/build.gradle:97`: `Cannot reference a Gradle script object from a Groovy closure as these are not supported with the configuration cache.` The cause was calling the script's `file(...)` helper and `logger` from the task action closure.
+- Replaced those script-object calls with `new File(epicRuntimePrefix)` and `System.out.println(...)`, retaining the strict prefix validation and no-stub fail-closed behavior. No configuration-cache disablement or relaxation of runtime checks.
+- Standard baseline APK workflow **44788442108** succeeded again, including embedded companion byte-match and shared signer validation.
+- Next: rerun Epic workflow, confirm prefix validation and runtime asset staging complete, then inspect Android instrumentation results. No Epic APK pair is ready.
