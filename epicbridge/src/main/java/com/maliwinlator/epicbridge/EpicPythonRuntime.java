@@ -157,6 +157,10 @@ public final class EpicPythonRuntime {
                     while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
                 }
             } catch (FileNotFoundException e) {
+                String[] nested = assets.list(childAsset);
+                if (nested == null || nested.length == 0) {
+                    throw new IOException("Missing packaged runtime asset " + childAsset, e);
+                }
                 extractAssetDirectory(assets, childAsset, targetRoot);
             }
         }
