@@ -172,6 +172,7 @@ def _launch_info(core, payload):
 def _runtime_self_test():
     import importlib.metadata
     import ssl
+    import tempfile
     from queue import Queue
     from threading import Condition, Thread
 
@@ -182,7 +183,7 @@ def _runtime_self_test():
     from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
     from legendary.downloader.mp.manager import DLManager
     from legendary.downloader.mp.workers import DLWorker, FileWorker
-    from legendary.models.downloading import AnalysisResult, TaskFlags, TerminateWorkerTask, WriterTaskResult
+    from legendary.models.downloading import AnalysisResult, FileTask, TaskFlags, TerminateWorkerTask, WriterTaskResult
 
     ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
     tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
@@ -224,6 +225,22 @@ def _runtime_self_test():
     empty_manager.join(timeout=5)
     if empty_manager.is_alive() or empty_manager.error is not None:
         raise RuntimeError("Legendary empty update did not exit cleanly")
+
+    # File-only installs (empty files/deletions) have no chunk denominator.
+    with tempfile.TemporaryDirectory(prefix="epic-empty-install-") as empty_dir:
+        file_only_manager = DLManager(
+            empty_dir, "https://cdn.invalid", {}, max_workers=1, max_shared_memory=4096
+        )
+        file_only_manager.analysis = AnalysisResult(biggest_chunk=1024)
+        file_only_manager.tasks.append(
+            FileTask(filename="empty.bin", flags=TaskFlags.CREATE_EMPTY_FILE)
+        )
+        file_only_manager.start()
+        file_only_manager.join(timeout=10)
+        if file_only_manager.is_alive() or file_only_manager.error is not None:
+            raise RuntimeError("Legendary file-only install failed")
+        if not os.path.isfile(os.path.join(empty_dir, "empty.bin")):
+            raise RuntimeError("Legendary file-only install did not create its output")
 
     failed_manager = DLManager("/tmp/epic-runtime-failure-smoke", "https://cdn.invalid", {})
     def fail_download_manager():
