@@ -1,6 +1,6 @@
 # MaliWinlator — Project Continuity Handoff
 
-Last updated: 2026-11-19
+Last updated: 2026-11-20
 Active branch: `development/maliwinlator-1.2.1-bootstrap`
 Repository: https://github.com/khalilgenshin42-design/WinlatorMali
 
@@ -371,3 +371,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Follow-up APK CI run **44645970680** completed successfully at source commit `ef0449db0f793f84d49610e38899016cad0ce03a`, including the secure one-shot Epic launch payload path, GPL companion docs, matching release-signing configuration, embedded APK integrity, package-ID, and signer checks. Artifact ID `14589465267`, size 446,638,120 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44645970680/artifacts/14589465267
 
 - Documentation-only pin update to the full Legendary 0.21.1 commit triggered APK CI run **44646484072**, which completed successfully including embedded companion integrity and signer verification. Artifact ID `14588732112`, size 446,638,088 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44646484072/artifacts/14588732112
+
+## Engineering step log — 2026-11-20: Epic companion packaging and source pin
+
+- Successful host/companion APK CI run **44646484072**, source commit `cc05504481babde64b0324d89d39427d2cc6453b`. Run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44646484072
+- Artifact `maliwinlator-1.2.1-standard-debug-cc05504481babde64b0324d89d39427d2cc6453b`, ID `14588732112`, reported size 446,638,088 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44646484072/artifacts/14588732112
+- Build success confirms Gradle packages the separate companion APK asset and host APK successfully at this source revision. It does not validate companion installation on a phone, Epic authentication, Legendary execution, or any Store feature.
+- `epicbridge/README.md` now records the full pinned Legendary 0.21.1 source commit `42f6bdeadde3a9526dc8eb713763476999ac217b`, CPython `v3.15.2`, ARM64 Android target and the signature-protected IPC contract.
+- Current bridge provider deliberately reports `runtime_ready=false`; no Legendary/CPython runtime is shipped yet. Do not present the current APK as an implemented Epic Store.
+- Source review found that the host-side `EpicBridgeClient` installer/status API exists, but no Epic UI fragment or functioning provider operations are present yet. Next work remains runtime viability, provider command protocol, and a UI that accurately reports unavailable states; do not expose nonfunctional install/auth buttons.
