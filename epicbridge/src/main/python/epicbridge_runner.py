@@ -38,9 +38,14 @@ def _library(core):
     games, dlc_by_catalog = core.get_game_and_dlc_list(platform="Windows")
     non_asset_games, non_asset_dlc = core.get_non_asset_library_items()
     known = {game.app_name for game in games}
-    games.extend(game for game in non_asset_games if game.app_name not in known)
+    for game in non_asset_games:
+        if game.app_name not in known:
+            games.append(game)
+            known.add(game.app_name)
     for catalog_id, dlcs in non_asset_dlc.items():
-        dlc_by_catalog[catalog_id].extend(dlcs)
+        # Non-asset library entries can introduce a catalog that was absent
+        # from the primary asset catalog map.
+        dlc_by_catalog.setdefault(catalog_id, []).extend(dlcs)
     result = []
     for game in sorted(games, key=lambda item: item.app_title.casefold()):
         dlcs = []
