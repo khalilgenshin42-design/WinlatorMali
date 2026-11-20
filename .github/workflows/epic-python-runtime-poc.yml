@@ -67,6 +67,9 @@ jobs:
             uuid-dev \
             zlib1g-dev
 
+      - name: Set Android API baseline to MaliWinlator minSdk
+        run: echo "ANDROID_API_LEVEL=26" >> "$GITHUB_ENV"
+
       - name: Verify pinned Android build target
         working-directory: cpython
         run: |
@@ -83,6 +86,36 @@ jobs:
           # x86_64 app APK. Test a matching x86_64 CPython package first.
           # This is a host-emulator validation, not the ARM64 target artifact.
           python3 Platforms/Android ci x86_64-linux-android --fast-ci
+
+      - name: Smoke-test POSIX shared memory and multiprocessing on Android
+        working-directory: cpython
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/epic-site"
+          cat > "$RUNNER_TEMP/epic-site/epic_mp_smoke.py" <<'PY'
+          from multiprocessing.shared_memory import SharedMemory
+
+          def read_shared_memory(name, result_queue):
+              shm = SharedMemory(name=name)
+              result_queue.put(bytes(shm.buf[:8]))
+              shm.close()
+          PY
+          python3 Platforms/Android test --managed maxVersion --site-packages "$RUNNER_TEMP/epic-site" -- -c '
+          import multiprocessing
+          from multiprocessing.shared_memory import SharedMemory
+          from epic_mp_smoke import read_shared_memory
+          shm = SharedMemory(create=True, size=4096)
+          shm.buf[:8] = b"MALIWINL"
+          queue = multiprocessing.Queue()
+          process = multiprocessing.Process(target=read_shared_memory, args=(shm.name, queue))
+          process.start()
+          assert queue.get(timeout=30) == b"MALIWINL"
+          process.join(30)
+          assert process.exitcode == 0, process.exitcode
+          shm.close()
+          shm.unlink()
+          print("ANDROID_POSIXSHMEM_MULTIPROCESS_OK")
+          '
 
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
@@ -106,8 +139,11 @@ jobs:
             echo "CPython commit: $(git rev-parse HEAD)"
             echo "Android target: aarch64-linux-android"
             echo "App ABI: arm64-v8a"
+            echo "Android API level: 26"
             echo "NDK from upstream android-env.sh: 27.3.13750724"
-            echo "Emulator test: x86_64-linux-android via upstream Platforms/Android ci --fast-ci"\n            echo "Shipped target: separately built aarch64-linux-android"
+            echo "Emulator test: x86_64-linux-android via upstream Platforms/Android ci --fast-ci"
+            echo "Shared memory test: POSIX shared memory plus multiprocessing child attach"
+            echo "Shipped target: separately built aarch64-linux-android"
             cat runtime-sha256.txt
           } > runtime-build-info.txt
           cat runtime-build-info.txt
