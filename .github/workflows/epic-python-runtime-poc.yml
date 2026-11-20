@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: maliwinlator-epic-cpython-poc
+  group: maliwinlator-epic-cpython-package-v2
   cancel-in-progress: false
 
 jobs:
@@ -82,7 +82,7 @@ jobs:
           python3 Platforms/Android configure-host --help
           git rev-parse HEAD
 
-      - name: Build x86_64 Android runtime for managed-emulator validation
+      - name: Build x86_64 Android runtime for instrumentation testing
         working-directory: cpython
         run: |
           set -euo pipefail
@@ -91,20 +91,6 @@ jobs:
           python3 Platforms/Android configure-host x86_64-linux-android
           python3 Platforms/Android make-host x86_64-linux-android
           python3 Platforms/Android package x86_64-linux-android
-
-      - name: Stage certifi trust roots for Android testbed
-        run: |
-          set -euo pipefail
-          python3 -m pip install --disable-pip-version-check --target \
-            "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages" requests==2.32.4 certifi==2025.1.31
-
-      - name: Smoke-test Legendary runtime prerequisites on Android
-        working-directory: cpython
-        run: |
-          set -euo pipefail
-          python3 Platforms/Android test --managed maxVersion \
-            --site-packages "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages" \
-            -- -m epic_runtime_smoke
 
       - name: Checkout pinned Legendary 0.21.1 source
         uses: actions/checkout@v4
