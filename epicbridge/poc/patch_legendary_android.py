@@ -188,9 +188,11 @@ def main() -> None:
         "        for cond in self.conditions:\n"
         "            with cond:\n"
         "                cond.notify_all()\n"
-        "        for q in (self.dl_worker_queue, self.writer_queue):\n"
-        "            if q is not None:\n"
-        "                q.put(TerminateWorkerTask())\n\n"
+        "        if self.dl_worker_queue is not None:\n"
+        "            for _ in range(self.max_workers):\n"
+        "                self.dl_worker_queue.put(TerminateWorkerTask())\n"
+        "        if self.writer_queue is not None:\n"
+        "            self.writer_queue.put(TerminateWorkerTask())\n\n"
     )
     replace_once(manager, anchor, stop_method)
 
