@@ -44,6 +44,8 @@ public final class EpicRuntimeInstrumentedTest {
                 selfTest.getBoolean("android_jca_aes_gcm_worker_thread"));
         assertTrue("Legendary workers are not using the thread backend",
                 selfTest.getBoolean("thread_workers"));
+        assertTrue("Download-manager exception cleanup test failed",
+                selfTest.getBoolean("download_failure_cleanup"));
         assertTrue("Anonymous mmap test failed",
                 selfTest.getBoolean("anonymous_mmap"));
     }
