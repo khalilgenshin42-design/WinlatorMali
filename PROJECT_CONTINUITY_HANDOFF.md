@@ -711,3 +711,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Bumped the standard host APK versionCode from 23 to 24 and labeled the versionName "1.2.1 MaliWinlator Epic". This prevents Android from treating the Epic-enabled build as an equal-version reinstall when updating the previous 1.2.1 development APK.
 - Commit: 3f0d4682e78422c398be857884b88d9a32cb60c6.
 - The integration workflow still compares APK signing certificates before publication; versionCode advancement does not bypass Android's signature requirement.
+
+## Engineering continuation — 2026-11-20: prevent worker-thread logging races
+
+- Found a thread-backend regression in Legendary's original worker startup: both DLWorker and FileWorker cleared and replaced the process-wide root logger handlers, behavior that was safe only when workers were isolated processes. Under the Android thread backend, the two workers could race and overwrite application/manager logging configuration.
+- Updated the patcher to remove per-worker root-handler reconfiguration and the now-unused QueueHandler import from workers.py. Thread workers inherit the manager/application root logger; the manager remains the only owner of any queue-based logging setup.
+- Commit: 3e1f67185fc3c16e8fc0468c02defcef8c766ee5.
+- This fix is included in the next Epic runtime POC run and Android worker lifecycle test.
