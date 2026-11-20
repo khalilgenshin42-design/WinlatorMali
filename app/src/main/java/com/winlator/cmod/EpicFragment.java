@@ -264,7 +264,7 @@ public final class EpicFragment extends Fragment {
                             } catch (Exception ignored) {}
                         } else {
                             String jobId = started.getString("job_id", "");
-                            jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
+                            jobPrefs.edit().putString(JOB_ID_KEY, jobId).commit();
                             jobPolling = true;
                             json = waitForJob(appContext, jobId);
                             jobPolling = false;
