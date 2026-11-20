@@ -891,3 +891,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The UI prevents a second install/uninstall from replacing the tracked active job ID. If the companion is absent, recovery waits until it is reinstalled rather than spinning on an unavailable provider.
 - Commits: 4f3469b605f5078179c8f26d5d41d12a92f86a3b (persistent job state/recovery); 0a78c94c9824c6895cdc672718c6e246bcfbdb90 (companion availability guard).
 - This improves long-running operation recovery; actual process-death recovery and service behavior still require Android validation.
+
+## Engineering continuation — 2026-11-20: detect interrupted foreground installs after Android kills the service
+
+- Added an in-process active-job registry to EpicRuntimeService. The provider now compares persisted `running` state with that registry and marks a job `interrupted` if the service process has disappeared, with a 30-second startup grace to avoid racing the initial `startForegroundService` launch.
+- The host recognizes `interrupted` as a terminal state, clears its persisted tracking key, and tells the user to retry instead of polling a dead job forever. This does not attempt to resume a partially downloaded job itself; Legendary's existing resume metadata remains the recovery mechanism for a retry.
+- Commits: 9955cdb568d8e9ffe23890f72eb17d0ffa12fb13 (service active-job registry); 0092cd0323f077e26a3b406232896031533f3cc2 (provider interruption detection); 61710bc44476985de62e872ece418b99e4000012 and 0ad3ef285eceaace62311c05b28c24d1c6d012eb (host retry handling); 70d941e1d863535bb280816ce49b544978dc4840 (startup grace).
