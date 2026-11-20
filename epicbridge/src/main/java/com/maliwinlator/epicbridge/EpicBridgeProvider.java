@@ -80,7 +80,7 @@ public final class EpicBridgeProvider extends ContentProvider {
         switch (method) {
             case "begin_login":
             case "finish_login":
-            case "status_account":
+            case "account_status":
             case "logout":
             case "library":
             case "installed":
@@ -88,7 +88,8 @@ public final class EpicBridgeProvider extends ContentProvider {
             case "uninstall":
             case "launch_info": {
                 String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
-                String response = EpicPythonRuntime.call(getContext(), method, payload);
+                String runtimeCommand = "account_status".equals(method) ? "status" : method;
+                String response = EpicPythonRuntime.call(getContext(), runtimeCommand, payload);
                 result.putString("result_json", response);
                 result.putBoolean("ok", response != null);
                 return result;
