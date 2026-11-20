@@ -79,7 +79,7 @@ public final class EpicBridgeProvider extends ContentProvider {
 
         if ("start_job".equals(method)) {
             String command = arg == null ? "" : arg;
-            if (!"install".equals(command)) {
+            if (!"install".equals(command) && !"uninstall".equals(command)) {
                 result.putBoolean("ok", false);
                 result.putString("error", "UNSUPPORTED_JOB");
                 return result;
