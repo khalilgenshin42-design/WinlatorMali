@@ -264,8 +264,8 @@ def main() -> None:
     # Ensure cancellation exits the progress loop and reaches ordered queue shutdown.
     replace_once(
         manager,
-        "        while processed_tasks < num_tasks:\\n",
-        "        while processed_tasks < num_tasks and self.running:\\n",
+        "        while processed_tasks < num_tasks:\n",
+        "        while processed_tasks < num_tasks and self.running:\n",
     )
 
     replace_once(
