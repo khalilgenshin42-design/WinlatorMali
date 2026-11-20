@@ -26,7 +26,8 @@ class LibraryMergeTests(unittest.TestCase):
                 return True
 
             def get_game_and_dlc_list(self, platform):
-                self.assertEqual(platform, "Windows")
+                if platform != "Windows":
+                    raise AssertionError(f"unexpected platform: {platform}")
                 return list(games), {key: list(value) for key, value in dlcs.items()}
 
             def get_non_asset_library_items(self):
