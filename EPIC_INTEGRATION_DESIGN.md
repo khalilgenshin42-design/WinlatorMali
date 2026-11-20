@@ -163,3 +163,18 @@ The host now has a dedicated `ProcessHelper.execSecure` path that overlays a one
 This is only the secure host-side launch plumbing. The companion's Legendary JSON launch response, path validation/mapping, and end-to-end game launch still need implementation and testing.
 
 Legendary launch JSON may also contain `pre_launch_command` and `launch_command`. The Android bridge must not execute host-side wrappers or arbitrary pre-launch shell commands from Legendary configuration/metadata. For the first implementation, require an empty `pre_launch_command` and an empty host `launch_command` under `--no-wine`; if either is non-empty, return an explicit unsupported-launch diagnostic rather than executing it. The game executable and arguments are passed only through Winlator's guest launcher.
+
+### Android Bionic multiprocessing blocker and required Legendary adaptation (2026-11-20)
+
+The first managed Android emulator run of CPython 3.15.2 built and executed 45,953 tests. The only unique upstream test failure was `test_grp`, where Android's group database returns a null group-password field; this is a platform-specific test expectation mismatch. The important configure result is that Bionic does not provide `shm_open` / `shm_unlink`, so CPython omits `_posixshmem` and `_multiprocessing`. The standard `multiprocessing` process/queue/shared-memory path is consequently unavailable in this Android build.
+
+Legendary 0.21.1 has a hard import/runtime dependency on that path for downloads: `downloader/mp/workers.py` and `manager.py` import `multiprocessing.shared_memory.SharedMemory`; the manager and workers subclass `multiprocessing.Process`; queues are `multiprocessing.Queue`. Setting one worker or reducing the shared-memory limit does not remove those imports and primitives.
+
+Selected implementation investigation: patch only the separately licensed Android companion's pinned Legendary source to use a thread backend:
+- Replace process workers/manager with `threading.Thread` (retain the public `start()` / `join()` flow where practical).
+- Replace multiprocessing queues with `queue.Queue` for download, result, status, and logging channels.
+- Replace named POSIX shared memory with one bounded anonymous `mmap.mmap(-1, size)` buffer shared by the worker threads. Pass the buffer object directly to workers; do not reopen by name.
+- Remove process-only cleanup paths (`exitcode`, `terminate`, queue feeder-thread cleanup) and add explicit stop/sentinel/join logic for cancellation and exceptions.
+- Keep the unmodified upstream implementation for desktop builds; this adaptation belongs only in the Android companion source package and must retain GPL notices/source patches.
+
+This is a proposed compatibility adaptation, not implemented or validated yet. The focused CPython probe now checks the APIs needed by this path (TLS/CA/DNS/HTTPS, ctypes, SQLite, zlib, file locks, hashing, and Android subprocess creation). After that probe and ARM64 package build pass, build the thread-backend patch into the emulator package and test Legendary imports, `--version`, login metadata, then a small controlled install before exposing game downloads in the UI.
