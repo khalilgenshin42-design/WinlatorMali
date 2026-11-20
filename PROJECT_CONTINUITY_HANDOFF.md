@@ -958,3 +958,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added a provider-side permission gate for install/uninstall job creation on Android 11+. The companion now rejects these operations with a specific `STORAGE_PERMISSION_REQUIRED` response unless its own package has all-files access, rather than relying only on the host UI to prevent an eventual filesystem failure.
 - Commit: 14532f916aaedc4e5118a6fde4eb477bdd355ebc.
+
+## Engineering continuation — 2026-11-20: normalize invalid background-job responses
+
+- Hardened the companion service result persistence: a null, empty, or malformed CPython/JNI response is now converted into a structured failed-job JSON result instead of storing an unreadable payload that would strand the host's status tracker.
+- Commit: 3d192562e448815f8574cf93c4ca1e7beb447935.
