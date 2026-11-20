@@ -846,7 +846,7 @@ public final class EpicFragment extends Fragment {
                     .replace(File.separatorChar, '\\');
             winePath = "Z:\\" + relativePath;
             File cleanupTarget = target;
-            new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 15L * 60L * 1000L);
+            new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 30L * 60L * 1000L);
         }
         return winePath;
     }
