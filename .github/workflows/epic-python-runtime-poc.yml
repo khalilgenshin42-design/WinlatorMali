@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/epic-python-runtime-poc.yml'
       - 'epicbridge/poc/site-packages/epic_runtime_smoke.py'
+      - 'epicbridge/poc/patch_legendary_android.py'
   workflow_dispatch:
 
 permissions:
@@ -96,6 +97,22 @@ jobs:
           python3 Platforms/Android test --managed maxVersion \
             --site-packages "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages" \
             -- -m epic_runtime_smoke
+
+      - name: Checkout pinned Legendary 0.21.1 source
+        uses: actions/checkout@v4
+        with:
+          repository: legendary-gl/legendary
+          ref: 42f6bdeadde3a9526dc8eb713763476999ac217b
+          path: legendary
+
+      - name: Apply and statically validate Android thread backend
+        run: |
+          set -euo pipefail
+          python3 maliwinlator/epicbridge/poc/patch_legendary_android.py legendary
+          python3 -m compileall -q legendary/legendary
+          ! grep -R -n -E 'from multiprocessing|multiprocessing\.shared_memory' \
+            legendary/legendary/downloader/mp legendary/legendary/core.py legendary/legendary/cli.py
+          test -f legendary/legendary/downloader/mp/android_shared_buffer.py
 
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
