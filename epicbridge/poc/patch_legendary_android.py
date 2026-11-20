@@ -220,15 +220,15 @@ def main() -> None:
     # Convert it into an explicit cooperative stop before allowing process exit.
     replace_once(
         cli,
-        "            dlm.start()\\n"
+        "            dlm.start()\n"
         "            dlm.join()",
-        "            dlm.start()\\n"
-        "            try:\\n"
-        "                dlm.join()\\n"
-        "            except KeyboardInterrupt:\\n"
-        "                logger.warning('Interrupt requested; stopping Android download threads...')\\n"
-        "                dlm.stop()\\n"
-        "                dlm.join(timeout=60.0)\\n"
+        "            dlm.start()\n"
+        "            try:\n"
+        "                dlm.join()\n"
+        "            except KeyboardInterrupt:\n"
+        "                logger.warning('Interrupt requested; stopping Android download threads...')\n"
+        "                dlm.stop()\n"
+        "                dlm.join(timeout=60.0)\n"
         "                raise",
     )
 
@@ -242,9 +242,9 @@ def main() -> None:
     # record completed files in the resume file and release mmap segments.
     replace_once(
         manager,
-        "    def fw_results_handler(self, shm_cond: Condition):\\n"
+        "    def fw_results_handler(self, shm_cond: Condition):\n"
         "        while self.running:",
-        "    def fw_results_handler(self, shm_cond: Condition):\\n"
+        "    def fw_results_handler(self, shm_cond: Condition):\n"
         "        while True:",
     )
 
@@ -253,19 +253,19 @@ def main() -> None:
     # only not-yet-started download jobs; active workers finish their current I/O.
     replace_once(
         manager,
-        "        for _ in range(self.max_workers):\\n"
+        "        for _ in range(self.max_workers):\n"
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
-        "        for t in self.threads[:2]:\\n"
-        "            t.join(timeout=30.0)\\n"
-        "            if t.is_alive():\\n"
-        "                self.log.warning(f'Helper thread did not terminate: {t!r}')\\n"
-        "        if not self.running:\\n"
-        "            try:\\n"
-        "                while True:\\n"
-        "                    self.dl_worker_queue.get_nowait()\\n"
-        "            except Empty:\\n"
-        "                pass\\n"
-        "        for _ in range(self.max_workers):\\n"
+        "        for t in self.threads[:2]:\n"
+        "            t.join(timeout=30.0)\n"
+        "            if t.is_alive():\n"
+        "                self.log.warning(f'Helper thread did not terminate: {t!r}')\n"
+        "        if not self.running:\n"
+        "            try:\n"
+        "                while True:\n"
+        "                    self.dl_worker_queue.get_nowait()\n"
+        "            except Empty:\n"
+        "                pass\n"
+        "        for _ in range(self.max_workers):\n"
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
