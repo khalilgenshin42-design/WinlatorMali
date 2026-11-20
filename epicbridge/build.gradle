@@ -117,6 +117,8 @@ tasks.register('stageEpicPythonRuntime', Sync) {
             exclude '**/__pycache__/**'
             exclude '**/*.pyc'
         }
+        // Keep the relocated package out of the broad stdlib asset tree; the
+        // dedicated neutral-name copy below is restored to _path at runtime.
         // Gradle's directory traversal can omit the relocated CPython 3.15
         // zipfile helper directory on some filesystems. Stage it explicitly.
         from("${epicRuntimePrefix}/lib/python3.15/zipfile/_path") {
