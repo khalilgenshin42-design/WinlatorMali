@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -99,6 +101,29 @@ tasks.register('stageEpicPythonRuntime', Sync) {
         }
         from('src/main/python') {
             into 'assets/python/lib/python3.15/site-packages'
+        }
+    }
+    doLast {
+        File pythonAssets = epicRuntimeGenerated.get().dir('assets').dir('python').asFile
+        if (epicRuntimePrefix && pythonAssets.isDirectory()) {
+            MessageDigest digest = MessageDigest.getInstance('SHA-256')
+            List<File> files = []
+            pythonAssets.eachFileRecurse { file -> if (file.isFile() && file.name != '.runtime-version') files.add(file) }
+            files.sort { a, b ->
+                pythonAssets.toPath().relativize(a.toPath()).toString() <=>
+                    pythonAssets.toPath().relativize(b.toPath()).toString()
+            }
+            files.each { file ->
+                String relative = pythonAssets.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/' as char)
+                digest.update(relative.getBytes('UTF-8'))
+                file.withInputStream { input ->
+                    byte[] buffer = new byte[65536]
+                    int count
+                    while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
+                }
+            }
+            String version = digest.digest().collect { String.format('%02x', it & 0xff) }.join()
+            new File(pythonAssets, '.runtime-version').setText(version + '\n', 'UTF-8')
         }
     }
 }
