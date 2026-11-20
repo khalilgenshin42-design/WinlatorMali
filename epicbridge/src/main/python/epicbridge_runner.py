@@ -190,6 +190,24 @@ def _runtime_self_test():
     if plaintext != bytes(16):
         raise RuntimeError("Android JCA AES-GCM NIST vector failed")
 
+    worker_results = []
+    def decrypt_on_worker():
+        try:
+            worker_results.append(
+                AES.new(bytes(16), AES.MODE_GCM, nonce=bytes(12))
+                .decrypt_and_verify(ciphertext, tag)
+            )
+        except BaseException as error:
+            worker_results.append(error)
+
+    crypto_worker = Thread(target=decrypt_on_worker, name="epic-jca-worker-smoke")
+    crypto_worker.start()
+    crypto_worker.join(timeout=10)
+    if crypto_worker.is_alive():
+        raise RuntimeError("Android JCA AES-GCM worker-thread call timed out")
+    if worker_results != [bytes(16)]:
+        raise RuntimeError(f"Android JCA AES-GCM worker-thread call failed: {worker_results!r}")
+
     ssl.create_default_context(cafile=certifi.where())
     if importlib.metadata.version("legendary-gl") != "0.21.1":
         raise RuntimeError("Unexpected Legendary distribution version")
@@ -230,6 +248,7 @@ def _runtime_self_test():
         "requests": requests.__version__,
         "certifi": certifi.where(),
         "android_jca_aes_gcm": True,
+        "android_jca_aes_gcm_worker_thread": True,
         "thread_workers": True,
         "anonymous_mmap": True,
     }
