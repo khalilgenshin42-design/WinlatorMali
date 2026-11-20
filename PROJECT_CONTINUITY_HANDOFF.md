@@ -1140,3 +1140,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Independently compared all 41 literal `replace_once` anchors (including the corrected writer-result handler) against pristine Legendary commit `42f6bdeadde3a9526dc8eb713763476999ac217b`, applying the replacements in patch order. Every literal anchor matched its expected occurrence count.
 - Also confirmed the separately named manager stop-method insertion anchor occurs exactly once. This is an anchor-count audit only; the official workflow still must run the patcher, Python compile/AST validation, host smoke, emulator instrumentation, and ARM64 package audit.
+
+## CI failure analysis — 2026-11-20: AES shim API mismatch in host Legendary smoke
+
+- The corrected patcher passed its full source transformation and AST/static-validation step. The Epic library aggregation regression tests also passed.
+- The next failure was the host Legendary smoke at run `44731340221`, step 14: `ImportError: cannot import name 'AES' from legendary.android_crypto`. The shim exposed module-level `new()` and `MODE_GCM`, while Legendary's encrypted chunk/manifest readers import an `AES` namespace and call `AES.new(..., AES.MODE_GCM, ...)`.
+- Added a compatible `AES` facade with `MODE_GCM` and `new()` delegating to the Android JCA-backed decrypt-only implementation. Commit: `2394c6509c96011a991b2959361b35f6da317837`.
+- The failed run produced no Android runtime or APK artifact. A fresh workflow run is required to verify this API correction and continue through emulator instrumentation and ARM64 packaging.
+- Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44731340221
