@@ -106,15 +106,16 @@ jobs:
           from epic_mp_smoke import read_shared_memory
           shm = SharedMemory(create=True, size=4096)
           shm.buf[:8] = b"MALIWINL"
-          queue = multiprocessing.Queue()
-          process = multiprocessing.Process(target=read_shared_memory, args=(shm.name, queue))
-          process.start()
-          assert queue.get(timeout=30) == b"MALIWINL"
-          process.join(30)
-          assert process.exitcode == 0, process.exitcode
-          shm.close()
-          shm.unlink()
-          print("ANDROID_POSIXSHMEM_MULTIPROCESS_OK")
+          if __name__ == "__main__":
+              queue = multiprocessing.Queue()
+              process = multiprocessing.Process(target=read_shared_memory, args=(shm.name, queue))
+              process.start()
+              assert queue.get(timeout=30) == b"MALIWINL"
+              process.join(30)
+              assert process.exitcode == 0, process.exitcode
+              shm.close()
+              shm.unlink()
+              print("ANDROID_POSIXSHMEM_MULTIPROCESS_OK")
           '
 
       - name: Build the production Android ARM64 runtime
