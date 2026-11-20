@@ -28,6 +28,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".EpicRuntimeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <provider
             android:name=".EpicBridgeProvider"
             android:authorities="com.maliwinlator.epicbridge.provider"
