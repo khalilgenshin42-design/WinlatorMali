@@ -22,6 +22,7 @@ public final class EpicFragment extends Fragment {
     private TextView statusText;
     private Button installButton;
     private Button storageButton;
+    private boolean replaceCompanion;
 
     @Nullable
     @Override
@@ -91,16 +92,23 @@ public final class EpicFragment extends Fragment {
         Bundle status = EpicBridgeClient.getStatus(requireContext());
         boolean ready = status.getBoolean("runtime_ready", false);
         boolean storage = status.getBoolean("storage_access", false);
+        String state = status.getString("state", "");
+        replaceCompanion = "signature_mismatch".equals(state);
         String message = status.getString("message", "Epic Bridge is installed");
         statusText.setText(ready
                 ? "Epic Bridge is ready. " + message
                 : "Epic Bridge installed. " + message + (storage ? "" : "\n\nGrant shared-storage access in the companion app before installing games."));
-        installButton.setVisibility(View.GONE);
-        storageButton.setVisibility(storage ? View.GONE : View.VISIBLE);
+        installButton.setVisibility(replaceCompanion ? View.VISIBLE : View.GONE);
+        installButton.setText(replaceCompanion ? "Replace Epic Bridge" : "Install Epic Bridge");
+        storageButton.setVisibility(replaceCompanion || storage ? View.GONE : View.VISIBLE);
     }
 
     private void installBridge() {
         try {
+            if (replaceCompanion) {
+                EpicBridgeClient.requestUninstall(requireContext());
+                return;
+            }
             EpicBridgeClient.requestInstall(requireContext());
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Unable to open Epic Bridge installer: " + e.getMessage(),
