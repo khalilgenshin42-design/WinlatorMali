@@ -126,6 +126,7 @@ public final class EpicFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (containerSpinner != null) loadContainers();
         refreshStatus();
     }
 
