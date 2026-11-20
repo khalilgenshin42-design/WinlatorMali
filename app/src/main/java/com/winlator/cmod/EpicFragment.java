@@ -171,7 +171,7 @@ public final class EpicFragment extends Fragment {
         boolean ready = bridge.getBoolean("runtime_ready", false);
         boolean storage = bridge.getBoolean("storage_access", false);
         String state = bridge.getString("state", "");
-        replaceCompanion = "signature_mismatch".equals(state) || "protocol_mismatch".equals(state);
+        replaceCompanion = "signature_mismatch".equals(state) || "protocol_mismatch".equals(state) || "runtime_not_installed".equals(state);
         installBridgeButton.setVisibility(replaceCompanion ? View.VISIBLE : View.GONE);
         installBridgeButton.setText(replaceCompanion ? "Replace Epic Bridge" : "Install Epic Bridge");
         storageButton.setVisibility(storage || replaceCompanion ? View.GONE : View.VISIBLE);
