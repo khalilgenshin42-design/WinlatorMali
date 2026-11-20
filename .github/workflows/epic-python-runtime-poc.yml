@@ -375,6 +375,17 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish installable Epic APK GitHub prerelease
         id: epic_release
         if: success()
@@ -410,16 +421,6 @@ jobs:
           fi
           echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Upload CPython Android runtime POC
-        uses: actions/upload-artifact@v4
-        with:
-          name: maliwinlator-cpython-3.15.2-android-arm64-poc
-          path: |
-            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
-            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
-            cpython/runtime-build-info.txt
-          if-no-files-found: error
-          retention-days: 14
 
       - name: Publish successful Epic build status to repository
         if: success()
