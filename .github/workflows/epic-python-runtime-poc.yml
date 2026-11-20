@@ -364,7 +364,10 @@ jobs:
 
           cp "$BRIDGE_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
           cp "$HOST_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
-          sha256sum "$GITHUB_WORKSPACE/epic-apk-output/"*.apk | tee "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"
+          (
+            cd "$GITHUB_WORKSPACE/epic-apk-output"
+            sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS
+          )
 
       - name: Upload installable MaliWinlator Epic APKs
         id: epic_apks
