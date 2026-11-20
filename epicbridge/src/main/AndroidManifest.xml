@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <permission
+        android:name="com.maliwinlator.epicbridge.permission.ACCESS"
+        android:protectionLevel="signature"
+        android:label="Access MaliWinlator Epic Bridge" />
+
+    <application
+        android:allowBackup="false"
+        android:label="MaliWinlator Epic Bridge"
+        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:usesCleartextTraffic="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name=".EpicBridgeProvider"
+            android:authorities="com.maliwinlator.epicbridge.provider"
+            android:exported="true"
+            android:permission="com.maliwinlator.epicbridge.permission.ACCESS" />
+    </application>
+</manifest>
