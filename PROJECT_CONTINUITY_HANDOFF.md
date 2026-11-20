@@ -452,3 +452,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Transformation update commit `e5c76c993546f14d2901216fe71eea36e494feed`. This remains a prototype until the patcher and download/cancel tests pass CI.
 
 - Follow-up review of Legendary's download scheduler found its inner producer loop did not re-check the shared running flag. A stop while waiting for a free shared-memory segment could therefore leave the producer spinning/retrying after cancellation. The Android patch now gates the inner scheduling loop on `self.running` as well as the outer loop. Commit `98642b6cbc5cc5c55f2f4713c477de849e80dee2`.
+
+- A further resume-integrity review found the writer-result handler must remain alive after cancellation: it records completed-file hashes in Legendary's resume file and returns shared-memory segments to the pool. The Android patch now lets this handler run until the writer's explicit termination message, even after the download producer/result handler have stopped. Commit `2442b60c0ed06eb60ce902e0a8b794bedd72fb59`.
