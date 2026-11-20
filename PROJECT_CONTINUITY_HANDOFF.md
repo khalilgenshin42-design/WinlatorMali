@@ -1274,3 +1274,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Workflow trigger fix commit: `db4785dc4e20bd8fc925bc53d9a404ba02d9ff24` (`ci: trigger Epic runtime on instrumentation helper changes`).
 - The helper path correction itself is commit `dab879b1c0ccc181c1bc558dae00220151981ea2`. The workflow trigger correction is a separate commit because the first helper-only push did not start the pipeline.
 - Next: confirm a new run starts from the trigger-fix commit and reaches the Gradle instrumentation task. No APK pair has been produced yet.
+
+
+## Epic CI run #182 — JNI compile failure and correction (2026-11-20)
+- Run #182: [GitHub Actions](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44750111414), source SHA `db4785dc4e20bd8fc925bc53d9a404ba02d9ff24`.
+- Steps 1–19 passed, including the production ARM64 CPython/Legendary runtime build and runtime audit. Step 20 reached the Android Gradle instrumentation build, then failed while compiling `epicbridge/src/main/c/epic_python.c`; the JNI instrumentation tests did not execute and APK packaging/release steps were correctly skipped.
+- Exact compiler error: line 245 had an over-escaped C string literal, `"{\\\\\"ok\\\\\":false,...}"`, producing `error: expected ')'`. This was introduced in the earlier JNI exception-diagnostics change, not an emulator/runtime issue.
+- Corrected the fallback JSON literal to standard C escaping: `"{\\\"ok\\\":false,\\\"error\\\":\\\"PYTHON_RUNTIME_ERROR\\\"}"`.
+- Fix commit: `f2809334eb322efaa9037dd18c2d72d981539901` — `fix: correct JSON fallback string escaping in JNI bridge`.
+- No installable APK artifacts or release were produced by run #182. Next: rerun the same workflow on the fix commit; verify the x86_64 JNI instrumentation tests, then ARM64 APK build, signer/package/ABI/ELF/embedded-byte audits, artifact upload, and prerelease. Do not call Epic integration ready until all gates pass and the APK pair is available.
