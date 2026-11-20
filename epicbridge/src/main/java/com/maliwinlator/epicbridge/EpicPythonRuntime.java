@@ -96,6 +96,22 @@ public final class EpicPythonRuntime {
             }
             try {
                 extractAssetDirectory(context.getAssets(), ASSET_ROOT, runtimeRoot);
+                File extractedPythonLib = new File(pythonHome, "lib/python3.15");
+                File extractedSitePackages = new File(extractedPythonLib, "site-packages");
+                File[] extractedExtensions = new File(extractedPythonLib, "lib-dynload").listFiles();
+                if (!new File(extractedPythonLib, "os.py").isFile()
+                        || !new File(extractedSitePackages, "legendary/__init__.py").isFile()
+                        || !new File(extractedSitePackages, "legendary/android_crypto.py").isFile()
+                        || !new File(extractedSitePackages, "epicbridge_runner.py").isFile()
+                        || extractedExtensions == null) {
+                    throw new IOException("Extracted CPython runtime is incomplete");
+                }
+                for (File extension : extractedExtensions) {
+                    if (extension.isFile() && extension.getName().matches(".*\\\\.so(?:\\\\..*)?$")
+                            && !extension.canExecute()) {
+                        throw new IOException("Extracted CPython extension is not executable: " + extension);
+                    }
+                }
                 File cwd = new File(pythonHome, "cwd");
                 if (!cwd.mkdirs() && !cwd.isDirectory()) {
                     throw new IOException("Unable to create Python working directory");
