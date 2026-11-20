@@ -30,6 +30,8 @@ public final class EpicPythonRuntime {
                     ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py");
              InputStream runner = context.getAssets().open(
                     ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py");
+             InputStream zipfilePath = context.getAssets().open(
+                    ASSET_ROOT + "/lib/python3.15/zipfile/_path/__init__.py");
              InputStream version = context.getAssets().open(ASSET_ROOT + "/runtime-version.txt")) {
             return true;
         } catch (IOException e) {
@@ -183,17 +185,30 @@ public final class EpicPythonRuntime {
         for (String child : children) {
             File target = new File(targetDir, child);
             String childAsset = assetPath + "/" + child;
+
+            // AssetManager can expose directory entries through list() even on
+            // Android builds where open(directory) does not reliably throw.
+            // Resolve non-empty directories before attempting to open a file;
+            // otherwise a directory may be copied as an empty file and its
+            // descendants silently disappear from the extracted runtime.
+            String[] nested = assets.list(childAsset);
+            if (nested == null) {
+                throw new IOException("Unable to inspect packaged runtime asset " + childAsset);
+            }
+            if (nested.length > 0) {
+                extractAssetDirectory(assets, childAsset, targetRoot);
+                continue;
+            }
+
             final InputStream assetInput;
             try {
                 assetInput = assets.open(childAsset);
             } catch (FileNotFoundException e) {
-                String[] nested = assets.list(childAsset);
-                if (nested == null) {
-                    throw new IOException("Missing packaged runtime asset " + childAsset, e);
+                // An empty AssetManager listing plus an unopenable entry is an
+                // empty directory, which still needs to exist in app storage.
+                if (!target.mkdirs() && !target.isDirectory()) {
+                    throw new IOException("Unable to create empty runtime directory " + target, e);
                 }
-                // An empty AssetManager listing is a valid empty directory. Required
-                // runtime files are verified by the post-extraction preflight/self-test.
-                extractAssetDirectory(assets, childAsset, targetRoot);
                 continue;
             }
             try (InputStream input = assetInput;
