@@ -181,10 +181,16 @@ def _runtime_self_test():
     import filelock
     import requests
     from legendary.android_crypto import AES
+    from legendary.core import LegendaryCore
     from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
     from legendary.downloader.mp.manager import DLManager
     from legendary.downloader.mp.workers import DLWorker, FileWorker
     from legendary.models.downloading import AnalysisResult, FileTask, TaskFlags, TerminateWorkerTask, WriterTaskResult
+
+    core = _core()
+    if not isinstance(core, LegendaryCore):
+        raise RuntimeError("Legendary core did not initialize in the Android runtime")
+    core.get_installed_list()
 
     ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
     tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
