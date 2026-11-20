@@ -731,3 +731,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The Android patcher now returns from run_real() before allocating mmap or starting worker threads when there are no file tasks. Added an embedded runtime self-test that runs an empty AnalysisResult through the manager thread and requires clean completion.
 - Commits: 40cf8c650a5982c54b705dadfbf920f3cc0681d0 (no-op guard); 1d3f42355285844b222519ed3892b9bccec0ae30 (no-op runtime test).
 - This source change is included in the next CPython/Legendary POC and downstream Android instrumentation build.
+
+## Engineering continuation — 2026-11-20: zero-chunk install regression
+
+- Found another valid Legendary manifest shape: an install/update may contain file operations but no chunk tasks (for example, empty files or deletion-only work). The original progress calculation divided by num_chunk_tasks unconditionally and could fail with ZeroDivisionError.
+- The Android patcher now reports 100% chunk progress when the chunk count is zero while continuing to count file tasks normally.
+- Added an end-to-end runtime self-test that runs a real FileWorker-backed, file-only DLManager job with a 4 KiB anonymous mmap and asserts that the empty output file is created successfully.
+- Commits: bb9d05628bee554956bfe35be7f7881863e4c691 (zero-chunk progress guard); deae043c807b2466746d2abfd89f9ca340bc0552 (file-only manager runtime test).
+- This test will execute as part of the Android JNI instrumentation test after the pinned Legendary patch is applied.
