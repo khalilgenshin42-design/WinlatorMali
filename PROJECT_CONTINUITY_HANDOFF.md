@@ -943,3 +943,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The status commit uses the workflow's scoped `contents: write` token and `[skip ci]`; status publication is best-effort and cannot turn a successful build into a failed build if branch writes are blocked. This removes the need for the user to locate or send an Actions run URL manually.
 - Commits: eae82aeccff46b77f6d48d1bfac0f3ad7862ce0e (status report publisher); 1db92c18ab8b11b59125f85339d3caa28177036e (publish after all artifacts); 3ce5b92292a4ec533817ccf1735e5733852c0985 and d7a7371de5b492c86ff73c40a1ad3d2b454ffb41 (best-effort report handling).
 - The publisher itself is not evidence of a passing build. Its report must be read after the workflow runs.
+
+## Engineering continuation — 2026-11-20: bind CI verification to the exact triggering commit
+
+- Changed the workflow checkout from the moving branch ref to `github.sha`. Each run now builds and tests the exact commit that triggered it, and the generated CI status record identifies that same source SHA. The final status publisher separately fetches the current branch head before committing its report.
+- Commit: e60a60d5af11b7241486268a577ad4c92c7708a0.
