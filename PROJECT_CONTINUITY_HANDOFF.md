@@ -1135,3 +1135,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added `EPIC_GAMES_TESTING_GUIDE.md` with the install order for the host/companion pair, per-app all-files permission steps, runtime self-test, Epic browser sign-in, container selection, install/launch flow, limitations, and safe bug-report checklist.
 - Commit: `753dd7df3e02b66872925146b87c479611df868a`.
 - The guide explicitly says to use only the successful Epic ARM64 prerelease and not to treat an unverified or bootstrap-only artifact as ready.
+
+## Static follow-up — 2026-11-20: verify the remaining Legendary patch anchors against the pinned source
+
+- Independently compared all 41 literal `replace_once` anchors (including the corrected writer-result handler) against pristine Legendary commit `42f6bdeadde3a9526dc8eb713763476999ac217b`, applying the replacements in patch order. Every literal anchor matched its expected occurrence count.
+- Also confirmed the separately named manager stop-method insertion anchor occurs exactly once. This is an anchor-count audit only; the official workflow still must run the patcher, Python compile/AST validation, host smoke, emulator instrumentation, and ARM64 package audit.
