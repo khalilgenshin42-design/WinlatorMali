@@ -71,6 +71,7 @@ public class MainActivity extends Activity {
 
     private void refreshStatus() {
         boolean runtimePackaged = EpicPythonRuntime.isPackaged(this);
+        selfTestButton.setVisibility(runtimePackaged ? Button.VISIBLE : Button.GONE);
         statusView.setText((hasStorageAccess()
                 ? "Shared game-library access: granted"
                 : "Shared game-library access: required")
