@@ -1373,3 +1373,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Next: rerun Epic workflow, confirm prefix validation and runtime asset staging complete, then inspect Android instrumentation results. No Epic APK pair is ready.
 
 - Follow-up trigger audit: the Epic workflow's `push.paths` did not explicitly include `epicbridge/build.gradle`, so the Gradle staging correction alone did not launch the Epic workflow (only the baseline workflow ran). Added the Gradle file to the Epic workflow path filters to ensure future packaging/build-logic changes automatically run the Android instrumentation gate.
+
+
+## 2026-11-20 — Epic runtime APK packaging diagnostics
+- Epic workflow run #44790782332 (run ID 44790782332, job 136477585874) completed with failure at Android x86_64 instrumentation. CPython x86_64 and ARM64 runtime builds/archive audits completed; Gradle executed `:epicbridge:stageEpicPythonRuntime`, then Android tests failed because `EpicPythonRuntime.isPackaged()` returned false (assets/JNI not all visible from the installed test target APK).
+- This is now narrowed to the final APK packaging boundary, not CPython source compilation or zipfile archive contents. The workflow's ARM64 APK audit has not yet run because instrumentation is an earlier gate.
+- Added explicit per-entry diagnostics in `EpicPythonRuntime.isPackaged()`: it now reports whether `libepic_python` or a native dependency failed to load, or the exact missing APK asset (stdlib, Legendary package, bridge runner, zipfile._path, or runtime identity). Commit: `1c2a5210ec774d8586f11a8d47ef3aaf68060d88`.
+- Next: rerun the Epic workflow, read the emitted `EpicPythonRuntime` logcat line, then fix the precise source-set/JNI/assets packaging defect. Keep the instrumentation gate strict; do not ship stub or partial runtime APKs.
