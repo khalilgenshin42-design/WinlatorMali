@@ -601,6 +601,12 @@ public final class EpicFragment extends Fragment {
         }
         containerSpinner.setSelection(ownerIndex);
         Container container = containers.get(ownerIndex);
+        try {
+            ensureEpicDriveLink(container);
+        } catch (Exception e) {
+            statusText.setText("Unable to restore this container's Epic C: mapping: " + e.getMessage());
+            return;
+        }
 
         JSONObject payload = new JSONObject();
         try { payload.put("app_name", appName); }
