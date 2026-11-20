@@ -289,17 +289,17 @@ public final class EpicFragment extends Fragment {
                     }
                 } else {
                     Bundle response = EpicBridgeClient.call(appContext, method, payload);
-                try {
-                    String body = response.getString("result_json");
-                    json = body == null ? new JSONObject() : new JSONObject(body);
-                } catch (Exception e) {
-                    json = new JSONObject();
                     try {
-                        json.put("ok", false);
-                        json.put("message", response.getString("message", "Epic Bridge operation failed"));
-                        json.put("error", response.getString("error", "IPC_ERROR"));
-                    } catch (Exception ignored) {}
-                }
+                        String body = response.getString("result_json");
+                        json = body == null ? new JSONObject() : new JSONObject(body);
+                    } catch (Exception e) {
+                        json = new JSONObject();
+                        try {
+                            json.put("ok", false);
+                            json.put("message", response.getString("message", "Epic Bridge operation failed"));
+                            json.put("error", response.getString("error", "IPC_ERROR"));
+                        } catch (Exception ignored) {}
+                    }
                 }
 
             } catch (Exception error) {
