@@ -63,7 +63,10 @@ public final class EpicPythonRuntime {
                 Log.w(TAG, "Unable to read the installed runtime marker; refreshing runtime", e);
             }
         }
-        if (!packagedVersion.equals(installedVersion)) {
+        boolean runtimeFilesPresent =
+                new File(pythonHome, "lib/python3.15/os.py").isFile()
+                && new File(pythonHome, "lib/python3.15/site-packages/epicbridge_runner.py").isFile();
+        if (!packagedVersion.equals(installedVersion) || !runtimeFilesPresent) {
             // Runtime assets are content-addressed. Updates to Python, Legendary,
             // or the bridge runner replace stale extracted files without touching HOME.
             deleteRecursively(pythonHome);
