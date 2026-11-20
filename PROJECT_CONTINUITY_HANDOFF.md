@@ -840,3 +840,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Runtime preflight now verifies that the lib-dynload directory exists and every shared-object extension is executable. If any module fails that check, the companion refreshes the extracted tree and applies the corrected file mode.
 - Commit: ce3e2197175203b881f42f90fcd03c049993e0a0.
 - The check is source-reviewed but not yet exercised on Android.
+
+## Engineering continuation — 2026-11-20: version the installable runtime companion
+
+- Incremented the Epic Bridge companion package from versionCode 1 / versionName 0.1.0 to versionCode 2 / 0.2.0. This ensures a runtime-enabled companion can replace an earlier bootstrap/P0C companion as a normal Android package update, provided the signing certificate matches.
+- Commit: 6d43399a252d3be1f42c30da69f50705cd4490e8.
+- The host APK remains MaliWinlator 1.2.1 Epic, versionCode 24. The final CI audit verifies both package identities and signer equality.
