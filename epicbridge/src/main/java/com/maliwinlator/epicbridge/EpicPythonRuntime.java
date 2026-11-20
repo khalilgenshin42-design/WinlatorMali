@@ -63,9 +63,16 @@ public final class EpicPythonRuntime {
                 Log.w(TAG, "Unable to read the installed runtime marker; refreshing runtime", e);
             }
         }
+        File pythonLib = new File(pythonHome, "lib/python3.15");
+        File sitePackages = new File(pythonLib, "site-packages");
         boolean runtimeFilesPresent =
-                new File(pythonHome, "lib/python3.15/os.py").isFile()
-                && new File(pythonHome, "lib/python3.15/site-packages/epicbridge_runner.py").isFile();
+                new File(pythonLib, "os.py").isFile()
+                && new File(sitePackages, "epicbridge_runner.py").isFile()
+                && new File(sitePackages, "legendary/__init__.py").isFile()
+                && new File(sitePackages, "legendary/android_crypto.py").isFile()
+                && new File(sitePackages, "requests/__init__.py").isFile()
+                && new File(sitePackages, "certifi/cacert.pem").isFile()
+                && new File(sitePackages, "filelock/__init__.py").isFile();
         if (!packagedVersion.equals(installedVersion) || !runtimeFilesPresent) {
             // Runtime assets are content-addressed. Updates to Python, Legendary,
             // or the bridge runner replace stale extracted files without touching HOME.
