@@ -436,3 +436,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - This fix has not yet been emulator-tested. A new POC workflow run will test TLS using the bundled CA bundle; only then can HTTPS support be marked validated.
 
 - Corrected the worker-side mmap close patch anchor after checking the pinned upstream source: only DLWorker closes its attached shared-memory handle; FileWorker does not. The transformation now expects exactly one close site, avoiding a false patch failure. Commit `2bdadb0403a822108ce92000f06569d634834797`.
+
+- The failing Android probe executes checks sequentially. Before reaching TLS, it successfully passed 64-bit pointer size, hashlib SHA-256, zlib round-trip, and SQLite create/insert/select. The run therefore positively validates those four APIs on the Android emulator; fcntl locking and subprocess were not reached because TLS failed first.
