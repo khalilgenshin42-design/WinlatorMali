@@ -180,6 +180,15 @@ def _launch_info(core, payload):
 
 def _runtime_self_test():
     import importlib.metadata
+    import importlib.resources
+    import importlib.util
+    import sys
+    import zipfile
+    import zipfile._path
+    if not hasattr(zipfile, "__path__") or importlib.util.find_spec("zipfile._path") is None:
+        raise RuntimeError("CPython zipfile package is not available on sys.path")
+    if importlib.resources.files("legendary") is None:
+        raise RuntimeError("importlib.resources could not resolve Legendary package resources")
     import ssl
     import tempfile
     from queue import Queue
@@ -320,7 +329,10 @@ def _runtime_self_test():
         buffer.unlink()
 
     return {
-        "python": __import__("sys").version.split()[0],
+        "python": sys.version.split()[0],
+        "zipfile_module": zipfile.__file__,
+        "zipfile_path_module": zipfile._path.__file__,
+        "python_search_paths": sys.path,
         "legendary": importlib.metadata.version("legendary-gl"),
         "requests": requests.__version__,
         "certifi": certifi.where(),
