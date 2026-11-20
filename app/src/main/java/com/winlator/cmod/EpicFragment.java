@@ -247,7 +247,8 @@ public final class EpicFragment extends Fragment {
                 if (!existingJobId.isEmpty()) {
                     Bundle existingState = EpicBridgeClient.call(appContext, "job_status", existingJobId, "{}");
                     String existingStatus = existingState.getString("state", "unknown");
-                    if (!"complete".equals(existingStatus) && !"failed".equals(existingStatus)) {
+                    if (!"complete".equals(existingStatus) && !"failed".equals(existingStatus)
+                            && !"interrupted".equals(existingStatus)) {
                         json = new JSONObject();
                         try {
                             json.put("ok", false);
@@ -317,9 +318,14 @@ public final class EpicFragment extends Fragment {
                 Thread.sleep(1500);
                 Bundle state = EpicBridgeClient.call(appContext, "job_status", jobId, "{}");
                 String jobState = state.getString("state", "unknown");
-                if ("complete".equals(jobState) || "failed".equals(jobState)) {
+                if ("complete".equals(jobState) || "failed".equals(jobState)
+                        || "interrupted".equals(jobState)) {
                     String body = state.getString("result_json", "");
                     result = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+                    if ("interrupted".equals(jobState)) {
+                        result.put("ok", false);
+                        result.put("message", "Android stopped the Epic background service before the operation completed. Retry the install or update.");
+                    }
                     android.content.SharedPreferences prefs =
                             appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
                     if (jobId.equals(prefs.getString(JOB_ID_KEY, ""))) {
