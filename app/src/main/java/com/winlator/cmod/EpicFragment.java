@@ -539,6 +539,9 @@ public final class EpicFragment extends Fragment {
         }
 
         if (link.exists()) {
+            if (!link.isDirectory()) {
+                throw new java.io.IOException("Wine C:/Games/Epic is occupied by a non-directory path");
+            }
             File[] children = link.listFiles();
             if (children != null && children.length > 0) {
                 throw new java.io.IOException("Wine C:/Games/Epic already contains files; refusing to replace it");
