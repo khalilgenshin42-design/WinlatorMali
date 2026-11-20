@@ -390,6 +390,7 @@ jobs:
 
       - name: Publish successful Epic build status to repository
         if: success()
+        continue-on-error: true
         working-directory: maliwinlator
         env:
           EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
