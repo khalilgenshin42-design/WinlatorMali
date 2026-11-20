@@ -684,3 +684,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Extended the real Android instrumentation test to run the Java AES-GCM known-answer test including deliberate tag corruption, proving authentication failure is rejected as well as valid plaintext being recovered.
 - Commits: 6aa922760df9ce560f3d5f6ce8d686bc23106539 (strict missing-asset handling); 649eb85de57b2fd322e531214dbbefc04b3ce382 (JCA positive/negative test).
 - Both are under epicbridge/**, so the active POC workflow's source path filter should start validation from the updated branch SHA. The Android test and final ARM64 artifact audit are still pending observed CI success.
+
+## Engineering continuation — 2026-11-20: require complete packaged runtime identity before advertising readiness
+
+- Tightened EpicPythonRuntime.isPackaged() to require the generated .runtime-version asset in addition to the native library, CPython standard-library entry point, Legendary package, and bridge runner. The status endpoint can no longer report a runtime-ready package when the build-time content identity is absent.
+- The extraction preflight also verifies the required Legendary crypto shim, requests, certifi CA bundle, and filelock files before reusing an existing extracted tree; a stale or incomplete tree is refreshed.
+- Commit: cbcb4f3110f688036c2afb7998f560ace4a0c892.
+- This final packaging/readiness check is part of the next Android instrumentation build. No runtime-ready result is claimed until that test passes on the managed x86_64 emulator.
