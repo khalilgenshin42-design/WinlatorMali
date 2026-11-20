@@ -7,6 +7,8 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -14,7 +16,7 @@ import java.io.IOException;
 public final class EpicPythonRuntime {
     private static final String TAG = "EpicPythonRuntime";
     private static final String ASSET_ROOT = "python";
-    private static final String RUNTIME_MARKER = ".maliwinlator-runtime-3.15.2-legendary-0.21.1";
+    private static final String RUNTIME_MARKER = ".maliwinlator-runtime";
     private static volatile boolean initialized;
     private static volatile boolean nativeLibraryLoaded;
 
@@ -41,9 +43,29 @@ public final class EpicPythonRuntime {
         File runtimeRoot = new File(context.getFilesDir(), "epic-runtime");
         File pythonHome = new File(runtimeRoot, ASSET_ROOT);
         File marker = new File(runtimeRoot, RUNTIME_MARKER);
-        if (!marker.isFile()) {
-            // Replace only the interpreter tree. Keep HOME separate so an
-            // app/runtime update never deletes the user's Epic account session.
+        final String packagedVersion;
+        try (InputStream versionInput = context.getAssets().open(ASSET_ROOT + "/.runtime-version")) {
+            packagedVersion = readUtf8(versionInput).trim();
+        } catch (IOException e) {
+            Log.e(TAG, "The packaged Python runtime has no build identity", e);
+            return false;
+        }
+        if (packagedVersion.isEmpty()) {
+            Log.e(TAG, "The packaged Python runtime identity is empty");
+            return false;
+        }
+
+        String installedVersion = "";
+        if (marker.isFile()) {
+            try (InputStream markerInput = new FileInputStream(marker)) {
+                installedVersion = readUtf8(markerInput).trim();
+            } catch (IOException e) {
+                Log.w(TAG, "Unable to read the installed runtime marker; refreshing runtime", e);
+            }
+        }
+        if (!packagedVersion.equals(installedVersion)) {
+            // Runtime assets are content-addressed. Updates to Python, Legendary,
+            // or the bridge runner replace stale extracted files without touching HOME.
             deleteRecursively(pythonHome);
             if (!runtimeRoot.mkdirs() && !runtimeRoot.isDirectory()) {
                 Log.e(TAG, "Unable to create runtime directory");
@@ -59,13 +81,23 @@ public final class EpicPythonRuntime {
                 if (!homeDir.mkdirs() && !homeDir.isDirectory()) {
                     throw new IOException("Unable to create Legendary data directory");
                 }
-                if (!marker.createNewFile()) {
-                    throw new IOException("Unable to write runtime marker");
+                File markerTemp = new File(runtimeRoot, RUNTIME_MARKER + ".tmp");
+                try (FileOutputStream output = new FileOutputStream(markerTemp, false)) {
+                    output.write(packagedVersion.getBytes("UTF-8"));
+                    output.write('\n');
+                    output.getFD().sync();
+                }
+                if (marker.exists() && !marker.delete()) {
+                    throw new IOException("Unable to replace old runtime marker");
+                }
+                if (!markerTemp.renameTo(marker)) {
+                    throw new IOException("Unable to commit runtime marker");
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Unable to extract the bundled CPython runtime", e);
                 deleteRecursively(pythonHome);
                 marker.delete();
+                new File(runtimeRoot, RUNTIME_MARKER + ".tmp").delete();
                 return false;
             }
         }
@@ -93,6 +125,14 @@ public final class EpicPythonRuntime {
             return "{\"ok\":false,\"error\":\"RUNTIME_NOT_READY\",\"message\":\"The bundled Android CPython runtime is unavailable\"}";
         }
         return nativeCall(command, payloadJson == null ? "{}" : payloadJson);
+    }
+
+    private static String readUtf8(InputStream input) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int count;
+        while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+        return output.toString("UTF-8");
     }
 
     private static void extractAssetDirectory(AssetManager assets, String assetPath, File targetRoot)
