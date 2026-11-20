@@ -564,6 +564,10 @@ public final class EpicFragment extends Fragment {
                 statusText.setText("Epic game executable path is missing.");
                 return;
             }
+            if (findContainerIndex(gameDir) != ownerIndex) {
+                statusText.setText("Epic returned a game directory outside the selected container's Wine C: drive. Reinstall the game into this container.");
+                return;
+            }
             File executable = new File(gameDir, exe.replace('\\', File.separatorChar));
             if (!executable.isFile()) {
                 statusText.setText("Game executable not found: " + executable);
