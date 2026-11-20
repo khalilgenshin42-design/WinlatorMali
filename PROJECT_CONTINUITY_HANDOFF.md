@@ -354,3 +354,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Hardened the payload lifecycle after the initial implementation: `EpicLaunchPayloadStore.get()` allows Activity recreation without consuming the secret, and `GuestProgramLauncherComponent` now consumes the payload only after prefix setup, immediately before the secure game process starts. Commits `fee0ac6bfccb0be0dd786c4630bfca3b1ed4eaa1`, `5bf809694f7e3719727b8cb3e58ec5d7c7bac373`, `f760fbf4aef34fb16cc1b2da256a75555cc07a0c`, and design update `78da45676ebc24d089a83448afb2152471a52c03`.
 
 - APK CI run **44645158888** caught a Java scope error: `epicLaunchToken` was declared inside the startup block but referenced later during launcher setup. Corrected it to an Activity field in commit `e01c1d0327551f275393e89b9c08cf03b58bbb3e`. The next app CI run must confirm the fix.
+
+- APK CI run **44645410357** found the next integration error: `XServerDisplayActivity` called `setEpicLaunchPayloadToken`, but the setter insertion had not landed in `GuestProgramLauncherComponent`. Added the missing setter in commit `d9401d7bb52ee63b60a11a705385e58f4a363b6e`. A new build will validate it.
