@@ -342,8 +342,8 @@ jobs:
           unzip -qq "$BRIDGE_APK" -d "$APK_EXTRACT_ROOT"
           NATIVE_LIB_DIR="$APK_EXTRACT_ROOT/lib/arm64-v8a"
           PYTHON_LIB_DIR="$APK_EXTRACT_ROOT/assets/python/lib/python3.15"
-          test -n "$(find "$NATIVE_LIB_DIR" -type f -name '*.so' -print -quit)"
-          test -n "$(find "$PYTHON_LIB_DIR/lib-dynload" -type f -name '*.so' -print -quit)"
+          test -n "$(find "$NATIVE_LIB_DIR" -type f \( -name '*.so' -o -name '*.so.*' \) -print -quit)"
+          test -n "$(find "$PYTHON_LIB_DIR/lib-dynload" -type f \( -name '*.so' -o -name '*.so.*' \) -print -quit)"
           while IFS= read -r -d '' ELF; do
             while IFS= read -r NEEDED; do
               if [ ! -f "$NATIVE_LIB_DIR/$NEEDED" ] && [ ! -f "$SYSROOT_LIB/$NEEDED" ]; then
@@ -351,7 +351,7 @@ jobs:
                 exit 1
               fi
             done < <("$READELF" -d "$ELF" | sed -n 's/.*Shared library: \[\(.*\)\].*/\1/p')
-          done < <(find "$NATIVE_LIB_DIR" "$PYTHON_LIB_DIR" -type f -name '*.so' -print0)
+          done < <(find "$NATIVE_LIB_DIR" "$PYTHON_LIB_DIR" -type f \( -name '*.so' -o -name '*.so.*' \) -print0)
 
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/runtime-version.txt'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/os.py'
