@@ -1219,3 +1219,13 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - A separate standard baseline APK workflow run **44739802087** was also triggered by the C source change. It is not the Epic CPython runtime release pipeline and must not be confused with the required matched host/companion APK pair.
 - Run #179 must reach emulator instrumentation to expose the native CPython exception in the captured Android logcat. The next code change should be based on that concrete exception, not speculative changes to Python paths or packaging.
 - Epic runtime run URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44739838824
+
+
+## Live CI update — 2026-11-20: emulator prerequisite passed; ARM64 build running
+
+- Polled Epic runtime workflow run **44739838824** (run #179), source commit **33ec6faf99d6d0003ac7d68d964029fe92e3a394**.
+- Confirmed step 16, **Run Epic Android runtime prerequisite smoke on managed x86_64 emulator**, completed successfully. This clears the managed-emulator prerequisite stage that was previously pending.
+- Step 17, **Build the production Android ARM64 runtime**, is now in progress. Steps 18–24 remain gated: runtime archive audit, Android build toolchain setup, x86_64 JNI/Python instrumentation (including the newly added native exception diagnostics), matched ARM64 host+companion APK build, uploads, and prerelease publication.
+- No installable Epic APK pair has been produced or published at this checkpoint. The independent baseline host APK is not a substitute.
+- Next action: poll run #179; once instrumentation completes, retrieve logcat diagnostics on failure and fix the concrete exception, or proceed to verify both APKs and all release audits if it passes.
+- Run URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44739838824
