@@ -72,6 +72,8 @@ public final class EpicPythonRuntime {
                 && extensionFiles != null && sharedLibrariesExecutable(pythonLib);
         boolean runtimeFilesPresent = runtimeExtensionsExecutable
                 && new File(pythonLib, "os.py").isFile()
+                && new File(pythonLib, "zipfile/__init__.py").isFile()
+                && new File(pythonLib, "zipfile/_path/__init__.py").isFile()
                 && new File(sitePackages, "epicbridge_runner.py").isFile()
                 && new File(sitePackages, "legendary/__init__.py").isFile()
                 && new File(sitePackages, "legendary/android_crypto.py").isFile()
@@ -95,6 +97,8 @@ public final class EpicPythonRuntime {
                 File extractedSitePackages = new File(extractedPythonLib, "site-packages");
                 File extractedExtensionDir = new File(extractedPythonLib, "lib-dynload");
                 if (!new File(extractedPythonLib, "os.py").isFile()
+                        || !new File(extractedPythonLib, "zipfile/__init__.py").isFile()
+                        || !new File(extractedPythonLib, "zipfile/_path/__init__.py").isFile()
                         || !new File(extractedSitePackages, "legendary/__init__.py").isFile()
                         || !new File(extractedSitePackages, "legendary/android_crypto.py").isFile()
                         || !new File(extractedSitePackages, "epicbridge_runner.py").isFile()
