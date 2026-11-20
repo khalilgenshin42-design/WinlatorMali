@@ -1103,3 +1103,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Set `GH_REPO` explicitly for the release-publishing step because the repository checkout is nested under `maliwinlator/` while the APK output directory is at the workspace root. This avoids relying on GitHub CLI remote discovery from the workspace parent.
 - Commit: 9f3f8b2ee5d9f1c49bf06dc957e1143629218f3a.
+
+## Engineering continuation — 2026-11-20: make Epic background install/update jobs single-flight
+
+- Closed a host/UI race in which two fast install/update taps could both reach the exported provider before the host persisted the first returned job ID. The provider now atomically reserves the one active Epic job slot before calling `startForegroundService`; a concurrent request receives `JOB_ALREADY_RUNNING`. If service startup throws, the reservation is released.
+- Added an instrumentation test covering first reservation, rejection of a concurrent second job, release, and successful reuse of the slot.
+- Commits: b1865f338a628739da2d8f3a7b5b40022fd267ad (atomic service reservation API); b49b8a47a7e1cca12f38ca110b7cc0d3aa43077a (provider gate and failure release); 69bbc6ffce99f28ae9bf7b9029ddbf17ea49b640 (instrumentation test).
+- This is source-level hardening; the test has not yet been executed on an Android emulator/device.
