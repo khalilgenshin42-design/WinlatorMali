@@ -216,6 +216,14 @@ def _runtime_self_test():
     if worker_results != [bytes(16)]:
         raise RuntimeError(f"Android JCA AES-GCM worker-thread call failed: {worker_results!r}")
 
+    bad_tag = bytes([tag[0] ^ 1]) + tag[1:]
+    try:
+        AES.new(bytes(16), AES.MODE_GCM, nonce=bytes(12)).decrypt_and_verify(ciphertext, bad_tag)
+    except RuntimeError:
+        bad_tag_rejected = True
+    else:
+        raise RuntimeError("Android JCA AES-GCM accepted a corrupted authentication tag")
+
     ssl.create_default_context(cafile=certifi.where())
     if importlib.metadata.version("legendary-gl") != "0.21.1":
         raise RuntimeError("Unexpected Legendary distribution version")
@@ -310,6 +318,7 @@ def _runtime_self_test():
         "certifi": certifi.where(),
         "android_jca_aes_gcm": True,
         "android_jca_aes_gcm_worker_thread": True,
+        "android_jca_aes_gcm_bad_tag_rejected": bad_tag_rejected,
         "thread_workers": True,
         "download_failure_cleanup": True,
         "anonymous_mmap": True,
