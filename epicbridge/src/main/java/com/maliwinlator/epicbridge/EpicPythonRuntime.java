@@ -23,20 +23,28 @@ public final class EpicPythonRuntime {
     private EpicPythonRuntime() {}
 
     public static boolean isPackaged(Context context) {
-        if (!ensureNativeLibraryLoaded()) return false;
-        try (InputStream ignored = context.getAssets().open(
-                    ASSET_ROOT + "/lib/python3.15/os.py");
-             InputStream legendary = context.getAssets().open(
-                    ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py");
-             InputStream runner = context.getAssets().open(
-                    ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py");
-             InputStream zipfilePath = context.getAssets().open(
-                    ASSET_ROOT + "/lib/python3.15/zipfile/_path/__init__.py");
-             InputStream version = context.getAssets().open(ASSET_ROOT + "/runtime-version.txt")) {
-            return true;
-        } catch (IOException e) {
+        if (!ensureNativeLibraryLoaded()) {
+            Log.e(TAG, "Runtime packaging check failed: libepic_python or a native dependency could not be loaded");
             return false;
         }
+        String[] requiredAssets = {
+                ASSET_ROOT + "/lib/python3.15/os.py",
+                ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py",
+                ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py",
+                ASSET_ROOT + "/lib/python3.15/zipfile/_path/__init__.py",
+                ASSET_ROOT + "/runtime-version.txt"
+        };
+        for (String asset : requiredAssets) {
+            try (InputStream ignored = context.getAssets().open(asset)) {
+                // Opening every required entry identifies omissions in the final APK.
+            } catch (IOException e) {
+                Log.e(TAG, "Runtime packaging check: missing APK asset " + asset, e);
+                return false;
+            }
+        }
+        Log.i(TAG, "Runtime packaging check passed; nativeLibraryDir="
+                + context.getApplicationInfo().nativeLibraryDir);
+        return true;
     }
 
     public static synchronized boolean initialize(Context context) {
