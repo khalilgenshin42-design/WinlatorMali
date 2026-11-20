@@ -296,3 +296,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added Legendary 0.21.1 mobile download policy to `EPIC_INTEGRATION_DESIGN.md` commit `9506edff03c09f56077a168c6f5e1a94bd27ccee`: parse the downloader's native `= Progress: N%` logs; begin with four workers and a 256 MiB shared-memory budget; use non-interactive install flags, preflight disk space, and preserve resume/manifest validation.
 
 - Recorded the separate companion storage-permission boundary in `EPIC_INTEGRATION_DESIGN.md` commit `666cd684de5736a383a5ac71bc09a12eb1e80206`: the companion needs its own all-files access to install into the shared MaliWinlator EpicGames directory; the host app's grant is not inherited across packages.
+
+- Added a concrete online launch bridge in `EPIC_INTEGRATION_DESIGN.md` commit `aea986d074e071883c4e29fc07318fa617136776`: use `legendary launch <app> --json --no-wine` to obtain the structured launch parameters and transient environment, then validate/map the game path to Wine F: and hand off to the host's existing `XEnvironment` / `GuestProgramLauncherComponent`. Never persist or log transient Epic/EOS tokens.
