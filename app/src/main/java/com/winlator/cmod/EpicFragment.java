@@ -215,19 +215,64 @@ public final class EpicFragment extends Fragment {
     private void runCommand(String method, String payload, CommandCallback callback) {
         android.content.Context appContext = requireContext().getApplicationContext();
         io.execute(() -> {
-            Bundle response = EpicBridgeClient.call(appContext, method, payload);
             JSONObject json;
-            try {
-                String body = response.getString("result_json");
-                json = body == null ? new JSONObject() : new JSONObject(body);
-            } catch (Exception e) {
-                json = new JSONObject();
+            if ("install".equals(method)) {
+                Bundle started = EpicBridgeClient.call(appContext, "start_job", "install", payload);
+                if (!started.getBoolean("ok", false)) {
+                    json = new JSONObject();
+                    try {
+                        json.put("ok", false);
+                        json.put("message", started.getString("message", "Unable to start Epic install"));
+                    } catch (Exception ignored) {}
+                } else {
+                    String jobId = started.getString("job_id", "");
+                    long deadline = System.currentTimeMillis() + 5L * 60L * 60L * 1000L;
+                    json = new JSONObject();
+                    while (!jobId.isEmpty() && System.currentTimeMillis() < deadline
+                            && !Thread.currentThread().isInterrupted()) {
+                        try {
+                            Thread.sleep(1500);
+                            Bundle state = EpicBridgeClient.call(appContext, "job_status", jobId, "{}");
+                            String jobState = state.getString("state", "unknown");
+                            if ("complete".equals(jobState) || "failed".equals(jobState)) {
+                                String body = state.getString("result_json", "");
+                                json = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        } catch (Exception e) {
+                            json = new JSONObject();
+                            try {
+                                json.put("ok", false);
+                                json.put("message", "Epic install status polling failed: " + e.getMessage());
+                            } catch (Exception ignored) {}
+                            break;
+                        }
+                    }
+                    if (jobId.isEmpty() || System.currentTimeMillis() >= deadline) {
+                        try {
+                            json.put("ok", false);
+                            json.put("message", "Epic install is still running in the foreground service. Reopen the Epic tab to check its status.");
+                        } catch (Exception ignored) {}
+                    }
+                }
+            } else {
+                Bundle response = EpicBridgeClient.call(appContext, method, payload);
                 try {
-                    json.put("ok", false);
-                    json.put("message", response.getString("message", "Epic Bridge operation failed"));
-                    json.put("error", response.getString("error", "IPC_ERROR"));
-                } catch (Exception ignored) {}
+                    String body = response.getString("result_json");
+                    json = body == null ? new JSONObject() : new JSONObject(body);
+                } catch (Exception e) {
+                    json = new JSONObject();
+                    try {
+                        json.put("ok", false);
+                        json.put("message", response.getString("message", "Epic Bridge operation failed"));
+                        json.put("error", response.getString("error", "IPC_ERROR"));
+                    } catch (Exception ignored) {}
+                }
             }
+
             JSONObject finalJson = json;
             if (getActivity() != null) getActivity().runOnUiThread(() -> {
                 if (getView() != null && callback != null) callback.onResult(finalJson);
