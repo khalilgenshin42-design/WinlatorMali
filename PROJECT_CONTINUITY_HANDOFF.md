@@ -670,3 +670,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Hardened the downloader's unexpected-exception cleanup: after cooperative worker joins, the manager now leaves the anonymous mmap open if any worker thread is still alive. This avoids invalidating a buffer still in use by a worker; the mapping remains referenced until those threads release it.
 - Commits: f70e4bca9757ff68f0a2ec7ee312d49f47672a8a (runtime file-presence recovery); 32c87a7a6a0efe903da133b7d2c27c53086d7b56 (mmap lifetime guard).
 - Both commits touch paths covered by the expanded Epic POC trigger, so the runtime/integration pipeline should validate the latest branch source SHA. No passing run has yet been observed.
+
+## Engineering continuation — 2026-11-20: prevent stale ABI outputs between emulator and production builds
+
+- Found a second-order Gradle issue after correcting the jniLibs destination: the integration workflow builds x86_64 instrumentation first and arm64-v8a production APK second in the same workspace. Without explicit task inputs, the Sync task could be considered up-to-date across an ABI property change and leave the wrong ABI's runtime libraries staged.
+- Added epicRuntimeAbi and epicRuntimePrefix as explicit inputs to stageEpicPythonRuntime. Switching from the x86_64 test prefix to the ARM64 production prefix now invalidates staging and regenerates the generated assets/JNI library tree before the production APK is assembled.
+- Commit: b9c3b397766b22b213325c7b4af48c356d92d429.
+- This is a build-graph correctness fix; the two-ABI sequential Gradle workflow must still demonstrate the expected x86_64 and arm64-v8a contents in its artifact audits.
