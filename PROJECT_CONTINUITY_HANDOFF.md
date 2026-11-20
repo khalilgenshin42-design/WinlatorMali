@@ -1296,3 +1296,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Next gate: confirm the new managed-emulator smoke actually imports `zipfile._path`, then JNI instrumentation, ARM64 host+companion build, signature/package/ABI/ELF/embedded-byte audits, artifact upload and prerelease. Only after all gates pass should the APK pair be handed over for on-device validation.
 
 - Follow-up on authoritative run #185 (2026-11-20): the repaired x86_64 managed-emulator runtime prerequisite smoke passed; production ARM64 CPython 3.15.2 runtime build and packaged-runtime audit also passed. CI has moved to Android toolchain installation, with JNI instrumentation and paired APK build/upload/release still pending. This is a real green milestone for both runtime architectures, but not yet a usable app release.
+
+
+## Epic runtime run #185 — JNI instrumentation still missing zipfile package (2026-11-20)
+
+- Authoritative run **44755104580** completed with failure at step 20, `:epicbridge:connectedDebugAndroidTest`; ARM64 APK build, artifact upload, and prerelease publication were correctly skipped. [Run #185](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44755104580).
+- The managed CPython x86_64 prerequisite smoke passed, and the production ARM64 CPython runtime build plus archive audit passed. The JNI companion instrumentation still failed twice with `ModuleNotFoundError: No module named 'zipfile._path'`.
+- The previous correction copied only `Lib/zipfile/_path` into each prefix. That was insufficient to prove the parent package and child module are co-located in the exact runtime tree consumed by Gradle and JNI.
+- Updated both x86_64 test and ARM64 production staging to replace the prefix's `lib/python3.15/zipfile` directory with the complete pinned CPython 3.15.2 `Lib/zipfile` package, and added archive-content assertions for both `zipfile/__init__.py` and `zipfile/_path/__init__.py`. Workflow fix commit: `28f643d752c81767f2b4eed21f192a58be53ad09`.
+- Added a Gradle `stageEpicPythonRuntime` fail-fast check for both package files in the generated APK asset tree. This prevents a future JNI test from silently running with an incomplete staged stdlib. Commit: `fdd46187102f5b0856d5cfc0e0a881fa9ea4d339`.
+- The workflow is now triggered for a fresh full retry by these commits. Next gate: confirm the archive assertions, Gradle staging assertion, and JNI instrumentation pass; only then continue to matched ARM64 APK build, signature/package/ABI/ELF and embedded-companion audits, artifact upload, and prerelease.
+- No installable Epic APK pair has been produced. Do not install the baseline host-only APK or claim Epic integration is ready.
