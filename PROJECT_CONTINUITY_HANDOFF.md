@@ -1045,3 +1045,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Changed recursive runtime deletion to report failure if a directory cannot be listed or any stale file cannot be removed. Runtime extraction now aborts before staging a new tree if the previous incomplete CPython tree could not be fully removed, avoiding a mixed-version runtime being marked current.
 - Commit: 04c4402c47013b02bd71769fc70caf42095b8cf0.
+
+## Engineering continuation — 2026-11-20: narrow AssetManager directory detection to asset-open failures
+
+- Refactored recursive extraction so only `AssetManager.open(childAsset)` failures are interpreted as directory entries. A `FileNotFoundException` from the destination `FileOutputStream` is now propagated as a real extraction failure instead of being misclassified as a directory and silently skipped.
+- Commit: 8bf2eba3a2bc1563a62953bd0923f310bfb01679.
