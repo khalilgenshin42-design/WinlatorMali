@@ -93,10 +93,13 @@ public final class EpicPythonRuntime {
                 extractAssetDirectory(context.getAssets(), ASSET_ROOT, runtimeRoot);
                 File extractedPythonLib = new File(pythonHome, "lib/python3.15");
                 File extractedSitePackages = new File(extractedPythonLib, "site-packages");
+                File extractedExtensionDir = new File(extractedPythonLib, "lib-dynload");
                 if (!new File(extractedPythonLib, "os.py").isFile()
                         || !new File(extractedSitePackages, "legendary/__init__.py").isFile()
                         || !new File(extractedSitePackages, "legendary/android_crypto.py").isFile()
                         || !new File(extractedSitePackages, "epicbridge_runner.py").isFile()
+                        || !extractedExtensionDir.isDirectory()
+                        || extractedExtensionDir.listFiles() == null
                         || !sharedLibrariesExecutable(extractedPythonLib)) {
                     throw new IOException("Extracted CPython runtime is incomplete or contains a non-executable shared extension");
                 }
