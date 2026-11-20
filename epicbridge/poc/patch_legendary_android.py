@@ -305,6 +305,53 @@ def main() -> None:
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
+    # Surface permanent chunk failures instead of retrying forever.
+    replace_once(
+        manager,
+        "        self.running = True\n        self.error = None\n",
+        "        self.running = True\n        self.error = None\n        self.download_failures = defaultdict(int)\n",
+    )
+    replace_once(
+        manager,
+        "                    else:\n"
+        "                        self.log.error(f'Download for {res.chunk_guid} failed, retrying...')\n"
+        "                        try:\n"
+        "                            # since the result is a subclass of the task we can simply resubmit the result object\n"
+        "                            self.dl_worker_queue.put(res, timeout=1.0)\n"
+        "                            self.active_tasks += 1\n"
+        "                        except Exception as e:\n"
+        "                            self.log.warning(f'Failed adding retry task to queue! {e!r}')\n"
+        "                            # If this failed for whatever reason, put the chunk at the front of the DL list\n"
+        "                            self.chunks_to_dl.appendleft(res.chunk_guid)\n",
+        "                    else:\n"
+        "                        self.download_failures[res.chunk_guid] += 1\n"
+        "                        if self.download_failures[res.chunk_guid] >= 3:\n"
+        "                            self.error = RuntimeError(f'Download failed repeatedly for chunk {res.chunk_guid}')\n"
+        "                            self.log.error(str(self.error))\n"
+        "                            self.stop()\n"
+        "                        else:\n"
+        "                            self.log.warning(f'Download for {res.chunk_guid} failed; retry {self.download_failures[res.chunk_guid]}/3')\n"
+        "                            try:\n"
+        "                                # Retry the result object; it retains the original chunk task metadata.\n"
+        "                                self.dl_worker_queue.put(res, timeout=1.0)\n"
+        "                                self.active_tasks += 1\n"
+        "                            except Exception as e:\n"
+        "                                self.log.warning(f'Failed adding retry task to queue! {e!r}')\n"
+        "                                self.chunks_to_dl.appendleft(res.chunk_guid)\n",
+    )
+
+    # A writer failure invalidates the installation; report it to the caller.
+    replace_once(
+        manager,
+        "                if not res.success:\n"
+        "                    # todo make this kill the installation process or at least skip the file and mark it as failed\n"
+        "                    self.log.fatal(f'Writing for {res.filename} failed!')\n",
+        "                if not res.success:\n"
+        "                    self.error = RuntimeError(f'Writing for {res.filename} failed')\n"
+        "                    self.log.error(str(self.error))\n"
+        "                    self.stop()\n",
+    )
+
     # Replace Legendary's two AES-GCM imports with an Android JCA-backed shim.
     for crypto_user in (
         root / "legendary/models/chunk.py",
