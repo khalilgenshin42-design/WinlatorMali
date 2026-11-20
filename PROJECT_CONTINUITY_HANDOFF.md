@@ -1007,3 +1007,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Extended the embedded Android runtime self-test to import and instantiate the actual pinned `LegendaryCore` class through the same `_core()` singleton used by login/library/install operations, then read its installed-game metadata. This catches missing runtime dependencies or import regressions that a downloader-only smoke would miss.
 - Commit: 939e16efbc14ccec035ad1fb3b6d244c6d140756.
+
+## Engineering continuation — 2026-11-20: audit ARM64 ELF dependency closure inside the final APK
+
+- Added a final-package ELF audit using the NDK's `llvm-readelf`. It extracts every ARM64 JNI library and CPython `lib-dynload/*.so` module from the companion APK, reads each `DT_NEEDED` entry, and requires the dependency to exist either in the APK's ARM64 native-library directory or the Android API 35 NDK system-library stubs.
+- This catches missing OpenSSL, libffi, sqlite, zlib, libpython, or other shared-library dependencies before the artifact is handed to the device.
+- Commits: 15509326e96d1e166514ca6a41709bd766b303ad (ELF closure audit); 76322d2d51a5f211a3e47208f19fb25e41ba5968 (corrected readelf dependency parser).
