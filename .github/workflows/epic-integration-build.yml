@@ -110,7 +110,7 @@ jobs:
           unzip -l "$X86_BRIDGE_APK" | grep -E 'lib/x86_64/libepic_python.so'
           unzip -l "$X86_BRIDGE_APK" | grep -E 'lib/x86_64/libpython3\.15\.so'
           unzip -l "$X86_BRIDGE_APK" | grep -E 'assets/python/lib/python3\.15/site-packages/epicbridge_runner\.py'
-          unzip -l "$X86_BRIDGE_APK" | grep -E 'assets/python/\.runtime-version'
+          unzip -l "$X86_BRIDGE_APK" | grep -E 'assets/python/runtime-version\.txt'
 
       - name: Build production MaliWinlator 1.2.1 ARM64 APK with Epic integration
         run: |
@@ -127,7 +127,7 @@ jobs:
           unzip -l "$BRIDGE_APK" | grep -E 'lib/arm64-v8a/libpython3\.15\.so'
           unzip -l "$BRIDGE_APK" | grep -E 'assets/python/lib/python3.15/os.py'
           unzip -l "$BRIDGE_APK" | grep -E 'assets/python/lib/python3.15/site-packages/epicbridge_runner.py'
-          unzip -l "$BRIDGE_APK" | grep -E 'assets/python/\.runtime-version'
+          unzip -l "$BRIDGE_APK" | grep -E 'assets/python/runtime-version\.txt'
           unzip -l "$HOST_APK" | grep -E 'assets/epicbridge.apk'
           HOST_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$HOST_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
           BRIDGE_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$BRIDGE_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
