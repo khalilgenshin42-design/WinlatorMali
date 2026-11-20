@@ -408,11 +408,11 @@ jobs:
         run: |
           set -euo pipefail
           if ! git fetch origin "$GITHUB_REF_NAME"; then
-            echo "Unable to fetch branch for CI status publication; APK build itself passed."
+            echo "Unable to fetch branch for CI failure report."
             exit 0
           fi
           if ! git reset --hard FETCH_HEAD; then
-            echo "Unable to synchronize branch for CI status publication; APK build itself passed."
+            echo "Unable to synchronize branch for CI failure report."
             exit 0
           fi
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
