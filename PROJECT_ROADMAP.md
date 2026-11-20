@@ -39,7 +39,7 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - [x] Build CPython 3.15.2 for Android x86_64 and run it on the managed emulator.
 - [x] Validate Android TLS/CA trust through Requests + certifi, plus ctypes, SQLite, zlib, SHA-256, fcntl locks and subprocess execution (run 44649787558).
 - [ ] Apply and validate the pinned Legendary 0.21.1 Android thread/anonymous-mmap backend; source patching currently has a cleanup-anchor mismatch being corrected.
-- [ ] Build and validate Legendary dependencies for Android ARM64, including pycryptodomex; do not assume host Linux wheels work.
+- [ ] Build and validate Legendary's pure-Python Android dependencies and the JNI/JCA AES-GCM shim; do not bundle host Linux native wheels.
 - [ ] Integrate the runtime into the companion and prove safe command output, cancellation, token handling, account status and owned-game metadata.
 
 ### M3 — Game library and lifecycle
