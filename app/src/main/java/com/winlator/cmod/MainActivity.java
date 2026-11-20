@@ -480,6 +480,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             case R.id.main_menu_containers:
                 show(new ContainersFragment(), false);  // Forward animation
                 break;
+            case R.id.main_menu_epic:
+                show(new EpicFragment(), false);
+                break;
             case R.id.main_menu_input_controls:
                 show(new InputControlsFragment(selectedProfileId), false);  // Forward animation
                 break;
