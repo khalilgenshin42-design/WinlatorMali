@@ -975,3 +975,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Wrapped the Java JCA call in `Py_BEGIN_ALLOW_THREADS` / `Py_END_ALLOW_THREADS`, allowing other Python download/writer threads to progress while a chunk is being authenticated. The JNI local references remain thread-local and are cleaned up before any attached worker detaches.
 - Commit: 921bb0647843c0b5d8d21ac4c73abfb417ab3c9a.
 - Performance gain is expected but unmeasured; the Android worker-thread crypto test must validate safety before benchmarking.
+
+## Engineering continuation — 2026-11-20: protect mmap lifetime on normal downloader shutdown too
+
+- Extended the lingering-thread mmap guard from the exception path to normal/cancelled `run_real()` cleanup. The manager now closes/unlinks the anonymous mapping only after every worker and helper thread has exited; if any remain alive after their bounded joins, it leaves the mapping referenced rather than invalidating memory still in use.
+- Commit: e58651d3324e66cb3792c3d446e60a109c622071.
