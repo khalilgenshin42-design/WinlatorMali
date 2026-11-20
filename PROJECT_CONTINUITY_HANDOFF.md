@@ -298,3 +298,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Recorded the separate companion storage-permission boundary in `EPIC_INTEGRATION_DESIGN.md` commit `666cd684de5736a383a5ac71bc09a12eb1e80206`: the companion needs its own all-files access to install into the shared MaliWinlator EpicGames directory; the host app's grant is not inherited across packages.
 
 - Added a concrete online launch bridge in `EPIC_INTEGRATION_DESIGN.md` commit `aea986d074e071883c4e29fc07318fa617136776`: use `legendary launch <app> --json --no-wine` to obtain the structured launch parameters and transient environment, then validate/map the game path to Wine F: and hand off to the host's existing `XEnvironment` / `GuestProgramLauncherComponent`. Never persist or log transient Epic/EOS tokens.
+
+## Engineering step log — 2026-11-20: GPL companion APK bootstrap
+
+- Added a separate Gradle application module `:epicbridge` with application ID `com.maliwinlator.epicbridge`. It has its own launcher activity, storage-access state, and signature-protected ContentProvider at `com.maliwinlator.epicbridge.provider`.
+- The provider currently reports `runtime_not_installed` and returns explicit not-ready errors for operations. This is an IPC/bootstrap shell only; it does not yet contain CPython, Legendary, authentication, or game-management functionality.
+- Host app manifest now requests `com.maliwinlator.epicbridge.permission.ACCESS`; the companion defines it as signature-level. Both APKs must be built/signed together with the same certificate.
+- Updated `.github/workflows/maliwinlator-ci.yml` in commit `09aa77dc678ced0959ebeceb5812d013b7d9ed0d` to build `:app:assembleStandardDebug` and `:epicbridge:assembleDebug` and upload both APKs.
+- Next: validate the two-APK build, add the host-side provider client and Epic UI, then package the tested CPython/Legendary runtime into the companion. Do not distribute the current companion scaffold as a working Epic Store feature.
