@@ -135,8 +135,14 @@ def _launch_info(core, payload):
     for index, argument in enumerate(egl_parameters):
         if argument.startswith("-epicovt="):
             source_path = argument.split("=", 1)[1]
-            with open(source_path, "rb") as source:
-                token_data = source.read(256 * 1024 + 1)
+            try:
+                with open(source_path, "rb") as source:
+                    token_data = source.read(256 * 1024 + 1)
+            finally:
+                try:
+                    os.remove(source_path)
+                except OSError:
+                    pass
             if len(token_data) > 256 * 1024:
                 raise ValueError("Epic ownership token file exceeded the safe transfer limit")
             secret_files.append({
