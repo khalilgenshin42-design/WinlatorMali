@@ -62,6 +62,7 @@ import com.google.android.material.navigation.NavigationView;
 import com.winlator.cmod.container.Container;
 import com.winlator.cmod.container.ContainerManager;
 import com.winlator.cmod.container.Shortcut;
+import com.winlator.cmod.epic.EpicLaunchPayloadStore;
 import com.winlator.cmod.contentdialog.ContentDialog;
 import com.winlator.cmod.contentdialog.DXVKConfigDialog;
 import com.winlator.cmod.contentdialog.DebugDialog;
@@ -169,6 +170,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private HudDataSource hudDataSource = null;
     private Runnable editInputControlsCallback;
     private Shortcut shortcut;
+    private EpicLaunchPayloadStore.Payload epicLaunchPayload;
     private String graphicsDriver = Container.DEFAULT_GRAPHICS_DRIVER;
     private HashMap<String, String> graphicsDriverConfig;
     private String audioDriver = Container.DEFAULT_AUDIO_DRIVER;
@@ -526,6 +528,14 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             shortcut = new Shortcut(container, new File(shortcutPath));
         }
 
+
+        epicLaunchPayload = EpicLaunchPayloadStore.take(getIntent().getStringExtra("epic_launch_token"));
+        if (epicLaunchPayload != null && shortcut != null) {
+            shortcut.putExtra("execArgs", epicLaunchPayload.commandLine);
+            if (!epicLaunchPayload.workingDirectory.isEmpty()) {
+                shortcut.putExtra("workingDirectory", epicLaunchPayload.workingDirectory);
+            }
+        }
 
         taskAffinityMask = (short) ProcessHelper.getAffinityMask(container.getCPUList(true));
         taskAffinityMaskWoW64 = (short) ProcessHelper.getAffinityMask(container.getCPUListWoW64(true));
@@ -1486,6 +1496,12 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                 contentsManager.getProfileByEntryName(container.getWineVersion()),
                 shortcut
         );
+
+                if (epicLaunchPayload != null) {
+            guestProgramLauncherComponent.setSecureLaunch(true);
+            guestProgramLauncherComponent.setSecretEnvVars(epicLaunchPayload.environment);
+            epicLaunchPayload = null;
+        }
 
         // Additional container checks and environment configuration
         if (container != null) {
@@ -2726,7 +2742,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             if (shortcut.path.endsWith(".lnk")) {
                 args += "\"" + shortcut.path + "\"" + execArgs;
             } else {
-                String exeDir = FileUtils.getDirname(shortcut.path);
+                String exeDir = shortcut.getExtra("workingDirectory");
+                if (exeDir.isEmpty()) exeDir = FileUtils.getDirname(shortcut.path);
                 String filename = FileUtils.getName(shortcut.path);
 
                 int dotIndex = filename.lastIndexOf(".");
