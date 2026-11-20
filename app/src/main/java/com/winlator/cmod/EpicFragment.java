@@ -323,8 +323,10 @@ public final class EpicFragment extends Fragment {
                     String body = state.getString("result_json", "");
                     result = body.isEmpty() ? new JSONObject() : new JSONObject(body);
                     if ("interrupted".equals(jobState)) {
-                        result.put("ok", false);
-                        result.put("message", "Android stopped the Epic background service before the operation completed. Retry the install or update.");
+                        try {
+                            result.put("ok", false);
+                            result.put("message", "Android stopped the Epic background service before the operation completed. Retry the install or update.");
+                        } catch (Exception ignored) {}
                     }
                     android.content.SharedPreferences prefs =
                             appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
