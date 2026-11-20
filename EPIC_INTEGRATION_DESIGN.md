@@ -182,3 +182,9 @@ This is a proposed compatibility adaptation, not implemented or validated yet. T
 ### Android TLS trust configuration
 
 The first managed-emulator CPython probe showed that the embedded OpenSSL build does not automatically locate Android's system CA store. Do not disable certificate verification or use an insecure context. The Epic companion must bundle a pinned certifi CA bundle alongside Requests and use Requests' default certifi trust path for Epic endpoints. Any direct urllib/OpenSSL calls must be given the same explicit CA file. The runtime probe validates a real HTTPS request with certificate verification enabled.
+
+### Legendary launch handoff to Winlator
+
+Inspection of pinned Legendary 0.21.1's `launch_game()` shows that `legendary launch <app> --json` returns its `LaunchParameters` object before spawning a process. With `--no-wine`, the companion can request game-specific executable, working directory, arguments, environment overrides, and EOS parameters without launching its own Wine process. The host should translate that structured payload into the existing Winlator guest launch pipeline, using the selected container's Wine binary/prefix and preserving required Epic/EOS environment variables. Do not shell-concatenate JSON values.
+
+The default container drive map defines Wine `F:` as Android external storage root, so a shared Epic library under `/storage/emulated/0/MaliWinlator/EpicGames` is reachable from the Wine environment. Legendary install commands support `--base-path`; configure this dedicated directory rather than writing into imagefs or an arbitrary container prefix. This handoff is a source-inspected integration path, not yet device-tested.
