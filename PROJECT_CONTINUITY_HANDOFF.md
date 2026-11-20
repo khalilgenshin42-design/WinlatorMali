@@ -776,3 +776,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added a dedicated 30-day artifact, `maliwinlator-1.2.1-epic-arm64-debug`, containing the host APK, companion APK, and SHA-256 manifest. The CPython runtime tarball artifact remains available separately for audit/recovery.
 - Commit: 886daa7597e71b4abf676bdf1d9a5536d54b8822.
 - This fixes a pipeline completeness defect; it is not evidence that the workflow has executed. A successful managed x86_64 instrumentation job, successful ARM64 Gradle build, artifact upload, and APK content/signature audit are still required before device handoff.
+
+## Engineering continuation — 2026-11-20: fix the companion's host-package authorization mismatch
+
+- A source audit of the provider boundary found a runtime-blocking identity mismatch: the companion authorized `com.winlator.cmod` (the Java namespace/upstream application ID), but the standard MaliWinlator flavor is installed as `com.maliwinlator.app`. The host had already declared the signature permission and companion package visibility, but provider-side UID package validation would reject the real host.
+- Updated `EpicBridgeProvider.HOST_PACKAGE` to the actual standard flavor application ID and added an Android instrumentation regression test that accepts `com.maliwinlator.app` while rejecting the old namespace and an unrelated package.
+- Commits: 03c3e416dbd013facacf501ba86c5295b086860a (authorization fix); dd3a84a9fd6f6047f6bab54579ac21b3a074e80f (instrumentation regression test).
+- This is a source-level fix, not a tested result. The updated managed x86_64 instrumentation job must pass before the APKs are considered usable.
