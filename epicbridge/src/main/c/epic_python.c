@@ -158,6 +158,7 @@ Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeInitialize(
     PyConfig_InitPythonConfig(&config);
     config.use_environment = 1;
     config.site_import = 1;
+    config.install_signal_handlers = 0;  // JNI may initialize Python on a Binder/worker thread.
     char *argv[] = {(char *) "epicbridge", NULL};
     PyStatus status = PyConfig_SetBytesArgv(&config, 1, argv);
     if (!PyStatus_Exception(status)) {
