@@ -77,6 +77,44 @@ public final class EpicBridgeProvider extends ContentProvider {
             return result;
         }
 
+        if ("start_job".equals(method)) {
+            String command = arg == null ? "" : arg;
+            if (!"install".equals(command)) {
+                result.putBoolean("ok", false);
+                result.putString("error", "UNSUPPORTED_JOB");
+                return result;
+            }
+            String jobId = java.util.UUID.randomUUID().toString();
+            String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
+            android.content.Intent intent = new android.content.Intent(getContext(), EpicRuntimeService.class);
+            intent.setAction(EpicRuntimeService.ACTION_RUN_JOB);
+            intent.putExtra(EpicRuntimeService.EXTRA_JOB_ID, jobId);
+            intent.putExtra(EpicRuntimeService.EXTRA_COMMAND, command);
+            intent.putExtra(EpicRuntimeService.EXTRA_PAYLOAD, payload);
+            try {
+                getContext().startForegroundService(intent);
+                result.putBoolean("ok", true);
+                result.putString("job_id", jobId);
+                result.putString("state", "queued");
+            } catch (Exception e) {
+                result.putBoolean("ok", false);
+                result.putString("error", "JOB_START_FAILED");
+                result.putString("message", e.getMessage());
+            }
+            return result;
+        }
+
+        if ("job_status".equals(method)) {
+            String jobId = arg == null ? "" : arg;
+            android.content.SharedPreferences prefs = getContext().getSharedPreferences(
+                    EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
+            result.putBoolean("ok", true);
+            result.putString("job_id", jobId);
+            result.putString("state", prefs.getString(jobId + ".state", "unknown"));
+            result.putString("result_json", prefs.getString(jobId + ".result", ""));
+            return result;
+        }
+
         switch (method) {
             case "begin_login":
             case "finish_login":
