@@ -1210,3 +1210,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated the emulator instrumentation script to dump the relevant Android logcat tags if Gradle tests fail, and corrected the shell flow so the failure branch still runs under the action's errexit behavior: commits d78c753547752cd25c0c834b29343bdb8504a63e and 33ec6faf99d6d0003ac7d68d964029fe92e3a394.
 - The workflow-file and native-source commits trigger a new full Epic runtime run. Next action: inspect the latest run and, if it reaches instrumentation, use the captured native exception to fix the actual runtime defect. Do not publish or install an APK pair until instrumentation and the full ARM64 packaging/audit/release chain pass.
 - Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44737481566
+
+
+## Live CI update — 2026-11-20: diagnostic Epic runtime retry queued and running
+
+- The diagnostic source/workflow changes are now on the development branch. Latest Epic runtime workflow run is **44739838824** (run #179), source commit **33ec6faf99d6d0003ac7d68d964029fe92e3a394**.
+- Run #179 is in progress; checkout and host Python/Java setup passed, Android SDK setup is running. The earlier duplicate workflow attempts from the intermediate commits were cancelled by the workflow concurrency group; run #179 contains both the native exception logging and failure-path logcat capture.
+- A separate standard baseline APK workflow run **44739802087** was also triggered by the C source change. It is not the Epic CPython runtime release pipeline and must not be confused with the required matched host/companion APK pair.
+- Run #179 must reach emulator instrumentation to expose the native CPython exception in the captured Android logcat. The next code change should be based on that concrete exception, not speculative changes to Python paths or packaging.
+- Epic runtime run URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44739838824
