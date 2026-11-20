@@ -239,6 +239,10 @@ def _runtime_self_test():
         raise RuntimeError("Legendary writer failures are not propagated")
 
     buffer = AndroidSharedBuffer(4096)
+    root_logger = logging.getLogger()
+    marker_handler = logging.NullHandler()
+    root_logger.addHandler(marker_handler)
+    root_handlers_before = tuple(root_logger.handlers)
     try:
         buffer.buf[:8] = b"MALIWINL"
         if buffer.buf[:8] != b"MALIWINL":
@@ -249,10 +253,6 @@ def _runtime_self_test():
                                    buffer, logging_queue=logs)
         if not isinstance(dl_worker, Thread) or not isinstance(writer_worker, Thread):
             raise RuntimeError("Legendary workers are not threads")
-        root_logger = logging.getLogger()
-        marker_handler = logging.NullHandler()
-        root_logger.addHandler(marker_handler)
-        root_handlers_before = tuple(root_logger.handlers)
         dl_worker.start()
         writer_worker.start()
         dl_q.put(TerminateWorkerTask())
@@ -265,8 +265,8 @@ def _runtime_self_test():
             raise RuntimeError("Legendary writer did not report clean shutdown")
         if tuple(root_logger.handlers) != root_handlers_before:
             raise RuntimeError("Legendary worker threads mutated the process-wide root logger")
-        root_logger.removeHandler(marker_handler)
     finally:
+        root_logger.removeHandler(marker_handler)
         buffer.close()
         buffer.unlink()
 
