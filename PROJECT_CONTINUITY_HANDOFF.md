@@ -677,3 +677,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added epicRuntimeAbi and epicRuntimePrefix as explicit inputs to stageEpicPythonRuntime. Switching from the x86_64 test prefix to the ARM64 production prefix now invalidates staging and regenerates the generated assets/JNI library tree before the production APK is assembled.
 - Commit: b9c3b397766b22b213325c7b4af48c356d92d429.
 - This is a build-graph correctness fix; the two-ABI sequential Gradle workflow must still demonstrate the expected x86_64 and arm64-v8a contents in its artifact audits.
+
+## Engineering continuation — 2026-11-20: Android runtime extraction and crypto negative-test coverage
+
+- Hardened recursive AssetManager extraction: a missing file can no longer be mistaken for a directory after FileNotFoundException. A child is recursed only when AssetManager reports nested entries; otherwise extraction fails and the content marker is not committed.
+- Extended the real Android instrumentation test to run the Java AES-GCM known-answer test including deliberate tag corruption, proving authentication failure is rejected as well as valid plaintext being recovered.
+- Commits: 6aa922760df9ce560f3d5f6ce8d686bc23106539 (strict missing-asset handling); 649eb85de57b2fd322e531214dbbefc04b3ce382 (JCA positive/negative test).
+- Both are under epicbridge/**, so the active POC workflow's source path filter should start validation from the updated branch SHA. The Android test and final ARM64 artifact audit are still pending observed CI success.
