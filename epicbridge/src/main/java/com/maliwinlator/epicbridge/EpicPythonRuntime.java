@@ -131,7 +131,7 @@ public final class EpicPythonRuntime {
         return initialized;
     }
 
-    public static String call(Context context, String command, String payloadJson) {
+    public static synchronized String call(Context context, String command, String payloadJson) {
         if (!initialize(context)) {
             return "{\"ok\":false,\"error\":\"RUNTIME_NOT_READY\",\"message\":\"The bundled Android CPython runtime is unavailable\"}";
         }
