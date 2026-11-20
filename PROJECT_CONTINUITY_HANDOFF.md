@@ -879,3 +879,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added a launch-time preflight that revalidates or restores the selected container's `.wine/drive_c/Games/Epic` symlink before obtaining launch parameters. If the mapping was removed or redirected, the user receives an explicit error instead of a Wine launch against an inaccessible path.
 - Commit: cf9fdba10bceb5a041895885cd7b70083dd207db.
+
+## Engineering continuation — 2026-11-20: constrain remote Epic executable paths
+
+- Added a canonical-path containment check after resolving Legendary's executable relative to its install directory. Launch now rejects metadata that resolves the executable outside the selected game's own install tree, including traversal or escaping symlink paths.
+- Commit: 70115fb868deb384667618a0c4586e06c4c115b4.
