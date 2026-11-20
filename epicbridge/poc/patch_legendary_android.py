@@ -297,6 +297,21 @@ def main() -> None:
         "        while True:",
     )
 
+    # A dead writer that exits without its sentinel must not leave the result
+    # handler spinning forever after the manager has stopped.
+    replace_once(
+        manager,
+        "                except Empty:\n"
+        "                    continue\n",
+        "                except Empty:\n"
+        "                    if self.children and not self.children[-1].is_alive():\n"
+        "                        self.error = RuntimeError('Writer thread exited without a completion signal')\n"
+        "                        self.stop()\n"
+        "                        break\n"
+        "                    continue\n",
+        expected=1,
+    )
+
     # The manager's result-handler threads must stop producing writer tasks
     # before the writer termination marker is queued. On cancellation, discard
     # only not-yet-started download jobs; active workers finish their current I/O.
