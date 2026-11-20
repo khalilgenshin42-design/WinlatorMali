@@ -119,7 +119,6 @@ public final class EpicPythonRuntime {
                     byte[] buffer = new byte[64 * 1024];
                     int count;
                     while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-                    output.getFD().sync();
                 }
             } catch (FileNotFoundException e) {
                 extractAssetDirectory(assets, childAsset, targetRoot);
