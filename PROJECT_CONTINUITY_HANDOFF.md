@@ -980,3 +980,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Extended the lingering-thread mmap guard from the exception path to normal/cancelled `run_real()` cleanup. The manager now closes/unlinks the anonymous mapping only after every worker and helper thread has exited; if any remain alive after their bounded joins, it leaves the mapping referenced rather than invalidating memory still in use.
 - Commit: e58651d3324e66cb3792c3d446e60a109c622071.
+
+## Engineering continuation — 2026-11-20: prevent a dead Legendary writer from hanging the result handler
+
+- Added a watchdog in the patched writer-result handler. If its queue remains empty after the FileWorker thread has exited without sending its normal termination marker, the handler now records a manager error, requests cooperative shutdown, and exits instead of waiting forever.
+- The normal mmap lifetime guard then keeps the buffer open if any other worker/helper remains alive.
+- Commit: 3bd2c2e3b4b95c621da54cfb9678f638a0ce1311.
