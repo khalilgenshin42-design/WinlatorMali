@@ -294,3 +294,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Reconciled the earlier CPython/JNI design text with the new GPL isolation boundary in `EPIC_INTEGRATION_DESIGN.md` commit `ef713ac70e9e6081c99050fceb8e32ab3f7604cc`: the `epicpython` JNI target belongs in the separate companion package, not the MIT host app.
 
 - Added Legendary 0.21.1 mobile download policy to `EPIC_INTEGRATION_DESIGN.md` commit `9506edff03c09f56077a168c6f5e1a94bd27ccee`: parse the downloader's native `= Progress: N%` logs; begin with four workers and a 256 MiB shared-memory budget; use non-interactive install flags, preflight disk space, and preserve resume/manifest validation.
+
+- Recorded the separate companion storage-permission boundary in `EPIC_INTEGRATION_DESIGN.md` commit `666cd684de5736a383a5ac71bc09a12eb1e80206`: the companion needs its own all-files access to install into the shared MaliWinlator EpicGames directory; the host app's grant is not inherited across packages.
