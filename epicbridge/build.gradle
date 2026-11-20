@@ -89,6 +89,10 @@ android {
 
 tasks.register('stageEpicPythonRuntime', Sync) {
     into(epicRuntimeGenerated)
+    // The same build directory is used first for x86_64 instrumentation and
+    // then for arm64-v8a production packaging; make ABI changes invalidate Sync.
+    inputs.property('epicRuntimeAbi', epicRuntimeAbi)
+    inputs.property('epicRuntimePrefix', epicRuntimePrefix ?: '')
     if (epicRuntimePrefix) {
         from("${epicRuntimePrefix}/lib/python3.15") {
             into 'assets/python/lib/python3.15'
