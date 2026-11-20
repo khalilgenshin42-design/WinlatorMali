@@ -346,7 +346,7 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 ## Engineering step log — 2026-11-20: secret-safe Epic-to-Wine launch plumbing
 
-- Added `ProcessHelper.execSecure` in commit `bdb4f2c0...` (exact source commit recorded in Git history): launches with a per-process environment overlay, redirects output to `/dev/null`, and never logs argv/environment or mutates global `EnvironmentManager`.
+- Added `ProcessHelper.execSecure` in commit `1fa9a2a0df1144fec05392a3753cdb209a7b371e` (exact source commit recorded in Git history): launches with a per-process environment overlay, redirects output to `/dev/null`, and never logs argv/environment or mutates global `EnvironmentManager`.
 - Updated `GuestProgramLauncherComponent` to keep Epic secret environment variables separate from ordinary container environment, apply them only after Wine prefix setup, suppress command logging for secure launches, and clear its secret reference after handoff.
 - Added `EpicLaunchPayloadStore`, a five-minute, one-shot in-memory store for launch args, working directory, and ephemeral environment. Updated `XServerDisplayActivity` to consume a token from the intent, apply launch metadata to the in-memory shortcut, and configure secure execution. No credentials are persisted in shortcut files.
 - These are host-side launch safety primitives only. The companion does not yet return Legendary launch parameters, and end-to-end Epic game launch is not implemented.
