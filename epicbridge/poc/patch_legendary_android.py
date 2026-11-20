@@ -225,7 +225,7 @@ def main() -> None:
         workers,
         "        self.shm.close()",
         "        # Shared mmap lifetime is owned by DLManager.",
-        expected=2,
+        expected=1,
     )
 
     # CTRL-C is delivered to the CLI's main thread, not the downloader thread.
