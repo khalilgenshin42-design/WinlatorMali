@@ -796,3 +796,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Replaced the bare Gradle step with `reactivecircus/android-emulator-runner@v2`, explicitly provisioning an API 35 x86_64 Google APIs Pixel 6 emulator before running the companion instrumentation suite against the x86_64 CPython prefix.
 - Commit: 3fc6a38d3920c029ee1e7f420eeb0f6fc0efa4f9.
 - The emulator action and Gradle instrumentation remain unexecuted in observed evidence; the next workflow run must validate the action inputs and test results.
+
+## Engineering continuation — 2026-11-20: make the manager exception-cleanup probe reach the intended path
+
+- Auditing the runtime self-test against the pinned Legendary 0.21.1 source showed that `DLManager.run()` rejects a missing analysis result before entering its guarded `run_real()` call. The intentional exception probe had not set `analysis`, so it would test an uncaught precondition error rather than the Android thread-backend cleanup handler.
+- Initialized the probe with an empty `AnalysisResult` before replacing `run_real()`; the test now exercises the intended exception capture, cooperative stop, and manager error slot.
+- Commit: 76dd23eb2039516d555bf4fdda7850195c725f50.
+- This is a test correctness fix; Android instrumentation remains pending.
