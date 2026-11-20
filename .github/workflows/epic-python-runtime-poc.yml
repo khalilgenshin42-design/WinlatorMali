@@ -90,6 +90,12 @@ jobs:
           python3 Platforms/Android make-host x86_64-linux-android
           python3 Platforms/Android package x86_64-linux-android
 
+      - name: Stage certifi trust roots for Android testbed
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --target \
+            "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages" certifi==2025.1.31
+
       - name: Smoke-test Legendary runtime prerequisites on Android
         working-directory: cpython
         run: |
