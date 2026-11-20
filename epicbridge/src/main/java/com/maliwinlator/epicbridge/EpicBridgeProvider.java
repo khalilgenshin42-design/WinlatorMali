@@ -12,6 +12,7 @@ import android.os.Environment;
 public final class EpicBridgeProvider extends ContentProvider {
     public static final String AUTHORITY = "com.maliwinlator.epicbridge.provider";
     public static final int PROTOCOL_VERSION = 2;
+    static final String HOST_PACKAGE = "com.winlator.cmod";
     private static volatile Boolean cryptoSelfTest;
 
     @Override
@@ -19,12 +20,16 @@ public final class EpicBridgeProvider extends ContentProvider {
         return true;
     }
 
+    static boolean isAllowedHostPackage(String packageName) {
+        return HOST_PACKAGE.equals(packageName);
+    }
+
     private boolean isAuthorizedHost() {
         if (getContext() == null) return false;
         String[] packages = getContext().getPackageManager().getPackagesForUid(Binder.getCallingUid());
         if (packages == null) return false;
         for (String packageName : packages) {
-            if ("com.winlator.cmod".equals(packageName)) return true;
+            if (isAllowedHostPackage(packageName)) return true;
         }
         return false;
     }
