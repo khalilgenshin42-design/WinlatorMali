@@ -963,3 +963,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Hardened the companion service result persistence: a null, empty, or malformed CPython/JNI response is now converted into a structured failed-job JSON result instead of storing an unreadable payload that would strand the host's status tracker.
 - Commit: 3d192562e448815f8574cf93c4ca1e7beb447935.
+
+## Engineering continuation — 2026-11-20: close the synchronous install IPC permission bypass
+
+- Applied the same Android 11+ all-files-access gate to the legacy synchronous `install`/`uninstall` provider methods as to foreground job creation. Both public IPC routes now fail closed if the companion lacks storage permission.
+- Commit: 001733aca7333d1cac4b92a1c5881d151a3c986a.
