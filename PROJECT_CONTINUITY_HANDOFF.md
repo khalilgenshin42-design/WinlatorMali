@@ -739,3 +739,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added an end-to-end runtime self-test that runs a real FileWorker-backed, file-only DLManager job with a 4 KiB anonymous mmap and asserts that the empty output file is created successfully.
 - Commits: bb9d05628bee554956bfe35be7f7881863e4c691 (zero-chunk progress guard); deae043c807b2466746d2abfd89f9ca340bc0552 (file-only manager runtime test).
 - This test will execute as part of the Android JNI instrumentation test after the pinned Legendary patch is applied.
+
+## Engineering continuation — 2026-11-20: use a portable runtime identity asset name
+
+- Renamed the generated packaged runtime identity from a dot-prefixed asset to runtime-version.txt. This avoids relying on hidden-file handling in Android asset packaging while preserving the same SHA-256 content identity and extraction behavior.
+- Updated EpicPythonRuntime readiness/extraction checks and the downstream x86_64/ARM64 APK asset audits to require the new filename.
+- Commits: c1de59b253ebaf8569f5b428859a1e6e8ef6b880 (Gradle generation); bbeba780b1e65df77fdc0a8bce664e997abef691 (Java runtime); 0d65cbed5ea6625b7508071b752d4cd267f11afa (downstream artifact audit).
+- This change is covered by the Epic source path filter and must be included in the next runtime/instrumentation run.
