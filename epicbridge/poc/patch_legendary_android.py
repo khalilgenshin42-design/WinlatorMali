@@ -240,6 +240,12 @@ def main() -> None:
         "                raise",
     )
 
+    replace_once(
+        manager,
+        "            while self.active_tasks < self.max_workers * 2 and self.chunks_to_dl:",
+        "            while self.active_tasks < self.max_workers * 2 and self.chunks_to_dl and self.running:",
+    )
+
     # The manager's result-handler threads must stop producing writer tasks
     # before the writer termination marker is queued. On cancellation, discard
     # only not-yet-started download jobs; active workers finish their current I/O.
