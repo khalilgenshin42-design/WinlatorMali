@@ -10,7 +10,7 @@ This module is distributed under **GNU GPL version 3 or later**. See [LICENSE](L
 
 - Legendary source: https://github.com/legendary-gl/legendary
 - Intended version: 0.21.1
-- Pinned upstream source commit: `42f6bde`
+- Pinned upstream source commit: `42f6bdeadde3a9526dc8eb713763476999ac217b`
 - CPython Android source: https://github.com/python/cpython
 - CPython tag: `v3.15.2`
 - CPython target: `aarch64-linux-android`, Android API 26, app ABI `arm64-v8a`
