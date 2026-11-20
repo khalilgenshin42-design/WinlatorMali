@@ -59,6 +59,7 @@ public final class EpicBridgeProvider extends ContentProvider {
             result.putBoolean("storage_access",
                     Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager());
             result.putString("state", "runtime_not_installed");
+            result.putString("crypto_status", cryptoReady ? "Android AES-GCM self-test passed" : "Android AES-GCM unavailable");
             result.putString("message", "Epic runtime bootstrap is not installed yet");
             return result;
         }
