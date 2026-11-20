@@ -54,13 +54,13 @@ public final class EpicRuntimeService extends Service {
         String jobId = intent.getStringExtra(EXTRA_JOB_ID);
         String command = intent.getStringExtra(EXTRA_COMMAND);
         String payload = intent.getStringExtra(EXTRA_PAYLOAD);
-        if (jobId == null || command == null || !"install".equals(command)) {
+        if (jobId == null || command == null || (!"install".equals(command) && !"uninstall".equals(command))) {
             stopSelf(startId);
             return START_NOT_STICKY;
         }
 
         if (activeJobs.getAndIncrement() == 0) {
-            startForeground(notificationId(jobId), buildNotification("Preparing Epic download", true));
+            startForeground(notificationId(jobId), buildNotification("install".equals(command) ? "Installing Epic game" : "Uninstalling Epic game", true));
             if (!wakeLock.isHeld()) wakeLock.acquire(6L * 60L * 60L * 1000L);
         }
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
