@@ -642,6 +642,17 @@ public final class EpicFragment extends Fragment {
                 statusText.setText("Game executable not found: " + executable);
                 return;
             }
+            try {
+                String gameRoot = new File(gameDir).getCanonicalPath();
+                String executablePath = executable.getCanonicalPath();
+                if (!executablePath.startsWith(gameRoot + File.separator)) {
+                    statusText.setText("Epic returned an executable outside the selected game's install directory.");
+                    return;
+                }
+            } catch (Exception e) {
+                statusText.setText("Unable to validate the Epic executable path: " + e.getMessage());
+                return;
+            }
 
             String ownershipTokenPath;
             try {
