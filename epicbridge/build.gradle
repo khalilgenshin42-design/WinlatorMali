@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+def epicRuntimePrefix = project.findProperty('epicRuntimePrefix') ?: System.getenv('EPIC_RUNTIME_PREFIX')
+def epicRuntimeGenerated = layout.buildDirectory.dir('generated/epicRuntime')
+
 android {
     namespace 'com.maliwinlator.epicbridge'
     compileSdk 34
@@ -12,6 +15,32 @@ android {
         targetSdk 34
         versionCode 1
         versionName '0.1.0'
+
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DPYTHON_PREFIX_DIR=${epicRuntimePrefix ?: ''}"
+            }
+        }
+    }
+
+    ndkVersion '29.0.14206865'
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/c/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(epicRuntimeGenerated.map { it.dir('assets') })
+            jniLibs.srcDir(epicRuntimeGenerated.map { it.dir('jniLibs') })
+        }
     }
 
     compileOptions {
@@ -52,3 +81,24 @@ android {
         }
     }
 }
+
+
+tasks.register('stageEpicPythonRuntime', Sync) {
+    into(epicRuntimeGenerated)
+    if (epicRuntimePrefix) {
+        from("${epicRuntimePrefix}/lib/python3.15") {
+            into 'assets/python/lib/python3.15'
+            exclude '**/__pycache__/**'
+            exclude '**/*.pyc'
+        }
+        from("${epicRuntimePrefix}/lib") {
+            into 'jniLibs/arm64-v8a'
+            include 'lib*.so*'
+        }
+        from('src/main/python') {
+            into 'assets/python/lib/python3.15/site-packages'
+        }
+    }
+}
+
+preBuild.dependsOn(stageEpicPythonRuntime)
