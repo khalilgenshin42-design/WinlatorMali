@@ -746,3 +746,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated EpicPythonRuntime readiness/extraction checks and the downstream x86_64/ARM64 APK asset audits to require the new filename.
 - Commits: c1de59b253ebaf8569f5b428859a1e6e8ef6b880 (Gradle generation); bbeba780b1e65df77fdc0a8bce664e997abef691 (Java runtime); 0d65cbed5ea6625b7508071b752d4cd267f11afa (downstream artifact audit).
 - This change is covered by the Epic source path filter and must be included in the next runtime/instrumentation run.
+
+## Engineering continuation — 2026-11-20: fail closed on Python environment setup
+
+- Changed EpicPythonRuntime.initialize() to abort when Android cannot set HOME or TMPDIR, instead of logging a warning and continuing with a potentially invalid Legendary configuration path. This prevents silent writes to an inaccessible default home directory and ensures the companion never reports a usable interpreter with misdirected account/session storage.
+- Commit: cb4b2b5a651df36177485aee554a8b34cbf89b98.
+- The updated initialization path will be exercised by the managed x86_64 Android instrumentation test.
