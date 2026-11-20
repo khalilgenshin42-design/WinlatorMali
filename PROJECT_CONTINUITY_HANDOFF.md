@@ -1098,3 +1098,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The generated branch CI status file now includes both the direct GitHub Releases URL and the Actions artifact URL. The prerelease notes explicitly label the APKs as experimental debug builds and document the possible signature mismatch with prior CI debug APKs.
 - Changed SHA-256 generation to use relative APK filenames so the published manifest can be checked with `sha256sum -c SHA256SUMS` after extracting the release assets.
 - Commits: 03bd358518eea4636a0c7aae404d4c2b94b004f2 (release publishing); ed83fb5282dc756f39b13309c68bae6682d020e2 (publish only after all uploads); 66a18c9a8399795de2f2af27c5533c0f776a9e53 (portable checksums).
+
+## Engineering continuation — 2026-11-20: make GitHub CLI release context explicit
+
+- Set `GH_REPO` explicitly for the release-publishing step because the repository checkout is nested under `maliwinlator/` while the APK output directory is at the workspace root. This avoids relying on GitHub CLI remote discovery from the workspace parent.
+- Commit: 9f3f8b2ee5d9f1c49bf06dc957e1143629218f3a.
