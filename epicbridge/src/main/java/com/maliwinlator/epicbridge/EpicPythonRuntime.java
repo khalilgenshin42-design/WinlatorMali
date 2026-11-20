@@ -38,7 +38,9 @@ public final class EpicPythonRuntime {
         File pythonHome = new File(runtimeRoot, ASSET_ROOT);
         File marker = new File(runtimeRoot, RUNTIME_MARKER);
         if (!marker.isFile()) {
-            deleteRecursively(runtimeRoot);
+            // Replace only the interpreter tree. Keep HOME separate so an
+            // app/runtime update never deletes the user's Epic account session.
+            deleteRecursively(pythonHome);
             if (!runtimeRoot.mkdirs() && !runtimeRoot.isDirectory()) {
                 Log.e(TAG, "Unable to create runtime directory");
                 return false;
@@ -49,20 +51,30 @@ public final class EpicPythonRuntime {
                 if (!cwd.mkdirs() && !cwd.isDirectory()) {
                     throw new IOException("Unable to create Python working directory");
                 }
+                File homeDir = new File(runtimeRoot, "home");
+                if (!homeDir.mkdirs() && !homeDir.isDirectory()) {
+                    throw new IOException("Unable to create Legendary data directory");
+                }
                 if (!marker.createNewFile()) {
                     throw new IOException("Unable to write runtime marker");
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Unable to extract the bundled CPython runtime", e);
-                deleteRecursively(runtimeRoot);
+                deleteRecursively(pythonHome);
+                marker.delete();
                 return false;
             }
         }
 
         File tempDir = context.getCacheDir();
+        File homeDir = new File(runtimeRoot, "home");
+        if (!homeDir.mkdirs() && !homeDir.isDirectory()) {
+            Log.e(TAG, "Unable to create Legendary data directory");
+            return false;
+        }
         try {
             Os.setenv("TMPDIR", tempDir.getAbsolutePath(), true);
-            Os.setenv("HOME", new File(runtimeRoot, "home").getAbsolutePath(), true);
+            Os.setenv("HOME", homeDir.getAbsolutePath(), true);
         } catch (Exception e) {
             Log.w(TAG, "Unable to set optional Python environment variables", e);
         }
