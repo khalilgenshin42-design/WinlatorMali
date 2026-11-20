@@ -826,3 +826,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated the host to validate both paths against the same container-owned shared directory and translate Legendary's actual `working_directory` into the matching `C:\\Games\\Epic\\...` path. The executable itself remains checked using its real shared-storage path before the Winlator launch begins.
 - Commit: f71f066f4641c5049a1f348a8f13c3f3efe9b2b5.
 - Static contract correction only; game launch still needs runtime verification.
+
+## Engineering continuation — 2026-11-20: make extracted CPython extension modules loadable
+
+- Reviewed the CPython asset extraction path against the native extension loading model. The standard library's `lib-dynload/*.so` modules are copied out of APK assets into app-private files storage; a plain `FileOutputStream` does not preserve their executable mode.
+- Updated extraction to mark shared-object extension files executable for the companion app's own UID and fail extraction if that permission cannot be set. The native CPython/libpython dependencies packaged under `jniLibs` remain handled by Android's native-library installer.
+- Commit: b0709de06f88e1f4c4824e3c9ccd87008e39d56b.
+- This is a loader-readiness hardening change; the Android runtime instrumentation must still prove that CPython imports its native modules successfully.
