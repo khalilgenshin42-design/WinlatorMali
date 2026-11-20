@@ -554,3 +554,21 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Current app-side work has moved beyond the earlier bootstrap: the Epic companion now has account/provider and UI integration, install/download service scaffolding, storage-permission handling, notification permission, and a launch handoff into Winlator's existing container launch path. These are implementation changes, not proof of successful Epic authentication or a completed game install.
 - Latest source changes for Epic UI/storage/notifications are being built by run **44657999414**. The Xiaomi 15T has not yet been asked to test this in-progress build.
 - Handoff refreshed after reviewing the latest failed runtime patcher logs and current CI runs. Epic Store is **not yet complete or device-validated**. Required remaining proof: Android ARM64 runtime package and JNI load; Legendary imports and AES-GCM crypto; actual Epic browser login/account/library; real game download/install; launch into selected container.
+
+
+## Engineering continuation — 2026-11-20 03:05 local: CI artifact-audit regex repair
+
+- Re-checked the live repository and confirmed the active branch is `development/maliwinlator-1.2.1-bootstrap`; the separate `development/maliwinlator-bootstrap` branch remains the obsolete 1.2 line.
+- Compared the active 1.2.1 branch with `bionic-mali-1.2`: the development branch is 266 commits ahead and 8 commits behind, with the common base at the exact 1.2.1 release commit `dfcdd4aaeff6def126ad8173619790806a5830db`. Do not merge or rebase the divergent 1.2 default branch blindly; its integration workflow is intentionally hosted there and checks out the 1.2.1 development branch.
+- Audited the downstream integration workflow on `bionic-mali-1.2`. It waits for successful CPython POC runs with run number >=45, downloads both x86_64 and ARM64 runtime archives, runs the Epic Bridge Android instrumentation test on x86_64, then builds the ARM64 host APK and verifies the embedded companion APK/runtime.
+- Audited the active branch's CPython workflow and found four over-escaped dots in the x86_64 archive checks: the `libpython*.so` and Legendary `dist-info/METADATA` patterns used two literal backslashes before dots. Under grep -E this does not match the intended filenames and would reject a valid runtime package.
+- Corrected all four over-escaped regexes to standard ERE escaped-dot patterns in commit `ead4aabacfe92d26dbb79439477deb03a0585748` (`ci: fix escaped regexes in runtime artifact audit`). The change is on the active 1.2.1 branch and matches the CPython workflow's push path filter, so it should start a fresh runtime POC run.
+- Inspected prior downstream host APK workflow runs **44657783606** and **44657999414**: both were cancelled during `Build standard debug APK`; neither completed the companion embedding checks or artifact upload. They are not build successes. POC run **44657880743** had no jobs/artifacts visible at this audit; no runtime artifact is claimed from it.
+- No Epic login, account, library, download, install, update, uninstall, or game-launch operation has been proven. Existing UI/IPC/service code remains implementation scaffolding until the next dual-ABI runtime and integration workflows pass.
+
+### Immediate next validation gates
+
+1. Observe the new CPython POC run triggered by `ead4aabacfe92d26dbb79439477deb03a0585748`; inspect its exact job steps and logs. Do not treat a queued run or empty jobs response as a pass.
+2. Require the Android emulator runtime smoke, Legendary patch application/compile/static check, host CLI/thread/AES-GCM smoke, dual-ABI package build, and archive audit to pass.
+3. Only then require the downstream integration workflow to extract both runtime packages, pass Android x86_64 JNI/instrumentation checks, build the ARM64 APK, and upload both APKs plus hashes.
+4. After an installable artifact exists, ask the user only for Xiaomi 15T validation of Epic browser login, owned library, one real install, and launch through a selected container. The official Epic Launcher fallback remains a separate later milestone.
