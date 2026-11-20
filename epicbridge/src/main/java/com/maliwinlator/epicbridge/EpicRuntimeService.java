@@ -93,9 +93,18 @@ public final class EpicRuntimeService extends Service {
                 response = failure.toString();
             }
 
-            boolean success = false;
-            try { success = new JSONObject(response).optBoolean("ok", false); }
-            catch (Exception ignored) {}
+            JSONObject responseObject;
+            try {
+                responseObject = new JSONObject(response == null ? "" : response);
+            } catch (Exception invalidResponse) {
+                responseObject = new JSONObject();
+                try {
+                    responseObject.put("ok", false);
+                    responseObject.put("message", "Epic runtime returned an empty or invalid job response");
+                } catch (Exception ignored) {}
+                response = responseObject.toString();
+            }
+            boolean success = responseObject.optBoolean("ok", false);
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                     .putString(jobId + ".state", success ? "complete" : "failed")
                     .putString(jobId + ".result", response)
