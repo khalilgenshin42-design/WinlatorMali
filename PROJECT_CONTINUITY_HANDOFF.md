@@ -803,3 +803,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Initialized the probe with an empty `AnalysisResult` before replacing `run_real()`; the test now exercises the intended exception capture, cooperative stop, and manager error slot.
 - Commit: 76dd23eb2039516d555bf4fdda7850195c725f50.
 - This is a test correctness fix; Android instrumentation remains pending.
+
+## Engineering continuation — 2026-11-20: verify both APKs are installable as a matched pair
+
+- Expanded the final CI audit after ARM64 Gradle assembly. It now verifies both APK signatures, asserts the expected package IDs (`com.maliwinlator.app` and `com.maliwinlator.epicbridge`), compares their signer SHA-256 fingerprints, checks the companion contains ARM64 `libepic_python.so` and `libpython3.15.so` plus the required runtime identity/stdlib/Legendary assets, and checks the host embeds the exact same companion APK bytes that are published separately.
+- The workflow writes a SHA-256 manifest for the two APKs and publishes them together as `maliwinlator-1.2.1-epic-arm64-debug`.
+- Commit: 4586dba1a5b4cba7209ffc2b8e13e759717234aa.
+- These are CI assertions, not observed results. The artifact is not ready until the complete workflow passes and the APKs are actually available.
