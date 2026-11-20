@@ -1076,3 +1076,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Expanded the final ELF scan from files ending exactly in `.so` to both `.so` and versioned `.so.*` names. This includes libraries such as versioned OpenSSL sonames that may be DT_NEEDED by CPython extension modules.
 - Commit: e4bcffe7857bcf62fe98e0119af736555c5e31cb.
+
+## Engineering continuation — 2026-11-20: durably save host job tracking before polling
+
+- Changed the host's initial background-job ID persistence from asynchronous SharedPreferences `apply()` to synchronous `commit()` before polling starts. This narrows the window where Android could kill the host process after starting a long download but before the ID needed for automatic recovery reaches disk.
+- Commit: e2f70a456cd968a440ef3ac9c4c5abc0003c2e3e.
