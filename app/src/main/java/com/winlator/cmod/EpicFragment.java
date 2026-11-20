@@ -241,21 +241,37 @@ public final class EpicFragment extends Fragment {
             JSONObject json;
             try {
                 if ("install".equals(method) || "uninstall".equals(method)) {
-                android.content.SharedPreferences jobPrefs =
-                        appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
-                String existingJobId = jobPrefs.getString(JOB_ID_KEY, "");
-                if (!existingJobId.isEmpty()) {
-                    Bundle existingState = EpicBridgeClient.call(appContext, "job_status", existingJobId, "{}");
-                    String existingStatus = existingState.getString("state", "unknown");
-                    if (!"complete".equals(existingStatus) && !"failed".equals(existingStatus)
-                            && !"interrupted".equals(existingStatus)) {
-                        json = new JSONObject();
-                        try {
-                            json.put("ok", false);
-                            json.put("message", "Another Epic operation is already running. Reopen the Epic tab to resume its status.");
-                        } catch (Exception ignored) {}
+                    android.content.SharedPreferences jobPrefs =
+                            appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+                    String existingJobId = jobPrefs.getString(JOB_ID_KEY, "");
+                    if (!existingJobId.isEmpty()) {
+                        Bundle existingState = EpicBridgeClient.call(appContext, "job_status", existingJobId, "{}");
+                        String existingStatus = existingState.getString("state", "unknown");
+                        if (!"complete".equals(existingStatus) && !"failed".equals(existingStatus)
+                                && !"interrupted".equals(existingStatus)) {
+                            json = new JSONObject();
+                            try {
+                                json.put("ok", false);
+                                json.put("message", "Another Epic operation is already running. Reopen the Epic tab to resume its status.");
+                            } catch (Exception ignored) {}
+                        } else {
+                            jobPrefs.edit().remove(JOB_ID_KEY).apply();
+                            Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
+                            if (!started.getBoolean("ok", false)) {
+                                json = new JSONObject();
+                                try {
+                                    json.put("ok", false);
+                                    json.put("message", started.getString("message", "Unable to start Epic operation"));
+                                } catch (Exception ignored) {}
+                            } else {
+                                String jobId = started.getString("job_id", "");
+                                jobPrefs.edit().putString(JOB_ID_KEY, jobId).commit();
+                                jobPolling = true;
+                                json = waitForJob(appContext, jobId);
+                                jobPolling = false;
+                            }
+                        }
                     } else {
-                        jobPrefs.edit().remove(JOB_ID_KEY).apply();
                         Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
                         if (!started.getBoolean("ok", false)) {
                             json = new JSONObject();
@@ -265,28 +281,12 @@ public final class EpicFragment extends Fragment {
                             } catch (Exception ignored) {}
                         } else {
                             String jobId = started.getString("job_id", "");
-                            jobPrefs.edit().putString(JOB_ID_KEY, jobId).commit();
+                            jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
                             jobPolling = true;
                             json = waitForJob(appContext, jobId);
                             jobPolling = false;
                         }
                     }
-                } else {
-                    Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
-                    if (!started.getBoolean("ok", false)) {
-                        json = new JSONObject();
-                        try {
-                            json.put("ok", false);
-                            json.put("message", started.getString("message", "Unable to start Epic operation"));
-                        } catch (Exception ignored) {}
-                    } else {
-                        String jobId = started.getString("job_id", "");
-                        jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
-                        jobPolling = true;
-                        json = waitForJob(appContext, jobId);
-                        jobPolling = false;
-                    }
-                }
             } else {
                 Bundle response = EpicBridgeClient.call(appContext, method, payload);
                 try {
@@ -300,7 +300,7 @@ public final class EpicFragment extends Fragment {
                         json.put("error", response.getString("error", "IPC_ERROR"));
                     } catch (Exception ignored) {}
                 }
-            }
+                }
 
             } catch (Exception error) {
                 json = new JSONObject();
