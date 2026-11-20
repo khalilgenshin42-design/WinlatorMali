@@ -11,7 +11,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
 
 concurrency:
   group: epic-integration-${{ github.event.workflow_run.head_branch }}
@@ -167,3 +167,25 @@ jobs:
             epic-runtime-build.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish test-ready Epic integration prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST_APK="$(find app/build/outputs/apk/standard/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          BRIDGE_APK="epicbridge/build/outputs/apk/debug/epicbridge-debug.apk"
+          TAG="maliwinlator-1.2.1-epic-run-${GITHUB_RUN_ID}"
+          if grep -q 'UPDATE_SIGNATURE_MATCH=false' epic-runtime-build.txt; then
+            NOTES="Pre-release test build for MaliWinlator 1.2.1 with Epic Games integration. WARNING: the signing certificate differs from the previous 1.2.1 APK; do not uninstall an existing installation until its containers are backed up."
+          else
+            NOTES="Pre-release test build for MaliWinlator 1.2.1 with Epic Games integration. The host APK embeds the matching Epic Bridge companion. Install the host APK, open the Epic tab, grant storage access, sign in through the browser, then refresh your library. Android emulator runtime instrumentation passed before publication."
+          fi
+          gh release create "$TAG" \
+            "$HOST_APK#MaliWinlator 1.2.1 Epic ARM64 APK" \
+            "$BRIDGE_APK#Epic Bridge companion APK" \
+            --title "MaliWinlator 1.2.1 — Epic Games integration" \
+            --notes "$NOTES" \
+            --prerelease
+
