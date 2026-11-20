@@ -190,18 +190,9 @@ public final class EpicPythonRuntime {
         for (String child : children) {
             File target = new File(targetDir, child);
             String childAsset = assetPath + "/" + child;
-            try (InputStream input = assets.open(childAsset)) {
-                try (FileOutputStream output = new FileOutputStream(target, false)) {
-                    byte[] buffer = new byte[64 * 1024];
-                    int count;
-                    while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-                }
-                // CPython loads lib-dynload extension modules with dlopen().
-                // Keep extracted .so files executable inside app-private storage.
-                if (target.isFile() && child.matches(".*\\.so(?:\\..*)?$")
-                        && !target.canExecute() && !target.setExecutable(true, true)) {
-                    throw new IOException("Unable to mark Python extension executable: " + target);
-                }
+            final InputStream assetInput;
+            try {
+                assetInput = assets.open(childAsset);
             } catch (FileNotFoundException e) {
                 String[] nested = assets.list(childAsset);
                 if (nested == null) {
@@ -210,6 +201,19 @@ public final class EpicPythonRuntime {
                 // An empty AssetManager listing is a valid empty directory. Required
                 // runtime files are verified by the post-extraction preflight/self-test.
                 extractAssetDirectory(assets, childAsset, targetRoot);
+                continue;
+            }
+            try (InputStream input = assetInput;
+                 FileOutputStream output = new FileOutputStream(target, false)) {
+                byte[] buffer = new byte[64 * 1024];
+                int count;
+                while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            }
+            // CPython loads lib-dynload extension modules with dlopen().
+            // Keep extracted .so files executable inside app-private storage.
+            if (target.isFile() && child.matches(".*\\.so(?:\\..*)?$")
+                    && !target.canExecute() && !target.setExecutable(true, true)) {
+                throw new IOException("Unable to mark Python extension executable: " + target);
             }
         }
     }
