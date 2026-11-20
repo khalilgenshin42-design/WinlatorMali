@@ -416,6 +416,11 @@ public final class EpicFragment extends Fragment {
             launch.setOnClickListener(v -> launchGame(appName, title));
             actions.addView(launch);
 
+            Button update = new Button(requireContext());
+            update.setText("Update");
+            update.setOnClickListener(v -> installGame(appName, title, true));
+            actions.addView(update);
+
             Button uninstall = new Button(requireContext());
             uninstall.setText("Uninstall");
             uninstall.setOnClickListener(v -> uninstallGame(appName, title));
@@ -440,6 +445,10 @@ public final class EpicFragment extends Fragment {
     }
 
     private void installGame(String appName, String title) {
+        installGame(appName, title, false);
+    }
+
+    private void installGame(String appName, String title, boolean update) {
         if (!storageReady) {
             statusText.setText("Grant shared-storage access to both MaliWinlator and Epic Bridge before installing games.");
             return;
@@ -456,13 +465,16 @@ public final class EpicFragment extends Fragment {
             payload.put("max_workers", 4);
             payload.put("max_shared_memory_mib", 512);
         } catch (Exception ignored) {}
-        statusText.setText("Installing " + title + ". The foreground download service keeps working if you leave this tab.");
+        statusText.setText((update ? "Updating " : "Installing ") + title +
+                ". The foreground download service keeps working if you leave this tab.");
         runCommand("install", payload.toString(), result -> {
             if (!result.optBoolean("ok", false)) {
-                statusText.setText("Install failed: " + result.optString("message"));
+                statusText.setText((update ? "Update failed: " : "Install failed: ") +
+                        result.optString("message"));
                 return;
             }
-            statusText.setText(title + " installed. You can now launch it in a Winlator container.");
+            statusText.setText(title + (update ? " updated." : " installed.") +
+                    " You can now launch it in a Winlator container.");
             refreshLibrary();
         });
     }
