@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
     private TextView statusView;
+    private TextView noticeView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,10 +41,9 @@ public class MainActivity extends Activity {
         storageButton.setOnClickListener(v -> requestStorageAccess());
         root.addView(storageButton);
 
-        TextView notice = new TextView(this);
-        notice.setPadding(0, pad, 0, 0);
-        notice.setText("This companion keeps the Epic account runtime separate from MaliWinlator. The Epic runtime is not included in this bootstrap build yet.");
-        root.addView(notice);
+        noticeView = new TextView(this);
+        noticeView.setPadding(0, pad, 0, 0);
+        root.addView(noticeView);
 
         setContentView(root);
         refreshStatus();
@@ -60,9 +60,15 @@ public class MainActivity extends Activity {
     }
 
     private void refreshStatus() {
-        statusView.setText(hasStorageAccess()
-                ? "Shared game-library access: granted\nRuntime: not installed"
-                : "Shared game-library access: required\nRuntime: not installed");
+        boolean runtimePackaged = EpicPythonRuntime.isPackaged(this);
+        statusView.setText((hasStorageAccess()
+                ? "Shared game-library access: granted"
+                : "Shared game-library access: required")
+                + "\nCPython / Legendary runtime: "
+                + (runtimePackaged ? "bundled" : "not bundled"));
+        noticeView.setText(runtimePackaged
+                ? "Epic account data and Legendary run in this separate companion package. Return to MaliWinlator to sign in and manage your Epic library."
+                : "This is a bootstrap companion build. Epic login, library, downloads and launch features become available when the Android CPython/Legendary runtime is bundled.");
     }
 
     private void requestStorageAccess() {
