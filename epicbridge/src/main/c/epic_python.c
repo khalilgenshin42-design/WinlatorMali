@@ -82,11 +82,11 @@ static PyObject *py_decrypt_aes_gcm(PyObject *self, PyObject *args) {
     PyObject *result = PyBytes_FromStringAndSize((const char *) output_bytes, output_len);
     (*env)->ReleaseByteArrayElements(env, output, output_bytes, JNI_ABORT);
     (*env)->DeleteLocalRef(env, output);
-    if (attached) (*g_vm)->DetachCurrentThread(g_vm);
     (*env)->DeleteLocalRef(env, jkey);
     (*env)->DeleteLocalRef(env, jnonce);
     (*env)->DeleteLocalRef(env, jciphertext);
     (*env)->DeleteLocalRef(env, jtag);
+    if (attached) (*g_vm)->DetachCurrentThread(g_vm);
     return result;
 
 cleanup:
