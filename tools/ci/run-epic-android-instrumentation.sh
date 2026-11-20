@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-cd "$(dirname "$0")/../../maliwinlator"
+cd "$(dirname "$0")/../.."
 chmod +x ./gradlew
 
 if ./gradlew --no-daemon --stacktrace :epicbridge:connectedDebugAndroidTest \
