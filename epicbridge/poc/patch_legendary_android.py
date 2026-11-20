@@ -193,6 +193,36 @@ def main() -> None:
     )
     replace_once(manager, anchor, stop_method)
 
+    # Preserve downloader failures across the Thread boundary. Thread objects
+    # have no exitcode/terminate API, so the manager exposes an error slot and
+    # performs cooperative teardown when run_real raises.
+    replace_once(
+        manager,
+        "        self.running = True\\n",
+        "        self.running = True\\n        self.error = None\\n",
+    )
+    replace_once(
+        manager,
+        "    def run_real(self):",
+        "        except Exception as exc:\\n"
+        "            self.error = exc\\n"
+        "            self.log.exception('Android download manager failed')\\n"
+        "            self.stop()\\n"
+        "            for q in (self.dl_worker_queue, self.writer_queue):\\n"
+        "                if q is not None:\\n"
+        "                    try:\\n"
+        "                        q.put_nowait(TerminateWorkerTask())\\n"
+        "                    except Exception:\\n"
+        "                        pass\\n"
+        "            for worker in self.children + self.threads:\\n"
+        "                if worker.is_alive():\\n"
+        "                    worker.join(timeout=10.0)\\n"
+        "            if self.shared_memory is not None:\\n"
+        "                self.shared_memory.close()\\n"
+        "                self.shared_memory.unlink()\\n\\n"
+        "    def run_real(self):",
+    )
+
     # Use the stop path on exceptions; this is idempotent and thread-safe.
     replace_once(
         manager,
