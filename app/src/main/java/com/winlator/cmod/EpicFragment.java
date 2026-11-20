@@ -63,6 +63,9 @@ public final class EpicFragment extends Fragment {
     private boolean storageReady;
     private boolean hostStorageReady;
     private boolean bridgeStorageReady;
+    private volatile boolean jobPolling;
+    private static final String JOB_PREFS = "epic_bridge_jobs";
+    private static final String JOB_ID_KEY = "active_job_id";
 
     @Nullable
     @Override
@@ -138,6 +141,7 @@ public final class EpicFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (containerSpinner != null) loadContainers();
+        resumePendingJob();
         refreshStatus();
     }
 
@@ -237,45 +241,49 @@ public final class EpicFragment extends Fragment {
         io.execute(() -> {
             JSONObject json;
             if ("install".equals(method) || "uninstall".equals(method)) {
-                Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
-                if (!started.getBoolean("ok", false)) {
-                    json = new JSONObject();
-                    try {
-                        json.put("ok", false);
-                        json.put("message", started.getString("message", "Unable to start Epic install"));
-                    } catch (Exception ignored) {}
-                } else {
-                    String jobId = started.getString("job_id", "");
-                    long deadline = System.currentTimeMillis() + 5L * 60L * 60L * 1000L;
-                    json = new JSONObject();
-                    while (!jobId.isEmpty() && System.currentTimeMillis() < deadline
-                            && !Thread.currentThread().isInterrupted()) {
+                android.content.SharedPreferences jobPrefs =
+                        appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+                String existingJobId = jobPrefs.getString(JOB_ID_KEY, "");
+                if (!existingJobId.isEmpty()) {
+                    Bundle existingState = EpicBridgeClient.call(appContext, "job_status", existingJobId, "{}");
+                    String existingStatus = existingState.getString("state", "unknown");
+                    if (!"complete".equals(existingStatus) && !"failed".equals(existingStatus)) {
+                        json = new JSONObject();
                         try {
-                            Thread.sleep(1500);
-                            Bundle state = EpicBridgeClient.call(appContext, "job_status", jobId, "{}");
-                            String jobState = state.getString("state", "unknown");
-                            if ("complete".equals(jobState) || "failed".equals(jobState)) {
-                                String body = state.getString("result_json", "");
-                                json = body.isEmpty() ? new JSONObject() : new JSONObject(body);
-                                break;
-                            }
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        } catch (Exception e) {
+                            json.put("ok", false);
+                            json.put("message", "Another Epic operation is already running. Reopen the Epic tab to resume its status.");
+                        } catch (Exception ignored) {}
+                    } else {
+                        jobPrefs.edit().remove(JOB_ID_KEY).apply();
+                        Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
+                        if (!started.getBoolean("ok", false)) {
                             json = new JSONObject();
                             try {
                                 json.put("ok", false);
-                                json.put("message", "Epic install status polling failed: " + e.getMessage());
+                                json.put("message", started.getString("message", "Unable to start Epic operation"));
                             } catch (Exception ignored) {}
-                            break;
+                        } else {
+                            String jobId = started.getString("job_id", "");
+                            jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
+                            jobPolling = true;
+                            json = waitForJob(appContext, jobId);
+                            jobPolling = false;
                         }
                     }
-                    if (jobId.isEmpty() || System.currentTimeMillis() >= deadline) {
+                } else {
+                    Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
+                    if (!started.getBoolean("ok", false)) {
+                        json = new JSONObject();
                         try {
                             json.put("ok", false);
-                            json.put("message", "Epic install is still running in the foreground service. Reopen the Epic tab to check its status.");
+                            json.put("message", started.getString("message", "Unable to start Epic operation"));
                         } catch (Exception ignored) {}
+                    } else {
+                        String jobId = started.getString("job_id", "");
+                        jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
+                        jobPolling = true;
+                        json = waitForJob(appContext, jobId);
+                        jobPolling = false;
                     }
                 }
             } else {
@@ -296,6 +304,68 @@ public final class EpicFragment extends Fragment {
             JSONObject finalJson = json;
             if (getActivity() != null) getActivity().runOnUiThread(() -> {
                 if (getView() != null && callback != null) callback.onResult(finalJson);
+            });
+        });
+    }
+
+    private JSONObject waitForJob(android.content.Context appContext, String jobId) {
+        long deadline = System.currentTimeMillis() + 5L * 60L * 60L * 1000L;
+        JSONObject result = new JSONObject();
+        while (!jobId.isEmpty() && System.currentTimeMillis() < deadline
+                && !Thread.currentThread().isInterrupted()) {
+            try {
+                Thread.sleep(1500);
+                Bundle state = EpicBridgeClient.call(appContext, "job_status", jobId, "{}");
+                String jobState = state.getString("state", "unknown");
+                if ("complete".equals(jobState) || "failed".equals(jobState)) {
+                    String body = state.getString("result_json", "");
+                    result = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+                    android.content.SharedPreferences prefs =
+                            appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+                    if (jobId.equals(prefs.getString(JOB_ID_KEY, ""))) {
+                        prefs.edit().remove(JOB_ID_KEY).apply();
+                    }
+                    return result;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                try {
+                    result.put("ok", false);
+                    result.put("message", "Epic operation status polling failed: " + e.getMessage());
+                } catch (Exception ignored) {}
+                return result;
+            }
+        }
+        try {
+            result.put("ok", false);
+            result.put("message", "Epic operation is still running in the foreground service. Reopen the Epic tab to resume status tracking.");
+        } catch (Exception ignored) {}
+        return result;
+    }
+
+    private void resumePendingJob() {
+        if (jobPolling || statusText == null || getContext() == null) return;
+        android.content.Context appContext = requireContext().getApplicationContext();
+        android.content.SharedPreferences prefs =
+                appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        String jobId = prefs.getString(JOB_ID_KEY, "");
+        if (jobId.isEmpty()) return;
+
+        jobPolling = true;
+        statusText.setText("Resuming the previous Epic operation...");
+        io.execute(() -> {
+            JSONObject result = waitForJob(appContext, jobId);
+            jobPolling = false;
+            if (getActivity() != null) getActivity().runOnUiThread(() -> {
+                if (getView() == null || statusText == null) return;
+                if (result.optBoolean("ok", false)) {
+                    statusText.setText("The previous Epic operation completed.");
+                    refreshLibrary();
+                } else {
+                    statusText.setText(result.optString("message", "Epic operation is still running."));
+                }
             });
         });
     }
