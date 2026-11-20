@@ -203,21 +203,8 @@ def main() -> None:
         "            self.stop()",
     )
 
-    # Process-only cleanup is invalid for threads. Join cooperatively and
-    # do not call multiprocessing queue lifecycle methods on queue.Queue.
-    replace_once(
-        manager,
-        "            for child in self.children:\\n"
-        "                child.join(timeout=5.0)\\n"
-        "                if child.exitcode is None:\\n"
-        "                    child.terminate()",
-        "            for child in self.children:\\n"
-        "                child.join(timeout=30.0)\\n"
-        "                if child.is_alive():\\n"
-        "                    self.log.warning(f'Worker thread did not terminate: {child!r}')",
-    )
-    replace_once(manager, "                    q.close()", "                    pass")
-    replace_once(manager, "                    q.join_thread()", "                    pass")
+    # The earlier cleanup transformation also changes the final exit to a
+    # normal thread return; process termination is not valid in this backend.
     replace_once(manager, "        exit(0)", "        return")
 
     # Every worker receives the same mmap object. Only the manager may close it.
