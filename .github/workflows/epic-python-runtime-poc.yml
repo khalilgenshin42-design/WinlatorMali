@@ -29,10 +29,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
-      - name: Checkout MaliWinlator
+      - name: Checkout MaliWinlator source commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.sha }}
           path: maliwinlator
 
       - name: Checkout pinned CPython source
