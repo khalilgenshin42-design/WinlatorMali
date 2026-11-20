@@ -1401,3 +1401,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Fixed `epicbridge/build.gradle` in commit `f73f5990726b34719177b153a55d03906e7dbd83` by setting `duplicatesStrategy = DuplicatesStrategy.EXCLUDE` on the Sync task. This preserves the broad stdlib copy while allowing the explicit path source to fill any omitted nested files.
 - Standard host APK workflow #44801340002 passed, including embedded companion APK byte-match and shared signer audit. It is not evidence that Epic runtime works.
 - Next gate: rerun Epic instrumentation; verify actual staged assets and APK contents, then confirm Android CPython initializes and imports `zipfile._path` and Legendary. No Epic-enabled APK is approved yet.
+
+
+## 2026-11-20 — Verification retry after duplicate staging fix
+- Standard MaliWinlator 1.2.1 baseline workflow #44803653869 passed: debug APK build, embedded Epic Bridge byte-match/shared signer verification, and artifact upload all succeeded. This is a baseline build only; it does not validate the Epic runtime.
+- Epic workflow #44803653839 passed source checkout, CPython Android x86_64 build, and archive staging, but failed before running Android instrumentation because the upstream CPython Android testbed Gradle build could not resolve its classpath dependencies (including Kotlin stdlib 2.3.20). The failure occurred during testbed Gradle configuration, before runtime instrumentation; it is not evidence that the CPython APK asset is still missing.
+- Retried only failed jobs for #44803653839 using GitHub Actions rerun. Await the retry before changing runtime packaging or interpreting this as a runtime regression.
+- The duplicate staging fix remains commit `f73f5990726b34719177b153a55d03906e7dbd83`; no Epic runtime pass or device acceptance has been established.
