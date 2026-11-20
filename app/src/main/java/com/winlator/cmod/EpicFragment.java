@@ -287,8 +287,8 @@ public final class EpicFragment extends Fragment {
                             jobPolling = false;
                         }
                     }
-            } else {
-                Bundle response = EpicBridgeClient.call(appContext, method, payload);
+                } else {
+                    Bundle response = EpicBridgeClient.call(appContext, method, payload);
                 try {
                     String body = response.getString("result_json");
                     json = body == null ? new JSONObject() : new JSONObject(body);
@@ -303,6 +303,7 @@ public final class EpicFragment extends Fragment {
                 }
 
             } catch (Exception error) {
+                jobPolling = false;
                 json = new JSONObject();
                 try {
                     json.put("ok", false);
