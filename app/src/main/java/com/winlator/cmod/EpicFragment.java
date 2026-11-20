@@ -133,7 +133,6 @@ public final class EpicFragment extends Fragment {
         gamesContainer.setPadding(0, pad, 0, 0);
         root.addView(gamesContainer);
 
-        refreshStatus();
         return scroll;
     }
 
