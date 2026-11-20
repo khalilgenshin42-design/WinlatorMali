@@ -211,7 +211,7 @@ public final class EpicPythonRuntime {
             if (child.isDirectory()) {
                 if (!sharedLibrariesExecutable(child)) return false;
             } else if (child.isFile()
-                    && child.getName().matches(".*\\\\.so(?:\\\\..*)?$")
+                    && child.getName().matches(".*\\.so(?:\\..*)?$")
                     && !child.canExecute()) {
                 return false;
             }
