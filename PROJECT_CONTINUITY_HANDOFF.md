@@ -724,3 +724,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Extended the embedded runtime self-test to install a sentinel root logger handler, start and stop both Legendary worker threads, and assert that the global root handler list is unchanged. The sentinel handler is removed in a finally block even if the worker smoke fails.
 - Commits: 511102a8bb878bfd40e1d32539ef89b6fd6a3736 (logging preservation assertion); 202a04ed50065faa0dd8af9544c861daa3aebb02 (guaranteed test cleanup).
 - The latest changes touch epicbridge/** and therefore trigger the full CPython/Legendary POC workflow, followed by the SHA-pinned Android instrumentation and ARM64 APK workflow if the POC passes.
+
+## Engineering continuation — 2026-11-20: no-op update handling
+
+- Audited the install path for games already at the current manifest. Legendary can produce an empty task deque for a no-op update; its original result-handler startup would pop from that empty deque and fail before recognizing there was no work.
+- The Android patcher now returns from run_real() before allocating mmap or starting worker threads when there are no file tasks. Added an embedded runtime self-test that runs an empty AnalysisResult through the manager thread and requires clean completion.
+- Commits: 40cf8c650a5982c54b705dadfbf920f3cc0681d0 (no-op guard); 1d3f42355285844b222519ed3892b9bccec0ae30 (no-op runtime test).
+- This source change is included in the next CPython/Legendary POC and downstream Android instrumentation build.
