@@ -8,6 +8,7 @@ on:
       - '.github/workflows/epic-python-runtime-poc.yml'
       - 'epicbridge/poc/site-packages/epic_runtime_smoke.py'
       - 'epicbridge/poc/patch_legendary_android.py'
+      - 'epicbridge/poc/requirements-android.txt'
   workflow_dispatch:
 
 permissions:
