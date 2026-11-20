@@ -14,12 +14,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: epic-integration-\${{ github.event.workflow_run.head_branch }}
+  group: epic-integration-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 jobs:
   test-and-build:
-    if: \${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
@@ -34,8 +34,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: maliwinlator-cpython-3.15.2-android-arm64-poc
-          run-id: \${{ github.event.workflow_run.id }}
-          github-token: \${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
           path: runtime-artifacts
 
       - name: Extract and locate Android runtime prefixes
@@ -53,13 +53,13 @@ jobs:
           ARM64_HEADER="$(find "$RUNNER_TEMP/epic-runtime-arm64" -type f -path '*/include/python3.15/Python.h' -print -quit)"
           test -n "$X86_HEADER"
           test -n "$ARM64_HEADER"
-          X86_PREFIX="\${X86_HEADER%/include/python3.15/Python.h}"
-          ARM64_PREFIX="\${ARM64_HEADER%/include/python3.15/Python.h}"
+          X86_PREFIX="${X86_HEADER%/include/python3.15/Python.h}"
+          ARM64_PREFIX="${ARM64_HEADER%/include/python3.15/Python.h}"
           test -f "$X86_PREFIX/lib/libpython3.15.so"
           test -f "$ARM64_PREFIX/lib/libpython3.15.so"
           echo "EPIC_X86_PREFIX=$X86_PREFIX" >> "$GITHUB_ENV"
           echo "EPIC_ARM64_PREFIX=$ARM64_PREFIX" >> "$GITHUB_ENV"
-          echo "Runtime artifact from POC run \${{ github.event.workflow_run.id }}" > epic-runtime-build.txt
+          echo "Runtime artifact from POC run ${{ github.event.workflow_run.id }}" > epic-runtime-build.txt
           echo "x86_64 prefix: $X86_PREFIX" >> epic-runtime-build.txt
           echo "arm64 prefix: $ARM64_PREFIX" >> epic-runtime-build.txt
 
