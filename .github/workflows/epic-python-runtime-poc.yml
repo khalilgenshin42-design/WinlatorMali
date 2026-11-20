@@ -201,6 +201,15 @@ jobs:
           rm -f cross-build/x86_64-linux-android/dist/*.tar.gz
           python3 Platforms/Android package x86_64-linux-android
 
+      - name: Run Epic Android runtime prerequisite smoke on managed x86_64 emulator
+        working-directory: cpython
+        run: |
+          set -euo pipefail
+          SITE_PACKAGES="$PWD/cross-build/x86_64-linux-android/prefix/lib/python3.15/site-packages"
+          cp "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages/epic_runtime_smoke.py" "$SITE_PACKAGES/"
+          python3 Platforms/Android test --managed maxVersion \
+            --site-packages "$SITE_PACKAGES" -- -m epic_runtime_smoke
+
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
         run: |
