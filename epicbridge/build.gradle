@@ -4,7 +4,9 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-def epicRuntimePrefix = project.findProperty('epicRuntimePrefix') ?: System.getenv('EPIC_RUNTIME_PREFIX')
+// Resolve the CI -P property from the root project explicitly. A missing prefix
+// must never silently produce a stub-only companion APK.
+def epicRuntimePrefix = rootProject.findProperty('epicRuntimePrefix') ?: project.findProperty('epicRuntimePrefix') ?: System.getenv('EPIC_RUNTIME_PREFIX')
 def epicRuntimeAbi = project.findProperty('epicRuntimeAbi') ?: 'arm64-v8a'
 def epicRuntimeGenerated = layout.buildDirectory.dir('generated/epicRuntime')
 
@@ -88,6 +90,18 @@ android {
 
 
 tasks.register('stageEpicPythonRuntime', Sync) {
+    doFirst {
+        if (!epicRuntimePrefix) {
+            throw new GradleException('Epic CPython prefix is required; refusing to package a stub-only companion APK')
+        }
+        File prefix = file(epicRuntimePrefix)
+        ['include/python3.15/Python.h', 'lib/libpython3.15.so', 'lib/python3.15/os.py', 'lib/python3.15/zipfile/__init__.py', 'lib/python3.15/zipfile/_path/__init__.py'].each { relative ->
+            if (!new File(prefix, relative).isFile()) {
+                throw new GradleException("Epic CPython prefix is incomplete: ${new File(prefix, relative)}")
+            }
+        }
+        logger.lifecycle("Staging Epic CPython runtime from ${prefix.absolutePath} for ABI ${epicRuntimeAbi}")
+    }
     into(epicRuntimeGenerated)
     // The same build directory is used first for x86_64 instrumentation and
     // then for arm64-v8a production packaging; make ABI changes invalidate Sync.
@@ -109,6 +123,9 @@ tasks.register('stageEpicPythonRuntime', Sync) {
     }
     doLast {
         File pythonAssets = epicRuntimeGenerated.get().dir('assets').dir('python').asFile
+        if (!pythonAssets.isDirectory()) {
+            throw new GradleException('Epic CPython runtime assets were not staged')
+        }
         if (epicRuntimePrefix && pythonAssets.isDirectory()) {
             File zipfilePackage = new File(pythonAssets, 'lib/python3.15/zipfile/__init__.py')
             File zipfilePathPackage = new File(pythonAssets, 'lib/python3.15/zipfile/_path/__init__.py')
