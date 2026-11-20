@@ -30,7 +30,7 @@ public final class EpicPythonRuntime {
                     ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py");
              InputStream runner = context.getAssets().open(
                     ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py");
-             InputStream version = context.getAssets().open(ASSET_ROOT + "/.runtime-version")) {
+             InputStream version = context.getAssets().open(ASSET_ROOT + "/runtime-version.txt")) {
             return true;
         } catch (IOException e) {
             return false;
@@ -45,7 +45,7 @@ public final class EpicPythonRuntime {
         File pythonHome = new File(runtimeRoot, ASSET_ROOT);
         File marker = new File(runtimeRoot, RUNTIME_MARKER);
         final String packagedVersion;
-        try (InputStream versionInput = context.getAssets().open(ASSET_ROOT + "/.runtime-version")) {
+        try (InputStream versionInput = context.getAssets().open(ASSET_ROOT + "/runtime-version.txt")) {
             packagedVersion = readUtf8(versionInput).trim();
         } catch (IOException e) {
             Log.e(TAG, "The packaged Python runtime has no build identity", e);
