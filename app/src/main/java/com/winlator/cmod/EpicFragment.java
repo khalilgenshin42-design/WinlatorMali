@@ -612,7 +612,6 @@ public final class EpicFragment extends Fragment {
             }
             String exe = launch.optString("game_executable", "");
             String gameDir = launch.optString("game_directory", "");
-            String workingDir = launch.optString("working_directory", gameDir);
             if (exe.isEmpty() || gameDir.isEmpty()) {
                 statusText.setText("Epic game executable path is missing.");
                 return;
