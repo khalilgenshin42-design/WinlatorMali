@@ -11,6 +11,8 @@ if ./gradlew --no-daemon --stacktrace :epicbridge:connectedDebugAndroidTest \
 else
   test_status=$?
   echo "===== Epic Bridge native/Python runtime diagnostics ====="
-  adb logcat -d -s EpicBridgePython:E python:E AndroidRuntime:E || true
+  # Include both Java and JNI tags. The previous filter omitted
+  # EpicPythonRuntime, hiding extraction and System.loadLibrary failures.
+  adb logcat -d -s EpicPythonRuntime:E EpicBridgePython:E python:E AndroidRuntime:E || true
   exit "$test_status"
 fi
