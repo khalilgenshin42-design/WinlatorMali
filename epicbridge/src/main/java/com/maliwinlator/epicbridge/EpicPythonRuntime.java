@@ -165,6 +165,12 @@ public final class EpicPythonRuntime {
                     int count;
                     while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
                 }
+                // CPython loads lib-dynload extension modules with dlopen().
+                // Keep extracted .so files executable inside app-private storage.
+                if (target.isFile() && child.matches(".*\\\\.so(?:\\\\..*)?$")
+                        && !target.canExecute() && !target.setExecutable(true, true)) {
+                    throw new IOException("Unable to mark Python extension executable: " + target);
+                }
             } catch (FileNotFoundException e) {
                 String[] nested = assets.list(childAsset);
                 if (nested == null || nested.length == 0) {
