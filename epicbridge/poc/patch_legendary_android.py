@@ -152,6 +152,22 @@ def main() -> None:
         "from multiprocessing.shared_memory import SharedMemory\n",
         "",
     )
+    # These are threads, not isolated processes. Reconfiguring root handlers
+    # in each worker would race and overwrite the application's global logger.
+    replace_once(
+        workers,
+        "from logging.handlers import QueueHandler\n",
+        "",
+    )
+    replace_once(
+        workers,
+        "        # we have to fix up the logger before we can start\n"
+        "        _root = logging.getLogger()\n"
+        "        _root.handlers = []\n"
+        "        _root.addHandler(QueueHandler(self.logging_queue))\n",
+        "        # Thread workers share the manager's root logger; do not mutate handlers.\n",
+        expected=2,
+    )
     replace_once(
         workers,
         "from queue import Empty\n",
