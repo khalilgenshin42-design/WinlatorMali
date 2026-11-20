@@ -311,6 +311,7 @@ public final class EpicFragment extends Fragment {
     private JSONObject waitForJob(android.content.Context appContext, String jobId) {
         long deadline = System.currentTimeMillis() + 5L * 60L * 60L * 1000L;
         JSONObject result = new JSONObject();
+        long unknownSince = 0L;
         while (!jobId.isEmpty() && System.currentTimeMillis() < deadline
                 && !Thread.currentThread().isInterrupted()) {
             try {
@@ -323,6 +324,22 @@ public final class EpicFragment extends Fragment {
                     return result;
                 }
                 String jobState = state.getString("state", "unknown");
+                if ("unknown".equals(jobState)) {
+                    if (unknownSince == 0L) unknownSince = System.currentTimeMillis();
+                    if (System.currentTimeMillis() - unknownSince > 30_000L) {
+                        android.content.SharedPreferences prefs =
+                                appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+                        if (jobId.equals(prefs.getString(JOB_ID_KEY, ""))) {
+                            prefs.edit().remove(JOB_ID_KEY).apply();
+                        }
+                        result.put("ok", false);
+                        result.put("message", "Epic Bridge did not report this job. The operation may not have started; retry it.");
+                        return result;
+                    }
+                    continue;
+                } else {
+                    unknownSince = 0L;
+                }
                 if ("complete".equals(jobState) || "failed".equals(jobState)
                         || "interrupted".equals(jobState)) {
                     String body = state.getString("result_json", "");
