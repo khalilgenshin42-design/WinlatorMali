@@ -3,6 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <queries>
+        <package android:name="com.maliwinlator.epicbridge" />
+    </queries>
+
     <!-- Declare features that might be needed -->
     <uses-feature
         android:glEsVersion="0x00020000"
