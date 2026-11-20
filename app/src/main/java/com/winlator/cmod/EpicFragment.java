@@ -585,7 +585,7 @@ public final class EpicFragment extends Fragment {
                 throw new java.io.IOException("Epic ownership token escaped the container image root");
             }
             String relativePath = targetPath.substring(imageRoot.length() + 1)
-                    .replace(File.separatorChar, '\\\\');
+                    .replace(File.separatorChar, '\\');
             winePath = "Z:\\" + relativePath;
             File cleanupTarget = target;
             new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 15L * 60L * 1000L);
