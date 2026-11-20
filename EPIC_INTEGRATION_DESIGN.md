@@ -136,3 +136,14 @@ Legendary 0.21.1's downloader emits structured progress log lines (`= Progress: 
 Install commands should be non-interactive (`--yes --skip-sdl`), target a validated per-container folder under the MaliWinlator shared-storage root, and perform free-space checks before starting. Do not use `--ignore-free-space`. Preserve Legendary's resume/repair behavior and validate its installed manifest before reporting success.
 
 The companion is a separate Android package and therefore does not inherit MaliWinlator's shared-storage grant. It must request its own all-files access (or a future proven filesystem-provider alternative) before installing games into `/storage/emulated/0/MaliWinlator/EpicGames`. The host UI should detect this state and deep-link to the companion's own Android storage-access settings page. Do not silently fall back to the companion's private directory because Wine in the host app cannot see that directory.
+
+### Online game launch handoff
+
+Legendary 0.21.1's `launch` command supports `--json` and `--no-wine`. Its CLI returns a structured `LaunchParameters` object (including game directory/executable, launch arguments, and environment overrides) before attempting to spawn a process. Use this as the host/companion boundary:
+
+1. Companion invokes `legendary launch <app> --json --no-wine` and returns a typed, one-shot launch payload over signature-protected IPC.
+2. Host validates the install path is within the EpicGames shared-storage root, converts it to the container's Wine-visible `F:\\MaliWinlator\\EpicGames\\...` path, and combines the arguments safely.
+3. Host launches through its existing `XEnvironment` / `GuestProgramLauncherComponent` for the selected container, not by letting Legendary spawn a host process.
+4. Any transient Epic/EOS environment values returned by Legendary are memory-only, never logged or persisted in shortcuts/preferences, and are cleared after launch setup. IPC errors and launch payloads must redact token-like values.
+
+This preserves Legendary's online authentication/launch preparation while retaining Winlator's proot, Wine, Box64/FEXCore, graphics wrapper, audio, input, and container setup. The handoff still requires an implementation-level validation against real game launch metadata and the exact existing launcher API.
