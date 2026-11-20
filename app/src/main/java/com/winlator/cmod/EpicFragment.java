@@ -239,7 +239,8 @@ public final class EpicFragment extends Fragment {
         android.content.Context appContext = requireContext().getApplicationContext();
         io.execute(() -> {
             JSONObject json;
-            if ("install".equals(method) || "uninstall".equals(method)) {
+            try {
+                if ("install".equals(method) || "uninstall".equals(method)) {
                 android.content.SharedPreferences jobPrefs =
                         appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
                 String existingJobId = jobPrefs.getString(JOB_ID_KEY, "");
@@ -299,6 +300,16 @@ public final class EpicFragment extends Fragment {
                         json.put("error", response.getString("error", "IPC_ERROR"));
                     } catch (Exception ignored) {}
                 }
+            }
+
+            } catch (Exception error) {
+                json = new JSONObject();
+                try {
+                    json.put("ok", false);
+                    json.put("error", "IPC_ERROR");
+                    json.put("message", error.getMessage() == null
+                            ? "Epic Bridge request failed unexpectedly" : error.getMessage());
+                } catch (Exception ignored) {}
             }
 
             JSONObject finalJson = json;
