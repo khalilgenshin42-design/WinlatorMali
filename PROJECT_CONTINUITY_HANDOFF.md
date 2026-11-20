@@ -768,3 +768,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Corrected the smoke script's invocation documentation to require the staged prefix site-packages directory, matching the workflow's actual copy-and-run sequence.
 - Commits: c7a02bef54249bce2a9448ef66fb5cf5da03ad6f (managed emulator gate restored at correct stage); c08687643953043a0c432db3305b0430af67ab87 (build metadata); 4f9c61943551d6bf62123742dc055ea2c2771e40 (stable TLS endpoint); 2b95880eb5310ffb3550d3932f67adede4eb52f9 (invocation documentation).
 - This is the latest POC workflow configuration. Its managed emulator run must complete successfully before any APK build or device-test handoff.
+
+## Engineering continuation — 2026-11-20: connect the CPython POC to actual installable APK outputs
+
+- Audited the active branch's real workflow rather than relying on the earlier handoff's description of a downstream integration workflow. The active branch did not contain `.github/workflows/epic-integration-build.yml`; the CPython workflow stopped after uploading runtime tarballs. Consequently, the existing pipeline could never produce the requested host/companion APK pair.
+- Extended the active `.github/workflows/epic-python-runtime-poc.yml` to install the app's pinned Android SDK/NDK/CMake toolchain, run `:epicbridge:connectedDebugAndroidTest` against the separately built x86_64 CPython prefix, then switch the Gradle runtime ABI/prefix inputs and assemble the ARM64 `:app:assembleStandardDebug` target. The host build embeds the separately built companion APK.
+- Added a dedicated 30-day artifact, `maliwinlator-1.2.1-epic-arm64-debug`, containing the host APK, companion APK, and SHA-256 manifest. The CPython runtime tarball artifact remains available separately for audit/recovery.
+- Commit: 886daa7597e71b4abf676bdf1d9a5536d54b8822.
+- This fixes a pipeline completeness defect; it is not evidence that the workflow has executed. A successful managed x86_64 instrumentation job, successful ARM64 Gradle build, artifact upload, and APK content/signature audit are still required before device handoff.
