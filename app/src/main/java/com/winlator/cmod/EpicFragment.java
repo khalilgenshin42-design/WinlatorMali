@@ -348,6 +348,7 @@ public final class EpicFragment extends Fragment {
     private void resumePendingJob() {
         if (jobPolling || statusText == null || getContext() == null) return;
         android.content.Context appContext = requireContext().getApplicationContext();
+        if (!EpicBridgeClient.isInstalled(appContext)) return;
         android.content.SharedPreferences prefs =
                 appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
         String jobId = prefs.getString(JOB_ID_KEY, "");
