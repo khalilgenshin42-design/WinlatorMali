@@ -609,9 +609,31 @@ public final class EpicFragment extends Fragment {
         StringBuilder result = new StringBuilder();
         for (String arg : args) {
             if (result.length() > 0) result.append(' ');
-            result.append('"').append(arg.replace("\\", "\\\\").replace("\"", "\\\"")).append('"');
+            result.append(quoteWindowsArgument(arg));
         }
         return result.toString();
+    }
+
+    private static String quoteWindowsArgument(String value) {
+        StringBuilder quoted = new StringBuilder("\"");
+        int backslashes = 0;
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (ch == '\\') {
+                backslashes++;
+            } else if (ch == '"') {
+                for (int j = 0; j < backslashes * 2 + 1; j++) quoted.append('\\');
+                quoted.append('"');
+                backslashes = 0;
+            } else {
+                for (int j = 0; j < backslashes; j++) quoted.append('\\');
+                quoted.append(ch);
+                backslashes = 0;
+            }
+        }
+        for (int j = 0; j < backslashes * 2; j++) quoted.append('\\');
+        quoted.append('"');
+        return quoted.toString();
     }
 
     private void installBridge() {
