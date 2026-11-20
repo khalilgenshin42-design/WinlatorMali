@@ -318,6 +318,20 @@ def main() -> None:
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
+    # Do not close an anonymous mmap while any worker/helper thread still references it.
+    replace_once(
+        manager,
+        "        self.shared_memory.close()\n"
+        "        self.shared_memory.unlink()\n",
+        "        alive_workers = [worker for worker in self.children + self.threads if worker.is_alive()]\n"
+        "        if alive_workers:\n"
+        "            self.log.error(f'Leaving Android mmap open while workers remain alive: {alive_workers!r}')\n"
+        "        else:\n"
+        "            self.shared_memory.close()\n"
+        "            self.shared_memory.unlink()\n"
+        "            self.shared_memory = None\n",
+    )
+
     # An up-to-date game can legitimately produce no writer tasks.
     replace_once(
         manager,
