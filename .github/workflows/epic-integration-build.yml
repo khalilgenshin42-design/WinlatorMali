@@ -70,6 +70,12 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Restore stable Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: maliwinlator-android-debug-keystore-v1
+
       - name: Set up Android SDK and NDK
         uses: android-actions/setup-android@v4
 
@@ -112,6 +118,10 @@ jobs:
           echo "Epic Bridge companion: $BRIDGE_APK" >> epic-runtime-build.txt
           echo "MaliWinlator host: $HOST_APK" >> epic-runtime-build.txt
           sha256sum "$BRIDGE_APK" "$HOST_APK" >> epic-runtime-build.txt
+          if [ -f "$HOME/.android/debug.keystore" ]; then
+            keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey \
+              | grep -E 'SHA256:' >> epic-runtime-build.txt
+          fi
 
       - name: Upload runtime-enabled MaliWinlator and Epic Bridge APKs
         uses: actions/upload-artifact@v4
