@@ -698,3 +698,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The synchronized call safely re-enters synchronized initialize() on the same Java monitor and does not affect JNI AES-GCM callbacks.
 - Commit: 04b4ce63ddaa31d2851b77a1dc54f76a34865d5f.
 - This source change triggers the Epic POC/integration validation pipeline; the Android runtime instrumentation still needs to pass.
+
+## Engineering continuation — 2026-11-20: deterministic pure-Python staging
+
+- Audited the two Android runtime prefix staging commands and found that pip's default bytecode compilation could create __pycache__ directories inside site-packages, conflicting with the ARM64 runtime packaging audit and wasting space in the embedded runtime.
+- Added pip's --no-compile option to both x86_64 and ARM64 Legendary target installs. The runtime packages remain source-only and the existing no-__pycache__ audit is now deterministic.
+- Commit: 9e5db51998bf5ab72a4a7c0482009d26cfa1cac7.
+- This updates the watched CPython workflow, so the next POC run will include the corrected staging behavior.
