@@ -789,3 +789,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Hardened the Android SDK license-acceptance step in the newly connected APK pipeline. With Bash `pipefail` enabled, the `yes | sdkmanager --licenses` pattern can report failure when `yes` receives SIGPIPE after sdkmanager has consumed its answers. The workflow now disables pipefail only around that pipeline and restores it before SDK package installation, preserving strict error handling for the actual build.
 - Commit: 52163f8796b1f29e7e5e6e32fa5727584f9768f9.
 - Static workflow review only; the managed emulator and APK build have not yet been observed passing.
+
+## Engineering continuation — 2026-11-20: provision a real emulator for companion instrumentation
+
+- Static review of the newly added `:epicbridge:connectedDebugAndroidTest` step found it had no connected Android device. The CPython prerequisite test uses CPython's own managed testbed emulator, but that emulator is shut down by the test command and is not available to Gradle's later connected-test task.
+- Replaced the bare Gradle step with `reactivecircus/android-emulator-runner@v2`, explicitly provisioning an API 35 x86_64 Google APIs Pixel 6 emulator before running the companion instrumentation suite against the x86_64 CPython prefix.
+- Commit: 3fc6a38d3920c029ee1e7f420eeb0f6fc0efa4f9.
+- The emulator action and Gradle instrumentation remain unexecuted in observed evidence; the next workflow run must validate the action inputs and test results.
