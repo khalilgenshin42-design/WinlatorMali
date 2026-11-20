@@ -24,6 +24,8 @@ public final class EpicPythonRuntimeInstrumentedTest {
         assertTrue("Runtime self-test failed: " + output, result.optBoolean("ok", false));
 
         JSONObject checks = result.getJSONObject("self_test");
+        assertTrue("CPython zipfile package was not imported", checks.optString("zipfile_module").contains("/lib/python3.15/zipfile/"));
+        assertTrue("CPython zipfile._path was not imported", checks.optString("zipfile_path_module").contains("/lib/python3.15/zipfile/_path/"));
         assertTrue(checks.optBoolean("android_jca_aes_gcm", false));
         assertTrue(checks.optBoolean("android_jca_aes_gcm_worker_thread", false));
         assertTrue(checks.optBoolean("thread_workers", false));
