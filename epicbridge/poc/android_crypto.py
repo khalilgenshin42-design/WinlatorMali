@@ -25,3 +25,15 @@ def new(key: bytes, mode: int, nonce: bytes):
     if len(key) not in (16, 24, 32):
         raise ValueError("AES key must be 16, 24, or 32 bytes")
     return _GCMCipher(key, nonce)
+
+
+class _AES:
+    MODE_GCM = MODE_GCM
+
+    @staticmethod
+    def new(key: bytes, mode: int, nonce: bytes):
+        return new(key, mode, nonce)
+
+
+# Legendary's encrypted chunk and manifest readers import AES as a namespace.
+AES = _AES()
