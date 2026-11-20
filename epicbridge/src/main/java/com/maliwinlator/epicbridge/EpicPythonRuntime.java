@@ -71,7 +71,7 @@ public final class EpicPythonRuntime {
         boolean runtimeExtensionsExecutable = extensionDir.isDirectory() && extensionFiles != null;
         if (runtimeExtensionsExecutable) {
             for (File extension : extensionFiles) {
-                if (extension.isFile() && extension.getName().matches(".*\\\\.so(?:\\\\..*)?$")
+                if (extension.isFile() && extension.getName().matches(".*\\.so(?:\\..*)?$")
                         && !extension.canExecute()) {
                     runtimeExtensionsExecutable = false;
                     break;
@@ -107,7 +107,7 @@ public final class EpicPythonRuntime {
                     throw new IOException("Extracted CPython runtime is incomplete");
                 }
                 for (File extension : extractedExtensions) {
-                    if (extension.isFile() && extension.getName().matches(".*\\\\.so(?:\\\\..*)?$")
+                    if (extension.isFile() && extension.getName().matches(".*\\.so(?:\\..*)?$")
                             && !extension.canExecute()) {
                         throw new IOException("Extracted CPython extension is not executable: " + extension);
                     }
@@ -195,7 +195,7 @@ public final class EpicPythonRuntime {
                 }
                 // CPython loads lib-dynload extension modules with dlopen().
                 // Keep extracted .so files executable inside app-private storage.
-                if (target.isFile() && child.matches(".*\\\\.so(?:\\\\..*)?$")
+                if (target.isFile() && child.matches(".*\\.so(?:\\..*)?$")
                         && !target.canExecute() && !target.setExecutable(true, true)) {
                     throw new IOException("Unable to mark Python extension executable: " + target);
                 }
