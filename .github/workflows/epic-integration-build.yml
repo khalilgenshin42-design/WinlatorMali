@@ -26,7 +26,7 @@ jobs:
       - name: Check out the 1.2.1 development branch
         uses: actions/checkout@v4
         with:
-          ref: development/maliwinlator-1.2.1-bootstrap
+          ref: ${{ github.event.workflow_run.head_sha }}
           submodules: recursive
           fetch-depth: 1
 
