@@ -17,6 +17,8 @@ import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class EpicRuntimeService extends Service {
     public static final String ACTION_RUN_JOB = "com.maliwinlator.epicbridge.RUN_JOB";
@@ -27,6 +29,11 @@ public final class EpicRuntimeService extends Service {
     private static final String CHANNEL_ID = "epic_runtime_jobs";
     private static final String TAG = "EpicRuntimeService";
     private static final int FOREGROUND_NOTIFICATION_ID = 0x45504943;
+    private static final Set<String> ACTIVE_JOB_IDS = ConcurrentHashMap.newKeySet();
+
+    public static boolean isJobActive(String jobId) {
+        return jobId != null && ACTIVE_JOB_IDS.contains(jobId);
+    }
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicInteger activeJobs = new AtomicInteger();
@@ -64,6 +71,7 @@ public final class EpicRuntimeService extends Service {
             startForeground(FOREGROUND_NOTIFICATION_ID, buildNotification("install".equals(command) ? "Installing Epic game" : "Uninstalling Epic game", true));
             if (!wakeLock.isHeld()) wakeLock.acquire(6L * 60L * 60L * 1000L);
         }
+        ACTIVE_JOB_IDS.add(jobId);
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString(jobId + ".state", "running")
                 .putString(jobId + ".result", "")
@@ -93,6 +101,7 @@ public final class EpicRuntimeService extends Service {
                     .putString(jobId + ".result", response)
                     .putLong(jobId + ".finished_at", System.currentTimeMillis())
                     .apply();
+            ACTIVE_JOB_IDS.remove(jobId);
 
             int remaining = activeJobs.decrementAndGet();
             if (remaining <= 0) {
