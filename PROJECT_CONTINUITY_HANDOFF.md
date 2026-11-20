@@ -1081,3 +1081,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Changed the host's initial background-job ID persistence from asynchronous SharedPreferences `apply()` to synchronous `commit()` before polling starts. This narrows the window where Android could kill the host process after starting a long download but before the ID needed for automatic recovery reaches disk.
 - Commit: e2f70a456cd968a440ef3ac9c4c5abc0003c2e3e.
+
+## Engineering continuation — 2026-11-20: durably persist companion job state transitions
+
+- Changed the companion service's queued/running, complete/failed, and interrupted SharedPreferences writes to synchronous commits. The host's durable job ID and the companion's job state/result now have a much smaller process-death window during long installs and service teardown.
+- Commit: 3f593220f3a8f6f553386be426f34698360f6f01.
