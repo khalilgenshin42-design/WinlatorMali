@@ -229,5 +229,17 @@ dependencies {
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
 }
 
+// Package the separately licensed Epic Bridge companion as an installable APK asset.
+// It remains a distinct Android package and is installed only with the user's consent.
+def epicBridgeApk = project(':epicbridge').layout.buildDirectory.file('outputs/apk/debug/epicbridge-debug.apk')
+def epicBridgeAssets = layout.buildDirectory.dir('generated/assets/epicBridge')
 
+tasks.register('embedEpicBridgeApk', Copy) {
+    dependsOn(':epicbridge:assembleDebug')
+    from(epicBridgeApk)
+    into(epicBridgeAssets)
+    rename { 'epicbridge.apk' }
+}
 
+android.sourceSets.main.assets.srcDir(epicBridgeAssets)
+preBuild.dependsOn(embedEpicBridgeApk)
