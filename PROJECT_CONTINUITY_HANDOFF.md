@@ -393,3 +393,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added host-side protocol-version validation to `EpicBridgeClient.getStatus()` in commit `d5105ce912bbf686d32aac62bb6da206d2ff43e0`. A stale/mismatched companion now produces a distinct `protocol_mismatch` state instead of being treated as a valid bridge response.
 - The standard debug APK CI triggered by the IPC hardening is run **44647036824** and was still in progress at the last poll. It must complete successfully before treating the latest provider/client changes as build-verified.
+
+- The earlier IPC-hardening build run `44647036824` was cancelled by the newer commit-triggered run; it is not a failure. Replacement build run **44647129110** at source commit `d5105ce912bbf686d32aac62bb6da206d2ff43e0` is in progress: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44647129110
