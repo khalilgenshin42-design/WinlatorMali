@@ -3,6 +3,8 @@ package com.winlator.cmod;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
+import android.os.Environment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -52,6 +54,7 @@ public final class EpicFragment extends Fragment {
     private final List<Container> containers = new ArrayList<>();
     private final Set<String> installedApps = new HashSet<>();
     private boolean replaceCompanion;
+    private boolean storageReady;
 
     @Nullable
     @Override
@@ -169,12 +172,14 @@ public final class EpicFragment extends Fragment {
 
         Bundle bridge = EpicBridgeClient.getStatus(requireContext());
         boolean ready = bridge.getBoolean("runtime_ready", false);
-        boolean storage = bridge.getBoolean("storage_access", false);
+        boolean bridgeStorage = bridge.getBoolean("storage_access", false);
+        boolean hostStorage = Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager();
+        storageReady = bridgeStorage && hostStorage;
         String state = bridge.getString("state", "");
         replaceCompanion = "signature_mismatch".equals(state) || "protocol_mismatch".equals(state) || "runtime_not_installed".equals(state);
         installBridgeButton.setVisibility(replaceCompanion ? View.VISIBLE : View.GONE);
         installBridgeButton.setText(replaceCompanion ? "Replace Epic Bridge" : "Install Epic Bridge");
-        storageButton.setVisibility(storage || replaceCompanion ? View.GONE : View.VISIBLE);
+        storageButton.setVisibility(storageReady || replaceCompanion ? View.GONE : View.VISIBLE);
         if (!ready) {
             statusText.setText("Epic Bridge is installed, but its CPython/Legendary runtime is not ready. " +
                     bridge.getString("message", "Install the runtime-enabled companion build."));
@@ -182,7 +187,9 @@ public final class EpicFragment extends Fragment {
             return;
         }
 
-        statusText.setText("Epic Bridge runtime ready. Checking Epic account...");
+        statusText.setText(storageReady
+                ? "Epic Bridge runtime ready. Checking Epic account..."
+                : "Epic runtime ready. Grant shared-storage access in both apps before installing or launching games.");
         setRuntimeControls(true);
         runCommand("account_status", "{}", response -> {
             if (!response.optBoolean("ok", false)) {
@@ -385,7 +392,7 @@ public final class EpicFragment extends Fragment {
 
         LinearLayout actions = new LinearLayout(requireContext());
         actions.setOrientation(LinearLayout.HORIZONTAL);
-        if (!installed && supported) {
+        if (!installed && supported && storageReady) {
             Button install = new Button(requireContext());
             install.setText("Install");
             install.setOnClickListener(v -> installGame(appName, title));
@@ -416,6 +423,10 @@ public final class EpicFragment extends Fragment {
     }
 
     private void installGame(String appName, String title) {
+        if (!storageReady) {
+            statusText.setText("Grant shared-storage access to both MaliWinlator and Epic Bridge before installing games.");
+            return;
+        }
         File basePath = new File(SettingsFragment.DEFAULT_WINLATOR_PATH, "drive_c/Games/Epic");
         if (!basePath.exists() && !basePath.mkdirs()) {
             statusText.setText("Unable to create Epic game install directory: " + basePath);
