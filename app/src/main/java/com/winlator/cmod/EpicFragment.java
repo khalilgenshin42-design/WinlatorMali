@@ -618,7 +618,12 @@ public final class EpicFragment extends Fragment {
                 return;
             }
             if (findContainerIndex(gameDir) != ownerIndex) {
-                statusText.setText("Epic returned a game directory outside the selected container's Wine C: drive. Reinstall the game into this container.");
+                statusText.setText("Epic returned a game directory outside the selected container's shared game folder. Reinstall the game into this container.");
+                return;
+            }
+            String epicWorkingDirectory = launch.optString("working_directory", gameDir);
+            if (findContainerIndex(epicWorkingDirectory) != ownerIndex) {
+                statusText.setText("Epic returned a working directory outside the selected container's shared game folder.");
                 return;
             }
             File executable = new File(gameDir, exe.replace('\\', File.separatorChar));
@@ -650,7 +655,7 @@ public final class EpicFragment extends Fragment {
             }
             final String wineWorkingDirectory;
             try {
-                wineWorkingDirectory = getWineEpicDirectory(container, gameDir);
+                wineWorkingDirectory = getWineEpicDirectory(container, epicWorkingDirectory);
             } catch (Exception e) {
                 statusText.setText("Unable to map Epic game directory into Wine C:: " + e.getMessage());
                 return;
