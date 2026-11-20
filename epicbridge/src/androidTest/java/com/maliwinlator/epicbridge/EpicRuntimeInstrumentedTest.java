@@ -1,6 +1,7 @@
 package com.maliwinlator.epicbridge;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
@@ -14,6 +15,13 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public final class EpicRuntimeInstrumentedTest {
+    @Test
+    public void providerAuthorizesOnlyTheActualStandardHostPackage() {
+        assertTrue(EpicBridgeProvider.isAllowedHostPackage("com.maliwinlator.app"));
+        assertFalse(EpicBridgeProvider.isAllowedHostPackage("com.winlator.cmod"));
+        assertFalse(EpicBridgeProvider.isAllowedHostPackage("com.example.untrusted"));
+    }
+
     @Test
     public void bundledRuntimeLoadsAndPassesNativeSelfTest() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
