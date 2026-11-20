@@ -35,6 +35,20 @@ public final class EpicRuntimeService extends Service {
         return jobId != null && ACTIVE_JOB_IDS.contains(jobId);
     }
 
+    /**
+     * Atomically reserve the single Epic install slot before the provider starts
+     * the service. This closes the window where two rapid host requests could
+     * both be accepted before either onStartCommand() has run.
+     */
+    public static synchronized boolean reserveJob(String jobId) {
+        return jobId != null && !jobId.isEmpty()
+                && ACTIVE_JOB_IDS.isEmpty() && ACTIVE_JOB_IDS.add(jobId);
+    }
+
+    public static synchronized void releaseJobReservation(String jobId) {
+        if (jobId != null) ACTIVE_JOB_IDS.remove(jobId);
+    }
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicInteger activeJobs = new AtomicInteger();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
