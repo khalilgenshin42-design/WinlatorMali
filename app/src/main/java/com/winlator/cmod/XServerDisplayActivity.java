@@ -529,7 +529,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
 
-        epicLaunchPayload = EpicLaunchPayloadStore.take(getIntent().getStringExtra("epic_launch_token"));
+        String epicLaunchToken = getIntent().getStringExtra("epic_launch_token");
+        epicLaunchPayload = EpicLaunchPayloadStore.get(epicLaunchToken);
         if (epicLaunchPayload != null && shortcut != null) {
             shortcut.putExtra("execArgs", epicLaunchPayload.commandLine);
             if (!epicLaunchPayload.workingDirectory.isEmpty()) {
@@ -1499,7 +1500,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         if (epicLaunchPayload != null) {
             guestProgramLauncherComponent.setSecureLaunch(true);
-            guestProgramLauncherComponent.setSecretEnvVars(epicLaunchPayload.environment);
+            guestProgramLauncherComponent.setEpicLaunchPayloadToken(epicLaunchToken);
             epicLaunchPayload = null;
         }
 
