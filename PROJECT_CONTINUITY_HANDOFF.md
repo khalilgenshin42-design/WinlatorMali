@@ -902,3 +902,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added an `onDestroy()` safeguard that marks any still-running persisted Epic jobs as interrupted before shutting down the service executor and releasing its wake lock. Normal completion removes job IDs first, so completed jobs are not overwritten.
 - Commit: 6be23b842150c1f2932104a1d60162c6988736d1.
+
+## Engineering continuation — 2026-11-20: expire orphaned host-side Epic job IDs
+
+- Added a 30-second unknown-state grace to the host job tracker. If the companion no longer has a record for a persisted job ID (for example, after the companion was reinstalled or the service failed before recording its job), the host now clears the orphaned ID and reports that the operation may not have started instead of polling indefinitely.
+- Commit: 72d760aabd76a88ba05a956bf30b57ce8a577c13.
