@@ -7,4 +7,3 @@ charset-normalizer==3.4.1
 idna==3.10
 urllib3==2.3.0
 filelock==3.18.0
-pycryptodomex==3.23.0
