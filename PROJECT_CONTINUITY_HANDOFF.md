@@ -861,3 +861,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - The embedded Python runtime self-test already reports a dedicated `download_failure_cleanup` result after forcing a manager exception and verifying the thread backend captures it and releases resources. Added an explicit Android instrumentation assertion for that result so this regression cannot silently remain untested.
 - Commit: 855a47c393dd9e31068340d4fc1dcf03e2323525.
+
+## Engineering continuation — 2026-11-20: fix JNI local-reference cleanup on Python worker threads
+
+- Audited the native AES-GCM callback path used by Legendary's downloader threads and found that the success path detached a Python worker from the JVM before deleting its JNI local references. A detached thread's `JNIEnv*` is no longer valid, making the subsequent `DeleteLocalRef` calls unsafe and potentially fatal during chunk decryption.
+- Reordered cleanup so all local references are deleted while the thread is still attached; only then is a thread attached by the callback detached. Binder/main Java threads remain attached by their original caller and are not detached.
+- Commit: 4ce0cbb745e8c376fc1e13be35fc8b890414cca2.
+- The dedicated worker-thread AES-GCM Android instrumentation assertion exercises this path; it must pass before runtime readiness can be claimed.
