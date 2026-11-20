@@ -351,6 +351,18 @@ def main() -> None:
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
+    # A dead writer while tasks remain would otherwise leave the main progress
+    # loop waiting forever for file-result notifications.
+    replace_once(
+        manager,
+        "        while processed_tasks < num_tasks and self.running:\n",
+        "        while processed_tasks < num_tasks and self.running:\n"
+        "            if self.children and not self.children[-1].is_alive():\n"
+        "                self.error = RuntimeError('Epic file writer thread exited before completing its tasks')\n"
+        "                self.stop()\n"
+        "                break\n",
+    )
+
     # Do not close an anonymous mmap while any worker/helper thread still references it.
     replace_once(
         manager,
