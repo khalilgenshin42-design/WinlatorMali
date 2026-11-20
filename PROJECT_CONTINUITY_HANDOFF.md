@@ -1019,3 +1019,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Extended the CPython runtime self-test to flip one bit of the NIST AES-GCM authentication tag and require the native _epiccrypto → JNI → Android JCA path to raise a Python RuntimeError. Added an explicit Android instrumentation assertion for this result.
 - The existing Java known-answer test already verifies JCA tag rejection directly; this new case verifies exception propagation through the C/JNI bridge used by Legendary.
 - Commits: fe6dbfc1625c74cbc459e8ebc68b1011ca99df3f (runtime negative test); f0c12e728a5bf88edff5b8cb1cbaf1f80fc89601 (instrumentation assertion).
+
+## Engineering continuation — 2026-11-20: report ELF dependency closure in the CI evidence summary
+
+- Updated the generated CI status report's verification scope to explicitly include the final ARM64 ELF dependency-closure audit, alongside emulator tests, JNI instrumentation, APK signing, package identity, ABI, assets, and embedded companion byte-for-byte comparison.
+- Commit: c208c3f908854bedfc0f12f4f41540901e80b0bc.
