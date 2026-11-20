@@ -1180,3 +1180,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - GitHub automatically started corrected workflow run **44733619638** from that commit. At the time of this note it is in progress at initial Android SDK setup; instrumentation, APK build, and publication are still pending.
 - Previous successes remain: Legendary source patch/static validation, Epic library aggregation tests, host smoke including AES-GCM known-answer and worker lifecycle, managed x86_64 runtime smoke, production ARM64 CPython runtime build, runtime archive audit, and Android SDK/NDK toolchain installation.
 - Do not install the host-only baseline APK or claim Epic integration is ready until corrected run completes instrumentation, produces both ARM64 APKs, passes signature/ABI/assets/ELF dependency and embedded-companion audits, and publishes the prerelease with SHA-256 sums.
+
+
+## CI failure analysis and shell-scope correction — 2026-11-20
+
+- Corrected retry **44733619638** passed all runtime build/audit stages and successfully booted its managed Android x86_64 emulator. It then failed before Gradle or any instrumentation assertion ran.
+- Exact failure: `chmod: cannot access './gradlew': No such file or directory`. The emulator action invokes each newline-delimited script command in a separate `/usr/bin/sh -c` process, so `cd maliwinlator` did not persist into the following `chmod` command. This was another CI script orchestration defect, not an Epic Bridge test failure.
+- Reworked the emulator script into one parenthesized shell command: `(cd maliwinlator && chmod +x ./gradlew && ./gradlew ... )`, keeping the directory change, wrapper permission fix, and instrumentation invocation in the same shell process.
+- Fix commit: `4bc34b9b334b101f0d0675c20b92d6b5636935c5`. A new run should be triggered by the workflow-file path filter. Instrumentation, ARM64 APK packaging, APK audits, artifact upload, and prerelease publication remain unverified until that run passes.
+- Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44733619638
