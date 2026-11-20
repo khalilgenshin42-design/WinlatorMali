@@ -185,9 +185,11 @@ public final class EpicPythonRuntime {
                 }
             } catch (FileNotFoundException e) {
                 String[] nested = assets.list(childAsset);
-                if (nested == null || nested.length == 0) {
+                if (nested == null) {
                     throw new IOException("Missing packaged runtime asset " + childAsset, e);
                 }
+                // An empty AssetManager listing is a valid empty directory. Required
+                // runtime files are verified by the post-extraction preflight/self-test.
                 extractAssetDirectory(assets, childAsset, targetRoot);
             }
         }
