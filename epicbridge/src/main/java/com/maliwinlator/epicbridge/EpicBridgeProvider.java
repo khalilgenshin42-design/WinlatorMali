@@ -86,7 +86,8 @@ public final class EpicBridgeProvider extends ContentProvider {
             case "installed":
             case "install":
             case "uninstall":
-            case "launch_info": {
+            case "launch_info":
+            case "runtime_self_test": {
                 String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
                 String runtimeCommand = "account_status".equals(method) ? "status" : method;
                 String response = EpicPythonRuntime.call(getContext(), runtimeCommand, payload);
