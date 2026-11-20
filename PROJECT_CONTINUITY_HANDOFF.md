@@ -1199,3 +1199,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - GitHub's job-log blob is not yet available while the job is active (log endpoint returned BlobNotFound); no instrumentation result should be inferred from that.
 - Next action: poll run **44737481566**. If instrumentation fails, retrieve the completed job log and fix the first actual Gradle/test failure. If it passes, verify the ARM64 APK pair, signer/package/ABI/ELF checks, embedded-companion byte identity, SHA-256 manifest, uploaded artifacts, and prerelease assets before calling the build ready.
 - Run URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44737481566
+
+
+## CI failure analysis and diagnostic retry — 2026-11-20
+
+- Epic runtime workflow run **44737481566** (run #176) completed with failure at step 20, :epicbridge:connectedDebugAndroidTest. All earlier steps 1–19 passed, including x86_64/ARM64 CPython runtime builds, Legendary static/host tests, managed emulator runtime prerequisite smoke, runtime archive audit, and Android toolchain setup.
+- The emulator instrumentation task actually ran four tests. Two runtime tests failed with the same response: {"ok":false,"error":"PYTHON_RUNTIME_ERROR"}; the provider authorization and single-flight job reservation tests were not reported as failing. APK build/upload/release steps were skipped by the intended gate.
+- The generic response was produced by epicbridge/src/main/c/epic_python.c when nativeCall() failed to obtain a Python Unicode result. The existing PyErr_Print() did not surface the root exception in the Gradle log, so the exact Python import/runtime exception remains unknown. Do not guess at the cause or weaken the test.
+- Added native exception type/message reporting through Android logcat (EpicBridgePython) while retaining the generic structured failure response: commit bc0215074b86d1a407974cafccbc653cd9a006df.
+- Updated the emulator instrumentation script to dump the relevant Android logcat tags if Gradle tests fail, and corrected the shell flow so the failure branch still runs under the action's errexit behavior: commits d78c753547752cd25c0c834b29343bdb8504a63e and 33ec6faf99d6d0003ac7d68d964029fe92e3a394.
+- The workflow-file and native-source commits trigger a new full Epic runtime run. Next action: inspect the latest run and, if it reaches instrumentation, use the captured native exception to fix the actual runtime defect. Do not publish or install an APK pair until instrumentation and the full ARM64 packaging/audit/release chain pass.
+- Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44737481566
