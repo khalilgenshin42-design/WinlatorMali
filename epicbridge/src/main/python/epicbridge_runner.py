@@ -1,7 +1,8 @@
 """Structured Android service API over pinned Legendary 0.21.1."""
 from __future__ import annotations
 
-import dataclasses
+import base64
+import uuid
 import json
 import logging
 import os
@@ -129,15 +130,31 @@ def _launch_info(core, payload):
     if not core.is_installed(app_name):
         raise ValueError("The selected Epic game is not installed")
     params = core.get_launch_parameters(app_name, disable_wine=True)
+    secret_files = []
+    egl_parameters = list(params.egl_parameters or [])
+    for index, argument in enumerate(egl_parameters):
+        if argument.startswith("-epicovt="):
+            source_path = argument.split("=", 1)[1]
+            with open(source_path, "rb") as source:
+                token_data = source.read(256 * 1024 + 1)
+            if len(token_data) > 256 * 1024:
+                raise ValueError("Epic ownership token file exceeded the safe transfer limit")
+            secret_files.append({
+                "name": f"epic-{uuid.uuid4().hex}.ovt",
+                "data_base64": base64.b64encode(token_data).decode("ascii"),
+            })
+            egl_parameters[index] = "-epicovt=__EPIC_OVT_PLACEHOLDER__"
+
     return {
         "app_name": app_name,
         "game_executable": params.game_executable,
         "game_directory": params.game_directory,
-        "working_directory": params.working_directory,
-        "game_parameters": list(params.game_parameters),
-        "egl_parameters": list(params.egl_parameters),
-        "user_parameters": list(params.user_parameters),
+        "working_directory": params.working_directory or params.game_directory,
+        "game_parameters": list(params.game_parameters or []),
+        "egl_parameters": egl_parameters,
+        "user_parameters": list(params.user_parameters or []),
         "environment": dict(params.environment or {}),
+        "secret_files": secret_files,
     }
 
 
