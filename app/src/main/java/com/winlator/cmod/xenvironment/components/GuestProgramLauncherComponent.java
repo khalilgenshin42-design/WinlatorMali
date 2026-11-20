@@ -51,7 +51,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private String[] bindingPaths;
     private EnvVars envVars;
     private EnvVars secretEnvVars;
-    private String epicLaunchPayloadToken;
+    private EpicLaunchPayloadStore.Payload epicLaunchPayload;
     private boolean secureLaunch;
     private WineInfo wineInfo;
     private String box64Preset = Box64Preset.COMPATIBILITY;
@@ -327,8 +327,8 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.secureLaunch = secureLaunch;
     }
 
-    public void setEpicLaunchPayloadToken(String token) {
-        this.epicLaunchPayloadToken = token;
+    public void setEpicLaunchPayload(EpicLaunchPayloadStore.Payload payload) {
+        this.epicLaunchPayload = payload;
     }
 
     public String getBox64Preset() {
@@ -551,10 +551,9 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         String wineLauncher = wineInfo.isArm64EC() ? winePath + "/wine" : imageFs.getBinDir() + "/box64 wine";
         updatePrefixBeforeSession(execEnvVars, wineLauncher, rootDir, imageFs);
 
-        if (epicLaunchPayloadToken != null) {
-            EpicLaunchPayloadStore.Payload payload = EpicLaunchPayloadStore.take(epicLaunchPayloadToken);
-            epicLaunchPayloadToken = null;
-            if (payload != null) execEnvVars.putAll(payload.environment);
+        if (epicLaunchPayload != null) {
+            execEnvVars.putAll(epicLaunchPayload.environment);
+            epicLaunchPayload = null;
         }
 
         // Apply one-shot authentication values only to the actual game process, never to prefix setup.
