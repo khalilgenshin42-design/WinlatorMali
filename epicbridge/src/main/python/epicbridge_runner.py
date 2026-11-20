@@ -236,7 +236,10 @@ def _runtime_self_test():
     bad_tag = bytes([tag[0] ^ 1]) + tag[1:]
     try:
         AES.new(bytes(16), AES.MODE_GCM, nonce=bytes(12)).decrypt_and_verify(ciphertext, bad_tag)
-    except RuntimeError:
+    except ValueError:
+        # The native shim deliberately maps JCA authentication failures to
+        # ValueError, matching the decrypt-and-verify contract. The valid
+        # NIST vector above proves this is not a blanket crypto failure.
         bad_tag_rejected = True
     else:
         raise RuntimeError("Android JCA AES-GCM accepted a corrupted authentication tag")
