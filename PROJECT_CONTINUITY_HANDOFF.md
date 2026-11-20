@@ -663,3 +663,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Disabled CPython signal-handler installation in JNI initialization because initialization may occur on an Android Binder or executor thread rather than the process main thread.
 - Commits: ea234c0d2616469cf60f95d799f3a475365b7bae (Android instrumentation test); e18f24a9036b6f96d4866b9ab77c07d1821ad660 (source-trigger coverage); a114f91deac6a138da81af01c0270d6ee0ac03e5 (dual-ABI APK audits); 2919a5f11f1660be677b60a9c1fba150556d93b2 (JNI CPython signal setup).
 - The latest development-branch commit e18f24a9036b6f96d4866b9ab77c07d1821ad660 changes the watched POC workflow paths and should trigger the next full runtime workflow. No successful run, runtime artifact, or APK has yet been observed for this exact source revision.
+
+## Engineering continuation — 2026-11-20: final runtime recovery and mmap lifetime guards
+
+- Tightened content-aware runtime extraction so a matching marker is not treated as sufficient when required extracted files are missing. The companion now verifies the CPython stdlib entry point and Epic runner before skipping extraction, allowing recovery from partial external deletion.
+- Hardened the downloader's unexpected-exception cleanup: after cooperative worker joins, the manager now leaves the anonymous mmap open if any worker thread is still alive. This avoids invalidating a buffer still in use by a worker; the mapping remains referenced until those threads release it.
+- Commits: f70e4bca9757ff68f0a2ec7ee312d49f47672a8a (runtime file-presence recovery); 32c87a7a6a0efe903da133b7d2c27c53086d7b56 (mmap lifetime guard).
+- Both commits touch paths covered by the expanded Epic POC trigger, so the runtime/integration pipeline should validate the latest branch source SHA. No passing run has yet been observed.
