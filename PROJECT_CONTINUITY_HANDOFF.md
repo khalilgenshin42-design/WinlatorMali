@@ -931,3 +931,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - `XServerDisplayActivity` now consumes the payload immediately and passes the in-memory payload object directly to the guest launcher. The launcher applies its environment only after prefix setup and then clears its reference. The command line and Wine working directory continue to be copied into the transient shortcut object, and secure launch logging remains enabled.
 - Commits: 97bf155443009facbd68ff5cf7d5c07df977381e (activity consumes/transfers payload); bb4f2951cd53aa51304ce875d4796758f2107b98 (guest launcher retains payload through prefix update).
 - Static launch-flow fix; actual first-run launch still needs a device test.
+
+## Engineering continuation — 2026-11-20: align ownership-token file lifetime with prefix startup
+
+- Extended the one-shot Epic ownership-token file cleanup delay from 15 to 30 minutes to match the stale-file sweep window and allow a slow first Wine prefix preparation to complete before the game reads its token. Files remain private to the host app UID and are removed by the delayed cleanup or the next launch's stale-file sweep.
+- Commit: 1ee412644c1c423c246b558d6cb0d53890d20dbf.
