@@ -4,6 +4,7 @@
 #include <android/log.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define LOG_TAG "EpicBridgePython"
@@ -178,6 +179,41 @@ Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeInitialize(
         goto init_failed;
     }
     PyConfig_Clear(&config);
+
+    // Android embeds CPython below an app-private PYTHONHOME. Explicitly
+    // prioritize the extracted stdlib and site-packages paths before the
+    // first bridge import; this also avoids stale/partial path configuration
+    // inherited from the Android process environment.
+    PyObject *python_path = PySys_GetObject("path");  // borrowed reference
+    if (!python_path || !PyList_Check(python_path)) {
+        LOGE("CPython sys.path is unavailable after initialization");
+        Py_FinalizeEx();
+        goto init_failed;
+    }
+    char stdlib_path[PATH_MAX];
+    char site_packages_path[PATH_MAX];
+    int stdlib_len = snprintf(stdlib_path, sizeof(stdlib_path), "%s/lib/python3.15", home_utf8);
+    int site_len = snprintf(site_packages_path, sizeof(site_packages_path), "%s/site-packages", stdlib_path);
+    if (stdlib_len <= 0 || (size_t)stdlib_len >= sizeof(stdlib_path)
+            || site_len <= 0 || (size_t)site_len >= sizeof(site_packages_path)) {
+        LOGE("CPython runtime search path exceeds the supported path length");
+        Py_FinalizeEx();
+        goto init_failed;
+    }
+    PyObject *stdlib_entry = PyUnicode_DecodeFSDefault(stdlib_path);
+    PyObject *site_entry = PyUnicode_DecodeFSDefault(site_packages_path);
+    int path_ok = stdlib_entry && site_entry
+            && PyList_Insert(python_path, 0, stdlib_entry) == 0
+            && PyList_Insert(python_path, 1, site_entry) == 0;
+    Py_XDECREF(stdlib_entry);
+    Py_XDECREF(site_entry);
+    if (!path_ok) {
+        LOGE("Unable to configure CPython stdlib/site-packages search paths");
+        PyErr_Clear();
+        Py_FinalizeEx();
+        goto init_failed;
+    }
+
     g_initialized = 1;
     PyEval_SaveThread();
     (*env)->ReleaseStringUTFChars(env, home, home_utf8);
