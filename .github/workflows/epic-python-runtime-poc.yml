@@ -10,6 +10,7 @@ on:
       - 'epicbridge/poc/patch_legendary_android.py'
       - 'epicbridge/poc/requirements-android.txt'
       - 'epicbridge/**'
+      - 'tools/ci/run-epic-android-instrumentation.sh'
       - 'app/src/main/java/**/Epic*.java'
       - 'app/src/main/AndroidManifest.xml'
       - 'app/build.gradle'
