@@ -37,8 +37,15 @@ public final class EpicBridgeClient {
 
     public static Bundle getStatus(Context context) {
         try {
-            return context.getContentResolver().call(
+            Bundle result = context.getContentResolver().call(
                     Uri.parse("content://" + AUTHORITY), "status", null, null);
+            if (result != null) return result;
+            Bundle unavailable = new Bundle();
+            unavailable.putBoolean("installed", isInstalled(context));
+            unavailable.putBoolean("runtime_ready", false);
+            unavailable.putString("state", "provider_unavailable");
+            unavailable.putString("message", "Epic Bridge returned no status");
+            return unavailable;
         } catch (SecurityException e) {
             Bundle result = new Bundle();
             result.putBoolean("installed", isInstalled(context));
