@@ -336,3 +336,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
   - Add an x86_64 managed-emulator smoke test that creates POSIX shared memory, attaches from a multiprocessing child, verifies bytes, and cleans up.
   - Fix a shell/YAML audit line and guard the smoke-test process creation.
 - The previous API-24 run **44641730025** was already running with the old workflow and does not validate this fix. The updated workflow will run separately after it completes. No CPython/Legendary runtime is approved for integration until API-26 shared-memory validation passes.
+
+- Updated status of legacy API-24 run **44641730025**: upstream CPython's x86_64 managed-emulator `ci --fast-ci` step completed successfully. It is now building the separate ARM64 package. This proves the CPython 3.15.2 x86_64 emulator test suite passes, but does not clear the Android shared-memory blocker because the inspected API-24 ARM64 package lacked `_posixshmem`. The API-26 run `44644276392` is queued to validate the corrected target.
