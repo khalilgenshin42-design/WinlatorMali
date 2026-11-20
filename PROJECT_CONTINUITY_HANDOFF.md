@@ -1371,3 +1371,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Replaced those script-object calls with `new File(epicRuntimePrefix)` and `System.out.println(...)`, retaining the strict prefix validation and no-stub fail-closed behavior. No configuration-cache disablement or relaxation of runtime checks.
 - Standard baseline APK workflow **44788442108** succeeded again, including embedded companion byte-match and shared signer validation.
 - Next: rerun Epic workflow, confirm prefix validation and runtime asset staging complete, then inspect Android instrumentation results. No Epic APK pair is ready.
+
+- Follow-up trigger audit: the Epic workflow's `push.paths` did not explicitly include `epicbridge/build.gradle`, so the Gradle staging correction alone did not launch the Epic workflow (only the baseline workflow ran). Added the Gradle file to the Epic workflow path filters to ensure future packaging/build-logic changes automatically run the Android instrumentation gate.
