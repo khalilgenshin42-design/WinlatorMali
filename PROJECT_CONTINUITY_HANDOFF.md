@@ -913,3 +913,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The install runner previously discarded the dictionary returned by Legendary's `core.install_game()`, which can identify a game's prerequisite installer. It now returns that metadata alongside install path/version and the existing anti-cheat/offline warnings.
 - The Epic UI now surfaces prerequisite requirements and compatibility warnings instead of silently implying every installed title is immediately launch-ready. It explicitly notes that prerequisite installers are not yet launched automatically.
 - Commits: 9a737c11a931ec0c60c5d5da4e939a947e8e60f2 (runner result); 69e0a5852c89933a7e069ef7958580492a0de70c (UI warnings).
+
+## Signing compatibility correction — 2026-11-20
+
+- The earlier versionCode note correctly prevents Android's version-code downgrade check, but it does **not** guarantee in-place updates from a prior GitHub Actions debug APK. Both host and companion currently use the runner-generated Android debug keystore; GitHub-hosted runners are ephemeral, so a later workflow run may sign with a different debug certificate.
+- The final same-run audit proves only that the host and embedded/separate companion APKs share the same certificate. It does not prove continuity with a previous run.
+- No stable private signing key is present in the repository, and a signing key must not be committed to this public source tree. Until a user-managed release keystore is configured securely, a debug APK signed by a different run may require uninstalling the previous debug package before installation. The first Epic artifact remains installable as a clean install.
