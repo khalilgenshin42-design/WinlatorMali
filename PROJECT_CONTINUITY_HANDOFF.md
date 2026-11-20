@@ -325,3 +325,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Dual-APK build and new verification gate passed in run **44643844227** at commit `c94a3e26481929bf5773f3982825a6e0d0d9d52e`. The host APK embeds the exact companion APK, the embedded APK passes ZIP integrity and package-ID checks, and both APKs have identical SHA-256 signer certificates. Artifact ID `14587242782`, size 446,637,569 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44643844227/artifacts/14587242782
 - This validates the installable companion packaging/signature boundary only. The companion still reports `runtime_not_installed`; no Epic login, library, downloads, or launch is available yet.
+
+## Engineering step log — 2026-11-20: Android POSIX shared-memory blocker found
+
+- Downloaded and inspected the prior CPython ARM64 POC artifact `14564177384` (run `44590732396`). Its package includes `multiprocessing/shared_memory.py` but **does not include** the native `_posixshmem` extension.
+- This is a hard Legendary blocker: Legendary 0.21.1's downloader imports `multiprocessing.shared_memory.SharedMemory` in its manager and workers, so the API-24 CPython package cannot be used as-is.
+- Updated `epic-python-runtime-poc.yml` in commits `daa3c7e4c2a9b94bce48cb40d18db2eda2d35460`, `61a0dec6e5529f51baaad41a7fbd1fa6096a36bf`, `9b11419768c301805e45c996cf5c73cbdb3054e2`, and `f7ba72398c0a56208b362add2cbc62e9db7d416f`:
+  - Set Android API level to 26, matching MaliWinlator minSdk.
+  - Require `_posixshmem` in the ARM64 runtime archive.
+  - Add an x86_64 managed-emulator smoke test that creates POSIX shared memory, attaches from a multiprocessing child, verifies bytes, and cleans up.
+  - Fix a shell/YAML audit line and guard the smoke-test process creation.
+- The previous API-24 run **44641730025** was already running with the old workflow and does not validate this fix. The updated workflow will run separately after it completes. No CPython/Legendary runtime is approved for integration until API-26 shared-memory validation passes.
