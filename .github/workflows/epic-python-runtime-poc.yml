@@ -178,9 +178,11 @@ jobs:
           # private _path helper: the Android app must see a package parent
           # and the submodule in the same stdlib tree.
           rm -rf "$PREFIX/lib/python3.15/zipfile"
-          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile" "$PREFIX/lib/python3.15/zipfile"
+          cp -aL "$GITHUB_WORKSPACE/cpython/Lib/zipfile" "$PREFIX/lib/python3.15/zipfile"
           test -f "$PREFIX/lib/python3.15/zipfile/__init__.py"
           test -f "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
+          test ! -L "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
+          test ! -L "$PREFIX/lib/python3.15/zipfile/_path"
           rm -f cross-build/x86_64-linux-android/dist/*.tar.gz
           python3 Platforms/Android package x86_64-linux-android
 
@@ -216,9 +218,11 @@ jobs:
           test -d "$SITE_PACKAGES/requests"
           # Keep the 3.15 zipfile package submodule visible to importlib.resources.
           rm -rf "$PREFIX/lib/python3.15/zipfile"
-          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile" "$PREFIX/lib/python3.15/zipfile"
+          cp -aL "$GITHUB_WORKSPACE/cpython/Lib/zipfile" "$PREFIX/lib/python3.15/zipfile"
           test -f "$PREFIX/lib/python3.15/zipfile/__init__.py"
           test -f "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
+          test ! -L "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
+          test ! -L "$PREFIX/lib/python3.15/zipfile/_path"
           ! find "$SITE_PACKAGES" -type d -name __pycache__ -print -quit | grep .
           python3 Platforms/Android package aarch64-linux-android
 
