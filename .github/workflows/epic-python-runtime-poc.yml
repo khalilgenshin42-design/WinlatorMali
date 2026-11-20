@@ -354,6 +354,17 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish successful Epic build status to repository
         if: success()
         working-directory: maliwinlator
@@ -362,11 +373,12 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin "$GITHUB_REF_NAME"
-          git rebase "origin/$GITHUB_REF_NAME"
+          git reset --hard FETCH_HEAD
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
           # Epic APK CI status
 
           - Result: **SUCCESS**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
           - Source commit: $GITHUB_SHA
           - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
           - APK artifact: $EPIC_APK_ARTIFACT_URL
@@ -387,11 +399,12 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin "$GITHUB_REF_NAME"
-          git rebase "origin/$GITHUB_REF_NAME"
+          git reset --hard FETCH_HEAD
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
           # Epic APK CI status
 
           - Result: **FAILURE**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
           - Source commit: $GITHUB_SHA
           - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
           - APK artifact: not verified; do not install.
@@ -403,13 +416,3 @@ jobs:
           git commit -m "ci: record Epic APK validation failure [skip ci]"
           git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
 
-      - name: Upload CPython Android runtime POC
-        uses: actions/upload-artifact@v4
-        with:
-          name: maliwinlator-cpython-3.15.2-android-arm64-poc
-          path: |
-            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
-            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
-            cpython/runtime-build-info.txt
-          if-no-files-found: error
-          retention-days: 14
