@@ -868,3 +868,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Reordered cleanup so all local references are deleted while the thread is still attached; only then is a thread attached by the callback detached. Binder/main Java threads remain attached by their original caller and are not detached.
 - Commit: 4ce0cbb745e8c376fc1e13be35fc8b890414cca2.
 - The dedicated worker-thread AES-GCM Android instrumentation assertion exercises this path; it must pass before runtime readiness can be claimed.
+
+## Engineering continuation — 2026-11-20: audit out the native PyCryptodome dependency
+
+- Verified the pinned Legendary 0.21.1 project metadata declares `pycryptodomex`, while the Android companion intentionally does not bundle its native extension: the two runtime AES-GCM imports in `models/chunk.py` and `models/manifest.py` are rewritten to the Android JCA shim.
+- Added a workflow assertion that no Python source under the installed Legendary package still imports or references `Cryptodome`. This prevents a future upstream change from silently reintroducing an unavailable native crypto dependency into the Bionic runtime.
+- Commit: ef6fca48413afef33ef006f0775ff5a74079f941.
