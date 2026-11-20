@@ -287,14 +287,22 @@ jobs:
             "cmake;3.22.1"
 
       - name: Run Epic Bridge x86_64 Android instrumentation tests
-        working-directory: maliwinlator
-        run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace \
-            :epicbridge:connectedDebugAndroidTest \
-            -PepicRuntimeAbi=x86_64 \
-            -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/x86_64-linux-android/prefix"
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -euo pipefail
+            cd maliwinlator
+            chmod +x ./gradlew
+            ./gradlew --no-daemon --stacktrace \
+              :epicbridge:connectedDebugAndroidTest \
+              -PepicRuntimeAbi=x86_64 \
+              -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/x86_64-linux-android/prefix"
 
       - name: Build ARM64 Epic companion and MaliWinlator host APK
         working-directory: maliwinlator
