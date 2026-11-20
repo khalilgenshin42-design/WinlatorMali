@@ -919,3 +919,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The earlier versionCode note correctly prevents Android's version-code downgrade check, but it does **not** guarantee in-place updates from a prior GitHub Actions debug APK. Both host and companion currently use the runner-generated Android debug keystore; GitHub-hosted runners are ephemeral, so a later workflow run may sign with a different debug certificate.
 - The final same-run audit proves only that the host and embedded/separate companion APKs share the same certificate. It does not prove continuity with a previous run.
 - No stable private signing key is present in the repository, and a signing key must not be committed to this public source tree. Until a user-managed release keystore is configured securely, a debug APK signed by a different run may require uninstalling the previous debug package before installation. The first Epic artifact remains installable as a clean install.
+
+## Engineering continuation — 2026-11-20: reject stale x86 libraries in the production companion APK
+
+- Extended the final APK content audit to fail if the ARM64 companion APK accidentally retains x86, x86_64, or armeabi-v7a JNI libraries after the sequential emulator-test/production-ABI Gradle builds. The expected ARM64 JNI libraries remain explicitly required.
+- Commit: 216be82e580811f02d832770019a5105b2b9ef06.
