@@ -219,8 +219,30 @@ Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeCall(
     }
     jstring output = result_utf8 ? (*env)->NewStringUTF(env, result_utf8) : NULL;
     if (!output) {
-        PyErr_Print();
-        output = (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"PYTHON_RUNTIME_ERROR\"}");
+        if (PyErr_Occurred()) {
+            PyObject *error_type = NULL;
+            PyObject *error_value = NULL;
+            PyObject *error_traceback = NULL;
+            PyErr_Fetch(&error_type, &error_value, &error_traceback);
+            PyErr_NormalizeException(&error_type, &error_value, &error_traceback);
+            PyObject *type_name = error_type
+                    ? PyObject_GetAttrString(error_type, "__name__") : NULL;
+            PyObject *message = error_value ? PyObject_Str(error_value) : NULL;
+            const char *type_utf8 = type_name ? PyUnicode_AsUTF8(type_name) : NULL;
+            const char *message_utf8 = message ? PyUnicode_AsUTF8(message) : NULL;
+            LOGE("CPython bridge call failed (%s): %s",
+                 type_utf8 ? type_utf8 : "unknown exception",
+                 message_utf8 ? message_utf8 : "no exception message");
+            Py_XDECREF(message);
+            Py_XDECREF(type_name);
+            Py_XDECREF(error_traceback);
+            Py_XDECREF(error_value);
+            Py_XDECREF(error_type);
+            PyErr_Clear();
+        } else {
+            LOGE("CPython bridge call produced no Unicode result and no Python exception");
+        }
+        output = (*env)->NewStringUTF(env, "{\\"ok\\":false,\\"error\\":\\"PYTHON_RUNTIME_ERROR\\"}");
     }
 
     Py_XDECREF(result);
