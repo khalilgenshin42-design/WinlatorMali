@@ -28,7 +28,7 @@ import androidx.fragment.app.Fragment;
 
 import com.winlator.cmod.container.Container;
 import com.winlator.cmod.container.ContainerManager;
-import com.winlator.cmod.container.ImageFs;
+import com.winlator.cmod.xenvironment.ImageFs;
 import com.winlator.cmod.core.EnvVars;
 import com.winlator.cmod.epic.EpicBridgeClient;
 import com.winlator.cmod.epic.EpicLaunchPayloadStore;
