@@ -20,6 +20,8 @@ public final class EpicRuntimeInstrumentedTest {
 
         assertTrue("CPython/Legendary assets or JNI library are missing",
                 EpicPythonRuntime.isPackaged(context));
+        assertTrue("Android AES-GCM known-answer or invalid-tag test failed",
+                EpicCryptoBridge.verifyKnownAnswerTest());
 
         String response = EpicPythonRuntime.call(context, "runtime_self_test", "{}");
         JSONObject result = new JSONObject(response);
