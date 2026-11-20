@@ -135,6 +135,7 @@ jobs:
           PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 -m legendary --version
           PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
           from queue import Queue
+          from threading import Thread
           from legendary.android_crypto import AES
           from legendary.downloader.mp.manager import DLManager
           from legendary.downloader.mp.workers import DLWorker, FileWorker
