@@ -1252,3 +1252,16 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Run #180 produced no installable APK artifacts; its gated APK build/upload/release steps were skipped. Do not install a host-only baseline APK or claim Epic integration is ready.
 - Next: follow the new workflow run; require the JNI instrumentation to actually execute, inspect `EpicBridgePython` logcat if it fails, then validate the matched ARM64 host+companion APKs, signer/package/ABI/ELF audits, embedded-companion byte identity, SHA-256 manifest, uploaded artifacts, and prerelease assets.
 - Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44742212167
+
+
+## CI failure analysis and instrumentation project-root correction — 2026-11-20
+
+- Epic runtime run **44748235868** (run #181), source commit `022126e2768103da2c9140189ff3d815cbebaa6c`, completed with failure at step 20. The managed x86_64 emulator booted successfully, but the instrumentation helper failed before Gradle launched:
+  `maliwinlator/tools/ci/run-epic-android-instrumentation.sh: line 4: cd: maliwinlator/tools/ci/../../maliwinlator: No such file or directory`.
+- Root cause: the workflow invokes the helper from the workspace root, and the helper itself is located at `maliwinlator/tools/ci`. Its previous `../../maliwinlator` suffix incorrectly attempted to enter a nested `maliwinlator/maliwinlator` directory. Correct project root relative to the helper is simply `../..`.
+- Important successful stages in run #181: x86_64 Android runtime build; Legendary Android thread-backend patch/static validation; Epic library aggregation tests; host smoke including AES-GCM and worker lifecycle; managed x86_64 emulator prerequisite smoke; **production Android ARM64 CPython runtime build**; **packaged ARM64 runtime audit**; Android SDK/NDK/CMake toolchain installation.
+- Step 20 failed before Gradle or any JNI instrumentation assertion. This is a helper path defect, not a CPython/JNI test result. The earlier two `PYTHON_RUNTIME_ERROR` failures from run #176 are still not diagnosed.
+- Corrected `tools/ci/run-epic-android-instrumentation.sh` to use `cd "$(dirname "$0")/../.."`. Commit: `dab879b1c0ccc181c1bc558dae00220151981ea2` (`ci: correct Epic instrumentation project root`).
+- The workflow path filter already includes `tools/ci/`, so this helper change triggers a fresh Epic runtime run. Next: verify the helper reaches Gradle; if instrumentation fails, retrieve the captured `EpicBridgePython` logcat exception and fix the actual runtime defect. If it passes, proceed through the gated matched ARM64 APK build, signer/package/ABI/ELF checks, exact embedded-companion byte comparison, SHA-256 manifest, artifact upload, and prerelease publication.
+- Run #181 URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44748235868
+- No APK pair was built or published by run #181. Do not install or announce an Epic-ready build yet.
