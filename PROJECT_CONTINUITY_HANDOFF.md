@@ -1283,3 +1283,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Corrected the fallback JSON literal to standard C escaping: `"{\\\"ok\\\":false,\\\"error\\\":\\\"PYTHON_RUNTIME_ERROR\\\"}"`.
 - Fix commit: `f2809334eb322efaa9037dd18c2d72d981539901` — `fix: correct JSON fallback string escaping in JNI bridge`.
 - No installable APK artifacts or release were produced by run #182. Next: rerun the same workflow on the fix commit; verify the x86_64 JNI instrumentation tests, then ARM64 APK build, signer/package/ABI/ELF/embedded-byte audits, artifact upload, and prerelease. Do not call Epic integration ready until all gates pass and the APK pair is available.
+
+
+## Epic runtime run #183 — Android stdlib package omission and corrective build (2026-11-20)
+
+- Run #183: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44752220023, source commit `f2809334eb322efaa9037dd18c2d72d981539901`.
+- Production ARM64 CPython 3.15.2 runtime compilation and its archive audit passed. The Android x86_64 JNI instrumentation then failed inside the companion runtime with the concrete exception `ModuleNotFoundError: No module named 'zipfile._path'`. This is a missing CPython standard-library package in the staged Android runtime, not a Legendary API or JNI linkage failure.
+- CPython v3.15.2 defines `Lib/zipfile/_path/` as a package directory (`__init__.py`, `_functools.py`, `glob.py`). The Android packaging pipeline had not preserved that package in its runtime prefix.
+- Corrected the Epic workflow to explicitly stage the pinned CPython source package into both x86_64 instrumentation and ARM64 production prefixes before invoking `Platforms/Android package`. Commit: `00a8b762124f6f27cd0bc9a29dbf87f575d7a1bc`.
+- Added managed Android runtime smoke assertions for `import zipfile._path`, `importlib.metadata.version('legendary-gl')`, and `importlib.resources.files('legendary')` so the missing module is caught before JNI instrumentation. Commit: `fa0dc92018676693ee943f66eb7cede0ff9faf09`.
+- Run #184 (source commit `00a8b762...`) was superseded/cancelled by the immediate smoke-test commit. Run #185 is the authoritative full retry: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44755104580. At this handoff update it is in progress; no matched ARM64 Epic APKs have been produced or released.
+- Next gate: confirm the new managed-emulator smoke actually imports `zipfile._path`, then JNI instrumentation, ARM64 host+companion build, signature/package/ABI/ELF/embedded-byte audits, artifact upload and prerelease. Only after all gates pass should the APK pair be handed over for on-device validation.
