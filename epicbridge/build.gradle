@@ -110,6 +110,11 @@ tasks.register('stageEpicPythonRuntime', Sync) {
     doLast {
         File pythonAssets = epicRuntimeGenerated.get().dir('assets').dir('python').asFile
         if (epicRuntimePrefix && pythonAssets.isDirectory()) {
+            File zipfilePackage = new File(pythonAssets, 'lib/python3.15/zipfile/__init__.py')
+            File zipfilePathPackage = new File(pythonAssets, 'lib/python3.15/zipfile/_path/__init__.py')
+            if (!zipfilePackage.isFile() || !zipfilePathPackage.isFile()) {
+                throw new GradleException('CPython 3.15 zipfile package is incomplete in staged Epic runtime assets')
+            }
             MessageDigest digest = MessageDigest.getInstance('SHA-256')
             List<File> files = []
             pythonAssets.eachFileRecurse { file -> if (file.isFile() && file.name != 'runtime-version.txt') files.add(file) }
