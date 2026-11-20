@@ -173,8 +173,12 @@ jobs:
           test -f "$SITE_PACKAGES/legendary_gl-0.21.1.dist-info/METADATA"
           # CPython 3.15's zipfile._path is a package directory; explicitly
           # stage it because the Android runtime package currently omits it.
-          mkdir -p "$PREFIX/lib/python3.15/zipfile"
-          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile/_path" "$PREFIX/lib/python3.15/zipfile/"
+          # Stage the complete CPython 3.15 zipfile package, not just its
+          # private _path helper: the Android app must see a package parent
+          # and the submodule in the same stdlib tree.
+          rm -rf "$PREFIX/lib/python3.15/zipfile"
+          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile" "$PREFIX/lib/python3.15/zipfile"
+          test -f "$PREFIX/lib/python3.15/zipfile/__init__.py"
           test -f "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
           rm -f cross-build/x86_64-linux-android/dist/*.tar.gz
           python3 Platforms/Android package x86_64-linux-android
@@ -210,8 +214,9 @@ jobs:
           test -f "$SITE_PACKAGES/legendary/__init__.py"
           test -d "$SITE_PACKAGES/requests"
           # Keep the 3.15 zipfile package submodule visible to importlib.resources.
-          mkdir -p "$PREFIX/lib/python3.15/zipfile"
-          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile/_path" "$PREFIX/lib/python3.15/zipfile/"
+          rm -rf "$PREFIX/lib/python3.15/zipfile"
+          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile" "$PREFIX/lib/python3.15/zipfile"
+          test -f "$PREFIX/lib/python3.15/zipfile/__init__.py"
           test -f "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
           ! find "$SITE_PACKAGES" -type d -name __pycache__ -print -quit | grep .
           python3 Platforms/Android package aarch64-linux-android
@@ -224,10 +229,14 @@ jobs:
           test -n "$X86_PACKAGE"
           tar -tzf "$X86_PACKAGE" | grep -E '(^|/)libpython.*\.so'
           tar -tzf "$X86_PACKAGE" | grep -E 'site-packages/legendary_gl-0\.21\.1.dist-info/METADATA'
+          tar -tzf "$X86_PACKAGE" | grep -E 'lib/python3\.15/zipfile/__init__\.py'
+          tar -tzf "$X86_PACKAGE" | grep -E 'lib/python3\.15/zipfile/_path/__init__\.py'
           PACKAGE="$(find cross-build/aarch64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
           test -n "$PACKAGE"
           tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
           tar -tzf "$PACKAGE" | grep -E 'python3\.15'
+          tar -tzf "$PACKAGE" | grep -E 'lib/python3\.15/zipfile/__init__\.py'
+          tar -tzf "$PACKAGE" | grep -E 'lib/python3\.15/zipfile/_path/__init__\.py'
           ! tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_posixshmem.*\.so'
           ! tar -tzf "$PACKAGE" | grep -E 'lib-dynload/_multiprocessing.*\.so'
           sha256sum "$X86_PACKAGE" "$PACKAGE" | tee runtime-sha256.txt
