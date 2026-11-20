@@ -18,6 +18,7 @@ public final class EpicBridgeClient {
     public static final String PACKAGE_NAME = "com.maliwinlator.epicbridge";
     public static final String AUTHORITY = PACKAGE_NAME + ".provider";
     private static final String ASSET_NAME = "epicbridge.apk";
+    private static final int PROTOCOL_VERSION = 1;
 
     private EpicBridgeClient() {}
 
@@ -39,7 +40,17 @@ public final class EpicBridgeClient {
         try {
             Bundle result = context.getContentResolver().call(
                     Uri.parse("content://" + AUTHORITY), "status", null, null);
-            if (result != null) return result;
+            if (result != null) {
+                if (result.getInt("protocol_version", -1) != PROTOCOL_VERSION) {
+                    Bundle mismatch = new Bundle();
+                    mismatch.putBoolean("installed", isInstalled(context));
+                    mismatch.putBoolean("runtime_ready", false);
+                    mismatch.putString("state", "protocol_mismatch");
+                    mismatch.putString("message", "Epic Bridge protocol version is incompatible; reinstall the matching companion package");
+                    return mismatch;
+                }
+                return result;
+            }
             Bundle unavailable = new Bundle();
             unavailable.putBoolean("installed", isInstalled(context));
             unavailable.putBoolean("runtime_ready", false);
