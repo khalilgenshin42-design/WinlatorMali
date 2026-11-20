@@ -1060,3 +1060,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added stable app-name fallbacks for missing base-game and DLC display titles, including the sort key. A malformed or sparse catalog entry can no longer abort the entire Epic library response during sorting or JSON serialization.
 - Commit: 71847ce5803022cb247e10c7a666a6609142931b.
+
+## Engineering continuation — 2026-11-20: validate the packaged runtime identity format
+
+- The companion now requires `runtime-version.txt` to contain exactly a lowercase 64-character SHA-256 hex digest before it will reuse or extract the runtime. A truncated/empty/corrupt identity asset can no longer be accepted as a valid package marker.
+- Commit: e472a26e4ef7f94fb787027404a5826147d58333.
