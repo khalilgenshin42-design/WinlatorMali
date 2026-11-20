@@ -141,6 +141,72 @@ def _launch_info(core, payload):
     }
 
 
+def _runtime_self_test():
+    import importlib.metadata
+    import ssl
+    from queue import Queue
+    from threading import Thread
+
+    import certifi
+    import filelock
+    import requests
+    from legendary.android_crypto import AES
+    from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
+    from legendary.downloader.mp.manager import DLManager
+    from legendary.downloader.mp.workers import DLWorker, FileWorker
+    from legendary.models.downloading import TerminateWorkerTask
+
+    ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
+    tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
+    plaintext = AES.new(bytes(16), AES.MODE_GCM, nonce=bytes(12)).decrypt_and_verify(ciphertext, tag)
+    if plaintext != bytes(16):
+        raise RuntimeError("Android JCA AES-GCM NIST vector failed")
+
+    ssl.create_default_context(cafile=certifi.where())
+    if importlib.metadata.version("legendary-gl") != "0.21.1":
+        raise RuntimeError("Unexpected Legendary distribution version")
+
+    manager = DLManager("/tmp/epic-runtime-smoke", "https://cdn.invalid", {})
+    if not isinstance(manager, Thread) or manager.error is not None:
+        raise RuntimeError("Legendary download manager thread backend is invalid")
+    manager.stop()
+
+    buffer = AndroidSharedBuffer(4096)
+    try:
+        buffer.buf[:8] = b"MALIWINL"
+        if buffer.buf[:8] != b"MALIWINL":
+            raise RuntimeError("Anonymous mmap read/write test failed")
+        logs, dl_q, dl_results, writer_q, writer_results = Queue(), Queue(), Queue(), Queue(), Queue()
+        dl_worker = DLWorker("epic-runtime-dl-smoke", dl_q, dl_results, buffer, logging_queue=logs)
+        writer_worker = FileWorker(writer_q, writer_results, "/tmp/epic-runtime-smoke",
+                                   buffer, logging_queue=logs)
+        if not isinstance(dl_worker, Thread) or not isinstance(writer_worker, Thread):
+            raise RuntimeError("Legendary workers are not threads")
+        dl_worker.start()
+        writer_worker.start()
+        dl_q.put(TerminateWorkerTask())
+        writer_q.put(TerminateWorkerTask())
+        dl_worker.join(timeout=5)
+        writer_worker.join(timeout=5)
+        if dl_worker.is_alive() or writer_worker.is_alive():
+            raise RuntimeError("Legendary worker thread shutdown timed out")
+        if not isinstance(writer_results.get(timeout=1), TerminateWorkerTask):
+            raise RuntimeError("Legendary writer did not report clean shutdown")
+    finally:
+        buffer.close()
+        buffer.unlink()
+
+    return {
+        "python": __import__("sys").version.split()[0],
+        "legendary": importlib.metadata.version("legendary-gl"),
+        "requests": requests.__version__,
+        "certifi": certifi.where(),
+        "android_jca_aes_gcm": True,
+        "thread_workers": True,
+        "anonymous_mmap": True,
+    }
+
+
 def handle(command: str, payload_json: str = "{}") -> str:
     try:
         payload = json.loads(payload_json or "{}")
@@ -150,6 +216,9 @@ def handle(command: str, payload_json: str = "{}") -> str:
         if command == "begin_login":
             from legendary.api.egs import EPCAPI
             return _dump({"ok": True, "authorization_url": EPCAPI().get_auth_url()})
+
+        if command == "runtime_self_test":
+            return _dump({"ok": True, "self_test": _runtime_self_test()})
 
         core = _core()
         if command == "finish_login":
