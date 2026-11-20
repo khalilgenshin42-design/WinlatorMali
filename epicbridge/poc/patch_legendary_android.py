@@ -7,6 +7,7 @@ companion source tree. Desktop Legendary builds remain unchanged.
 from __future__ import annotations
 
 import sys
+import shutil
 from pathlib import Path
 
 
@@ -268,10 +269,25 @@ def main() -> None:
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
+    # Replace Legendary's two AES-GCM imports with an Android JCA-backed shim.
+    for crypto_user in (
+        root / "legendary/models/chunk.py",
+        root / "legendary/models/manifest.py",
+    ):
+        replace_once(
+            crypto_user,
+            "from Cryptodome.Cipher import AES",
+            "from legendary.android_crypto import AES",
+        )
+    shutil.copyfile(
+        Path(__file__).with_name("android_crypto.py"),
+        root / "legendary/android_crypto.py",
+    )
+
     # Ensure every patched Python file parses before reporting success.
     import ast
 
-    for path in (manager, workers, core, cli, shared_buffer):
+    for path in (manager, workers, core, cli, shared_buffer, root / 'legendary/android_crypto.py', root / 'legendary/models/chunk.py', root / 'legendary/models/manifest.py'):
         ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     print("LEGENDARY_ANDROID_THREAD_BACKEND_PATCHED")
 
