@@ -12,6 +12,7 @@ import android.os.Environment;
 public final class EpicBridgeProvider extends ContentProvider {
     public static final String AUTHORITY = "com.maliwinlator.epicbridge.provider";
     public static final int PROTOCOL_VERSION = 1;
+    private static volatile Boolean cryptoSelfTest;
 
     @Override
     public boolean onCreate() {
@@ -28,6 +29,17 @@ public final class EpicBridgeProvider extends ContentProvider {
         return false;
     }
 
+    private static boolean cryptoSelfTest() {
+        Boolean cached = cryptoSelfTest;
+        if (cached != null) return cached;
+        synchronized (EpicBridgeProvider.class) {
+            if (cryptoSelfTest == null) {
+                cryptoSelfTest = EpicCryptoBridge.verifyKnownAnswerTest();
+            }
+            return cryptoSelfTest;
+        }
+    }
+
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
         Bundle result = new Bundle();
@@ -40,7 +52,9 @@ public final class EpicBridgeProvider extends ContentProvider {
         }
 
         if ("status".equals(method) || "ping".equals(method)) {
+            boolean cryptoReady = cryptoSelfTest();
             result.putBoolean("installed", true);
+            result.putBoolean("crypto_supported", cryptoReady);
             result.putBoolean("runtime_ready", false);
             result.putBoolean("storage_access",
                     Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager());
