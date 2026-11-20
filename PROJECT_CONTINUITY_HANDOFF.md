@@ -1444,3 +1444,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated `tools/ci/run-epic-android-instrumentation.sh` at commit `f3604947263e561dc827a677129989bbd5a260e0` to print a distinct pass/fail for each required APK entry and list related entries when one is absent. Checks remain strict for the CPython zipfile helper, stdlib `os.py`, and x86_64 JNI library.
 - Next: allow the workflow triggered by this diagnostic change to run, identify the exact absent archive entry, correct its staging/packaging source, then run instrumentation before proceeding to ARM64 host/companion APK audit.
 - No Epic APK is installable/verified yet.
+
+
+## 2026-11-20 Epic APK asset-merger diagnosis (run 44814450227)
+- Latest Epic workflow run `44814450227` failed in the x86_64 instrumentation job after `:epicbridge:assembleDebug` succeeded. The explicit archive audit now reports the first missing entry: `assets/python/lib/python3.15/zipfile/_path/__init__.py`.
+- The log confirms the CPython x86_64 prefix contains both `zipfile/__init__.py` and `zipfile/_path/__init__.py`; the runtime package tarball also contains the complete `zipfile/_path` directory. Gradle `stageEpicPythonRuntime` passes its own preflight and post-copy check for the staged `_path/__init__.py`, while the assembled APK omits it. Thus the remaining defect is downstream of the runtime build and Gradle staging: Android asset merging/packaging is dropping this underscore-prefixed directory, not a missing CPython source file or failed CPython build.
+- Confirmed native CMake build and `:epicbridge:assembleDebug` succeed for x86_64. Instrumentation is not reached because archive audit correctly blocks the incomplete APK.
+- Next experiment: avoid relying on an underscore-prefixed directory as an Android asset-source path. Stage the `zipfile/_path` package into a deterministic archive with a non-underscore asset filename, verify that archive entry in the APK, then extract it into the app-private CPython `lib/python3.15/zipfile/_path` directory before Python initialization. Preserve file hashes and add instrumentation assertions for all extracted helper modules. Do not relax the APK audit or mark the companion installable until extraction and Python import tests pass.
+- Workflow link: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44814450227
