@@ -986,3 +986,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added a watchdog in the patched writer-result handler. If its queue remains empty after the FileWorker thread has exited without sending its normal termination marker, the handler now records a manager error, requests cooperative shutdown, and exits instead of waiting forever.
 - The normal mmap lifetime guard then keeps the buffer open if any other worker/helper remains alive.
 - Commit: 3bd2c2e3b4b95c621da54cfb9678f638a0ce1311.
+
+## Engineering continuation — 2026-11-20: detect downloader threads that die without returning a chunk result
+
+- Added a corresponding watchdog to Legendary's download-result handler. If all DLWorker threads have exited unexpectedly while the manager is still running and an in-flight result is awaited, the manager records a hard error and stops cooperatively rather than waiting forever on an empty result queue.
+- Normal cancellation is excluded from this error path; it is already signaled by `self.running = False`.
+- Commit: aa191ecfadc23d264fac32380c93cf3fe1bc0dfb.
