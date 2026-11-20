@@ -188,11 +188,7 @@ def main() -> None:
         "        for cond in self.conditions:\n"
         "            with cond:\n"
         "                cond.notify_all()\n"
-        "        if self.dl_worker_queue is not None:\n"
-        "            for _ in range(self.max_workers):\n"
-        "                self.dl_worker_queue.put(TerminateWorkerTask())\n"
-        "        if self.writer_queue is not None:\n"
-        "            self.writer_queue.put(TerminateWorkerTask())\n\n"
+        "        # run_real owns ordered queue shutdown after helper threads exit.\n\n"
     )
     replace_once(manager, anchor, stop_method)
 
@@ -242,6 +238,27 @@ def main() -> None:
         "                dlm.stop()\\n"
         "                dlm.join(timeout=60.0)\\n"
         "                raise",
+    )
+
+    # The manager's result-handler threads must stop producing writer tasks
+    # before the writer termination marker is queued. On cancellation, discard
+    # only not-yet-started download jobs; active workers finish their current I/O.
+    replace_once(
+        manager,
+        "        for _ in range(self.max_workers):\\n"
+        "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
+        "        for t in self.threads[:2]:\\n"
+        "            t.join(timeout=30.0)\\n"
+        "            if t.is_alive():\\n"
+        "                self.log.warning(f'Helper thread did not terminate: {t!r}')\\n"
+        "        if not self.running:\\n"
+        "            try:\\n"
+        "                while True:\\n"
+        "                    self.dl_worker_queue.get_nowait()\\n"
+        "            except Empty:\\n"
+        "                pass\\n"
+        "        for _ in range(self.max_workers):\\n"
+        "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
     # Ensure every patched Python file parses before reporting success.
