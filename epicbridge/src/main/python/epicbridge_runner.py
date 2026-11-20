@@ -182,7 +182,7 @@ def _runtime_self_test():
     from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
     from legendary.downloader.mp.manager import DLManager
     from legendary.downloader.mp.workers import DLWorker, FileWorker
-    from legendary.models.downloading import TaskFlags, TerminateWorkerTask, WriterTaskResult
+    from legendary.models.downloading import AnalysisResult, TaskFlags, TerminateWorkerTask, WriterTaskResult
 
     ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
     tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
@@ -216,6 +216,14 @@ def _runtime_self_test():
     if not isinstance(manager, Thread) or manager.error is not None:
         raise RuntimeError("Legendary download manager thread backend is invalid")
     manager.stop()
+
+    # A no-op update must not start workers or fail on an empty task deque.
+    empty_manager = DLManager("/tmp/epic-runtime-empty-smoke", "https://cdn.invalid", {})
+    empty_manager.analysis = AnalysisResult()
+    empty_manager.start()
+    empty_manager.join(timeout=5)
+    if empty_manager.is_alive() or empty_manager.error is not None:
+        raise RuntimeError("Legendary empty update did not exit cleanly")
 
     failed_manager = DLManager("/tmp/epic-runtime-failure-smoke", "https://cdn.invalid", {})
     def fail_download_manager():
