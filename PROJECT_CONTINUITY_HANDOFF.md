@@ -783,3 +783,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated `EpicBridgeProvider.HOST_PACKAGE` to the actual standard flavor application ID and added an Android instrumentation regression test that accepts `com.maliwinlator.app` while rejecting the old namespace and an unrelated package.
 - Commits: 03c3e416dbd013facacf501ba86c5295b086860a (authorization fix); dd3a84a9fd6f6047f6bab54579ac21b3a074e80f (instrumentation regression test).
 - This is a source-level fix, not a tested result. The updated managed x86_64 instrumentation job must pass before the APKs are considered usable.
+
+## Engineering continuation — 2026-11-20: CI toolchain license-pipe robustness
+
+- Hardened the Android SDK license-acceptance step in the newly connected APK pipeline. With Bash `pipefail` enabled, the `yes | sdkmanager --licenses` pattern can report failure when `yes` receives SIGPIPE after sdkmanager has consumed its answers. The workflow now disables pipefail only around that pipeline and restores it before SDK package installation, preserving strict error handling for the actual build.
+- Commit: 52163f8796b1f29e7e5e6e32fa5727584f9768f9.
+- Static workflow review only; the managed emulator and APK build have not yet been observed passing.
