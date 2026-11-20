@@ -884,3 +884,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Added a canonical-path containment check after resolving Legendary's executable relative to its install directory. Launch now rejects metadata that resolves the executable outside the selected game's own install tree, including traversal or escaping symlink paths.
 - Commit: 70115fb868deb384667618a0c4586e06c4c115b4.
+
+## Engineering continuation — 2026-11-20: persist Epic job tracking across fragment/activity recreation
+
+- Corrected the earlier UI promise that users could reopen the Epic tab to check a long-running install. The host now persists the active companion job ID in app-private SharedPreferences, polls the companion's durable job state, clears the ID only after a terminal result, and resumes polling when the Epic fragment is recreated or the app returns to the tab.
+- The UI prevents a second install/uninstall from replacing the tracked active job ID. If the companion is absent, recovery waits until it is reinstalled rather than spinning on an unavailable provider.
+- Commits: 4f3469b605f5078179c8f26d5d41d12a92f86a3b (persistent job state/recovery); 0a78c94c9824c6895cdc672718c6e246bcfbdb90 (companion availability guard).
+- This improves long-running operation recovery; actual process-death recovery and service behavior still require Android validation.
