@@ -21,13 +21,6 @@ def game(app_name, title, catalog="catalog-main", *, is_dlc=False):
 
 class LibraryMergeTests(unittest.TestCase):
     def run_library(self, games, dlcs, extra_games, extra_dlcs):
-        core = object()
-        with patch.object(runner, "_require_login"), \
-             patch.object(runner, "_core", return_value=core):
-            # _library receives the core argument directly; patch the two
-            # Legendary API calls on a tiny fake core instead.
-            pass
-
         class FakeCore:
             def login(self):
                 return True
