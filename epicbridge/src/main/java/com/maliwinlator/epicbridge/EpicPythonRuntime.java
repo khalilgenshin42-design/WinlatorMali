@@ -20,6 +20,8 @@ public final class EpicPythonRuntime {
     private EpicPythonRuntime() {}
 
     public static boolean isPackaged(Context context) {
+        File nativeLibrary = new File(context.getApplicationInfo().nativeLibraryDir, "libepic_python.so");
+        if (!nativeLibrary.isFile()) return false;
         try (InputStream ignored = context.getAssets().open(
                 ASSET_ROOT + "/lib/python3.15/os.py")) {
             return true;
