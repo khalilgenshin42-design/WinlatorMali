@@ -1171,3 +1171,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Steps 1–19 are all successful, including production ARM64 CPython runtime compilation and packaged-runtime audit, plus the managed x86_64 runtime smoke.
 - Steps 21–24 (ARM64 APK build, artifact uploads, and prerelease publication) have not yet started. No Epic APK pair is published at this checkpoint.
 - The workflow definition's release gate is correctly sequenced after Android JNI instrumentation, APK signature/package/ABI checks, ELF dependency closure, and exact embedded-companion byte comparison. Do not bypass these gates to distribute the baseline host-only APK.
+
+## CI failure analysis and corrected retry — 2026-11-20
+
+- Run **44731972181** failed only at workflow step 20, `Run Epic Bridge x86_64 Android instrumentation tests`. The emulator booted successfully, but `reactivecircus/android-emulator-runner@v2` executes its `script` using `/usr/bin/sh`; the script began with Bash-only `set -euo pipefail`, causing immediate exit: `/usr/bin/sh: 1: set: Illegal option -o pipefail`.
+- No Android instrumentation assertions ran in that attempt. Therefore this failure is an identified CI shell portability defect, not evidence of an Epic Java/JNI functional failure.
+- Corrected `.github/workflows/epic-python-runtime-poc.yml` emulator script to use POSIX `set -eu`. Commit: `f72c282ebb3918f2f5df6be336553cf0a607af69`.
+- GitHub automatically started corrected workflow run **44733619638** from that commit. At the time of this note it is in progress at initial Android SDK setup; instrumentation, APK build, and publication are still pending.
+- Previous successes remain: Legendary source patch/static validation, Epic library aggregation tests, host smoke including AES-GCM known-answer and worker lifecycle, managed x86_64 runtime smoke, production ARM64 CPython runtime build, runtime archive audit, and Android SDK/NDK toolchain installation.
+- Do not install the host-only baseline APK or claim Epic integration is ready until corrected run completes instrumentation, produces both ARM64 APKs, passes signature/ABI/assets/ELF dependency and embedded-companion audits, and publishes the prerelease with SHA-256 sums.
