@@ -297,7 +297,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: |
-            set -euo pipefail
+            set -eu
             cd maliwinlator
             chmod +x ./gradlew
             ./gradlew --no-daemon --stacktrace \
