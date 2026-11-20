@@ -31,7 +31,7 @@ public final class EpicPythonRuntime {
                 ASSET_ROOT + "/lib/python3.15/os.py",
                 ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py",
                 ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py",
-                ASSET_ROOT + "/lib/python3.15/zipfile/_path/__init__.py",
+                ASSET_ROOT + "/lib/python3.15/zipfile/path_pkg/__init__.py",
                 ASSET_ROOT + "/runtime-version.txt"
         };
         for (String asset : requiredAssets) {
@@ -104,6 +104,16 @@ public final class EpicPythonRuntime {
             try {
                 extractAssetDirectory(context.getAssets(), ASSET_ROOT, runtimeRoot);
                 File extractedPythonLib = new File(pythonHome, "lib/python3.15");
+                // Android asset merging can omit the underscore-prefixed CPython
+                // zipfile/_path directory. Package it under a neutral asset name,
+                // then restore CPython's exact import path in app-private storage.
+                File zipfileDir = new File(extractedPythonLib, "zipfile");
+                File stagedZipPath = new File(zipfileDir, "path_pkg");
+                File actualZipPath = new File(zipfileDir, "_path");
+                if (!actualZipPath.isDirectory() && stagedZipPath.isDirectory()
+                        && !stagedZipPath.renameTo(actualZipPath)) {
+                    throw new IOException("Unable to restore CPython zipfile/_path package");
+                }
                 File extractedSitePackages = new File(extractedPythonLib, "site-packages");
                 File extractedExtensionDir = new File(extractedPythonLib, "lib-dynload");
                 String missingRuntimeFile = firstMissingRuntimeFile(extractedPythonLib, extractedSitePackages);
