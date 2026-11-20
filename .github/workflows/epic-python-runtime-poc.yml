@@ -275,7 +275,11 @@ jobs:
       - name: Install MaliWinlator Android build toolchain
         run: |
           set -euo pipefail
+          # sdkmanager exits after consuming the required answers; disable
+          # pipefail only for this pipeline so yes receiving SIGPIPE is harmless.
+          set +o pipefail
           yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
           sdkmanager --install \
             "platforms;android-34" \
             "build-tools;35.0.0" \
