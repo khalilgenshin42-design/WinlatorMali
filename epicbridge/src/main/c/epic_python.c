@@ -242,7 +242,7 @@ Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeCall(
         } else {
             LOGE("CPython bridge call produced no Unicode result and no Python exception");
         }
-        output = (*env)->NewStringUTF(env, "{\\"ok\\":false,\\"error\\":\\"PYTHON_RUNTIME_ERROR\\"}");
+        output = (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"PYTHON_RUNTIME_ERROR\"}");
     }
 
     Py_XDECREF(result);
