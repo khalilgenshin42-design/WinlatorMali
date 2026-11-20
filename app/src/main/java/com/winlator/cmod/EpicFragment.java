@@ -205,9 +205,11 @@ public final class EpicFragment extends Fragment {
                 JSONObject account = response.optJSONObject("account");
                 String displayName = account == null ? "" : account.optString("display_name", "");
                 statusText.setText("Signed in to Epic Games" +
-                        (displayName.isEmpty() ? "" : " as " + displayName) + ".");
+                        (displayName.isEmpty() ? "" : " as " + displayName) + "." +
+                        (storageReady ? "" : " Grant shared-storage access in both apps to install and launch games."));
             } else {
-                statusText.setText("Epic runtime ready. Sign in to your Epic Games account to load your library.");
+                statusText.setText("Epic runtime ready. Sign in to your Epic Games account to load your library." +
+                        (storageReady ? "" : " Shared-storage access is also required for installs and launches."));
             }
         });
     }
