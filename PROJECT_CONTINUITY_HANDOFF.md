@@ -1034,3 +1034,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Corrected a runtime extraction edge case: Android's AssetManager can return an empty listing for a valid empty directory. The previous strict missing-asset check treated that as a missing file and aborted extraction. Empty directories are now created normally; missing required files are still caught by the packaged-file preflight and the real CPython/Legendary instrumentation self-test.
 - Commit: 848b1a0b4afc154d2b32a7e46ada26fb7034bce8.
+
+## Engineering continuation — 2026-11-20: verify extracted runtime before committing its marker; correct extension matching
+
+- Added a post-extraction completeness check before writing the runtime marker. The companion now verifies the CPython stdlib entry point, Legendary package, Android crypto shim, runner, lib-dynload directory, and executable mode of every extracted shared extension. An incomplete extraction is deleted and retried on the next initialization rather than being marked valid.
+- Corrected over-escaped Java regular expressions in both the extraction chmod pass and the preflight/postflight checks. They now match actual `.so` and versioned `.so.*` filenames.
+- Commits: 37f6fd141715a746c38d220aba9fa12daab78d4e (post-extraction verification); 933dc0bae1f31480eb6bb21607f02a91ecd44bde (regex correction).
