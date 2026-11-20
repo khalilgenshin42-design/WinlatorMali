@@ -1110,3 +1110,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added an instrumentation test covering first reservation, rejection of a concurrent second job, release, and successful reuse of the slot.
 - Commits: b1865f338a628739da2d8f3a7b5b40022fd267ad (atomic service reservation API); b49b8a47a7e1cca12f38ca110b7cc0d3aa43077a (provider gate and failure release); 69bbc6ffce99f28ae9bf7b9029ddbf17ea49b640 (instrumentation test).
 - This is source-level hardening; the test has not yet been executed on an Android emulator/device.
+
+## Engineering continuation — 2026-11-20: recover cleanly from unexpected Epic IPC failures
+
+- Wrapped the host's background IPC dispatch in an exception boundary. A Binder/provider/runtime exception now becomes a structured `IPC_ERROR` result delivered to the fragment instead of silently killing the executor task and leaving the UI waiting forever.
+- The catch path also clears the volatile polling flag while preserving the stored job ID, allowing the next Epic-tab resume to retry status tracking for a job that may still be active in the companion service.
+- Commits: 91fcb2da009df9e7bc1707a391e2049fb147fff3 (IPC exception boundary); fe3dc476c9a350aa1e48db39a38900f8b3fda598 and f3d52b37737ea4403042b0e2f90948e5b9bbd69b (formatting); 938bb7d610d97ebae46cf3859648613e3fb48a6a (polling recovery).
+- Android build/instrumentation remains pending; these changes are not yet device-verified.
