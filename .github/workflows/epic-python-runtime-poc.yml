@@ -171,6 +171,11 @@ jobs:
           python3 -m pip install --disable-pip-version-check --no-compile --target "$SITE_PACKAGES" --no-deps "$GITHUB_WORKSPACE/legendary"
           test -f "$SITE_PACKAGES/legendary/__init__.py"
           test -f "$SITE_PACKAGES/legendary_gl-0.21.1.dist-info/METADATA"
+          # CPython 3.15's zipfile._path is a package directory; explicitly
+          # stage it because the Android runtime package currently omits it.
+          mkdir -p "$PREFIX/lib/python3.15/zipfile"
+          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile/_path" "$PREFIX/lib/python3.15/zipfile/"
+          test -f "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
           rm -f cross-build/x86_64-linux-android/dist/*.tar.gz
           python3 Platforms/Android package x86_64-linux-android
 
@@ -204,6 +209,10 @@ jobs:
           python3 -m pip install --disable-pip-version-check --no-compile --target "$SITE_PACKAGES" --no-deps ./../legendary
           test -f "$SITE_PACKAGES/legendary/__init__.py"
           test -d "$SITE_PACKAGES/requests"
+          # Keep the 3.15 zipfile package submodule visible to importlib.resources.
+          mkdir -p "$PREFIX/lib/python3.15/zipfile"
+          cp -a "$GITHUB_WORKSPACE/cpython/Lib/zipfile/_path" "$PREFIX/lib/python3.15/zipfile/"
+          test -f "$PREFIX/lib/python3.15/zipfile/_path/__init__.py"
           ! find "$SITE_PACKAGES" -type d -name __pycache__ -print -quit | grep .
           python3 Platforms/Android package aarch64-linux-android
 
