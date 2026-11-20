@@ -372,8 +372,14 @@ jobs:
           EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
         run: |
           set -euo pipefail
-          git fetch origin "$GITHUB_REF_NAME"
-          git reset --hard FETCH_HEAD
+          if ! git fetch origin "$GITHUB_REF_NAME"; then
+            echo "Unable to fetch branch for CI status publication; APK build itself passed."
+            exit 0
+          fi
+          if ! git reset --hard FETCH_HEAD; then
+            echo "Unable to synchronize branch for CI status publication; APK build itself passed."
+            exit 0
+          fi
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
           # Epic APK CI status
 
@@ -390,7 +396,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT_EPIC_CI_STATUS.md
-          git commit -m "ci: publish verified Epic APK artifact [skip ci]"
+          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then
+            echo "Unable to commit CI status report; APK build itself passed."
+            exit 0
+          fi
           git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI status commit could not be pushed; inspect this workflow run directly."
 
       - name: Publish failed Epic build status to repository
@@ -398,8 +407,14 @@ jobs:
         working-directory: maliwinlator
         run: |
           set -euo pipefail
-          git fetch origin "$GITHUB_REF_NAME"
-          git reset --hard FETCH_HEAD
+          if ! git fetch origin "$GITHUB_REF_NAME"; then
+            echo "Unable to fetch branch for CI status publication; APK build itself passed."
+            exit 0
+          fi
+          if ! git reset --hard FETCH_HEAD; then
+            echo "Unable to synchronize branch for CI status publication; APK build itself passed."
+            exit 0
+          fi
           cat > PROJECT_EPIC_CI_STATUS.md <<EOF
           # Epic APK CI status
 
@@ -413,6 +428,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT_EPIC_CI_STATUS.md
-          git commit -m "ci: record Epic APK validation failure [skip ci]"
+          git commit -m "ci: record Epic APK validation failure [skip ci]" || echo "Unable to commit CI failure report."
           git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
 
