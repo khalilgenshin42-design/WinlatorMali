@@ -132,7 +132,7 @@ jobs:
           def decrypt_aes_gcm(key, nonce, data, tag):
               return AES.new(key, AES.MODE_GCM, nonce=nonce).decrypt_and_verify(data, tag)
           PY
-          PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 -m legendary --version
+          PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 -m legendary.cli --version
           PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
           from queue import Queue
           from threading import Thread
