@@ -6,6 +6,7 @@ on:
       - 'development/**'
     paths:
       - '.github/workflows/epic-python-runtime-poc.yml'
+      - 'epicbridge/poc/site-packages/epic_runtime_smoke.py'
   workflow_dispatch:
 
 permissions:
