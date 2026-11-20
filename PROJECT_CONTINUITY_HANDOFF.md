@@ -460,3 +460,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added `epicbridge/poc/requirements-android.txt` to pin the Python runtime dependency set for Legendary 0.21.1: Requests 2.32.4, certifi 2025.1.31, charset-normalizer 3.4.1, idna 3.10, urllib3 2.3.0, filelock 3.18.0, and pycryptodomex 3.23.0. Native dependencies still require Android/CPython 3.15 ARM64 builds; host Linux wheels must not be copied into the Android runtime. Commit `0a7c92f83ece40cf66ab39d957fd6ad5614e0b44`.
 
 - Added the Android dependency lock file to the CPython/Legendary POC workflow path filters so changing dependency pins automatically reruns the validation pipeline. Workflow commit `ce12e689f1b146fb5944f3c5bad2b583924be69a`.
+
+## Engineering step log — 2026-11-20: Android runtime probe passed; patch anchor corrected
+
+- Managed Android emulator run **44649787558** passed the focused CPython runtime probe. The log printed `EPIC_ANDROID_RUNTIME_PREREQUISITES_OK`, confirming CPython 3.15.2 on Android can import Requests/certifi, complete HTTPS with certificate verification, use ctypes, SQLite, zlib, hashlib, fcntl file locks, and launch an Android system subprocess. This is the first successful end-to-end Android runtime probe.
+- The same run then failed during Legendary patch application because the KeyboardInterrupt cleanup anchor omitted an upstream `child.join(timeout=5.0)` line. The exact pinned manager source was inspected and the patch now includes that line in the anchor and replaces the complete process cleanup block with thread join/liveness checks. Patcher correction commit `16f3c6fd941e371b92c285a4c84dc64c5cafeb13`.
+- No Legendary patch or CLI smoke has passed yet; the next workflow run must prove the patch applies, all Python files compile, multiprocessing imports/process-only calls are gone, and the patched CLI imports/runs.
