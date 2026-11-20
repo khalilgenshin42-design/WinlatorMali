@@ -810,3 +810,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The workflow writes a SHA-256 manifest for the two APKs and publishes them together as `maliwinlator-1.2.1-epic-arm64-debug`.
 - Commit: 4586dba1a5b4cba7209ffc2b8e13e759717234aa.
 - These are CI assertions, not observed results. The artifact is not ready until the complete workflow passes and the APKs are actually available.
+
+## Engineering continuation — 2026-11-20: correct cross-package game storage and Wine C: mapping
+
+- Audited `ImageFs.find(context)` and `ContainerManager`: container prefixes live under the host app's private `files/imagefs/home/user-<id>` tree. The Epic Bridge is a separate Android package/UID and cannot write directly into that private directory, even though the host app can.
+- Reworked Epic install storage to a per-container shared external directory, `/storage/emulated/0/MaliWinlator/EpicGames/container-<id>`, which both packages can access after the two explicit all-files-access grants.
+- The host now creates/validates a symlink at the selected container's `.wine/drive_c/Games/Epic` pointing to that shared directory. This makes the same files available to Wine as `C:\\Games\\Epic` without exposing the host's private prefix to the companion.
+- Installed-game metadata is mapped back to its owning container using the per-container shared directory. Update and launch automatically select that container; launch rejects a game directory outside its selected container's shared tree and converts its working directory to the corresponding Wine C: path.
+- Commits: b58bc1b8184a7f997f28d928fbfaa02e900d235e (initial container ownership/path validation); 0b8eb2441f1541812e480f779f878c7b7c3ac914 (launch path guard); 8526603928a0e21f79c8fb8cc347da607c6f8ad9 (shared storage + Wine C: symlink mapping).
+- Source-level architecture correction only. Symlink behavior, cross-package shared-storage access, install, and game launch still require emulator/device validation.
