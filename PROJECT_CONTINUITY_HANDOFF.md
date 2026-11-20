@@ -1474,3 +1474,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The failing step was the managed x86_64 Android runtime prerequisite smoke. Gradle dependency resolution was rate-limited by Maven Central HTTP 429 responses (37+ dependencies), not by a source/test assertion. The previous AES-GCM negative-tag correction was therefore not exercised in this run.
 - The standard MaliWinlator 1.2.1 debug build run `44835831756` succeeded.
 - Requested GitHub to rerun failed jobs for run `44835831594`; await that retry before changing source. No Epic APK artifact was produced or verified; do not install.
+
+
+## 2026-11-21 — Epic ARM64 host build: missing adrenotools submodule
+- Retry attempt 2 of Epic runtime run `44835831594` passed the prior Maven dependency-resolution obstacle and progressed through the managed x86_64 instrumentation stage, but the final ARM64 host APK configure failed at `app/src/main/cpp/CMakeLists.txt:8`: `app/src/main/cpp/adrenotools` had no `CMakeLists.txt`.
+- Root cause: Epic workflow's MaliWinlator checkout omitted Git submodules, while the normal APK workflow explicitly uses `submodules: recursive`. `.gitmodules` maps `app/src/main/cpp/adrenotools` to `https://github.com/Pipetto-crypto/libadrenotools.git`.
+- Fixed workflow checkout to use `submodules: recursive` and `fetch-depth: 1`. Commit: `e358ccafb0ad8d5f2c3aabf13993e18bb6a772a4`.
+- This is a CI checkout fix, not a driver/runtime code change. Re-run Epic workflow to validate recursive submodule checkout, ARM64 host build, APK signer/package/ABI/ELF checks, and artifact upload. No Epic APK is currently verified for installation.
