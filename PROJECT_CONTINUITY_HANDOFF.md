@@ -1265,3 +1265,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The workflow path filter already includes `tools/ci/`, so this helper change triggers a fresh Epic runtime run. Next: verify the helper reaches Gradle; if instrumentation fails, retrieve the captured `EpicBridgePython` logcat exception and fix the actual runtime defect. If it passes, proceed through the gated matched ARM64 APK build, signer/package/ABI/ELF checks, exact embedded-companion byte comparison, SHA-256 manifest, artifact upload, and prerelease publication.
 - Run #181 URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44748235868
 - No APK pair was built or published by run #181. Do not install or announce an Epic-ready build yet.
+
+
+## CI trigger correction — 2026-11-20
+
+- Follow-up inspection found the Epic workflow's `push.paths` filter did **not** include `tools/ci/run-epic-android-instrumentation.sh`. The earlier note that the helper path was already covered was incorrect; the path match was not present in the workflow YAML.
+- Added the exact helper path to the workflow trigger list so future edits to this script reliably start the Epic runtime pipeline.
+- Workflow trigger fix commit: `db4785dc4e20bd8fc925bc53d9a404ba02d9ff24` (`ci: trigger Epic runtime on instrumentation helper changes`).
+- The helper path correction itself is commit `dab879b1c0ccc181c1bc558dae00220151981ea2`. The workflow trigger correction is a separate commit because the first helper-only push did not start the pipeline.
+- Next: confirm a new run starts from the trigger-fix commit and reaches the Gradle instrumentation task. No APK pair has been produced yet.
