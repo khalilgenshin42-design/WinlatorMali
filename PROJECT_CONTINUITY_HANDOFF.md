@@ -306,3 +306,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Host app manifest now requests `com.maliwinlator.epicbridge.permission.ACCESS`; the companion defines it as signature-level. Both APKs must be built/signed together with the same certificate.
 - Updated `.github/workflows/maliwinlator-ci.yml` in commit `09aa77dc678ced0959ebeceb5812d013b7d9ed0d` to build `:app:assembleStandardDebug` and `:epicbridge:assembleDebug` and upload both APKs.
 - Next: validate the two-APK build, add the host-side provider client and Epic UI, then package the tested CPython/Legendary runtime into the companion. Do not distribute the current companion scaffold as a working Epic Store feature.
+
+## Engineering step log — 2026-11-20: Epic host UI and companion installer scaffold
+
+- Added the Epic Games navigation destination and `EpicFragment` setup/status screen. It detects the companion package, calls its status provider, and offers a user-confirmed companion APK installation flow.
+- Added `EpicBridgeClient`: checks companion installation, calls the signature-protected provider, copies the embedded companion APK to cache, and opens Android's package installer. If Android requires unknown-app install permission, it opens the corresponding settings page first.
+- Added the `:epicbridge` application module and configured the host app to embed its debug APK as `assets/epicbridge.apk`; this remains a separate Android package/aggregate, not an in-process GPL library. The host and companion are built together so their debug signatures match.
+- Updated the APK CI to build both packages. Current build run **44642849562** is in progress: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44642849562
+- Important limitation: the companion is still only a bootstrap shell. Its provider reports `runtime_not_installed`; it has no CPython/Legendary code yet. The Epic screen is not a functioning store at this stage.
