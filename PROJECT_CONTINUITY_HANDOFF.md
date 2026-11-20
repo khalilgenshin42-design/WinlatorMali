@@ -874,3 +874,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Verified the pinned Legendary 0.21.1 project metadata declares `pycryptodomex`, while the Android companion intentionally does not bundle its native extension: the two runtime AES-GCM imports in `models/chunk.py` and `models/manifest.py` are rewritten to the Android JCA shim.
 - Added a workflow assertion that no Python source under the installed Legendary package still imports or references `Cryptodome`. This prevents a future upstream change from silently reintroducing an unavailable native crypto dependency into the Bionic runtime.
 - Commit: ef6fca48413afef33ef006f0775ff5a74079f941.
+
+## Engineering continuation — 2026-11-20: validate the Wine C: storage link before launching
+
+- Added a launch-time preflight that revalidates or restores the selected container's `.wine/drive_c/Games/Epic` symlink before obtaining launch parameters. If the mapping was removed or redirected, the user receives an explicit error instead of a Wine launch against an inaccessible path.
+- Commit: cf9fdba10bceb5a041895885cd7b70083dd207db.
