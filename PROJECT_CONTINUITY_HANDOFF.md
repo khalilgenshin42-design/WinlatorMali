@@ -1029,3 +1029,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Marked the successful-build status publisher as `continue-on-error`. The artifact upload and verification steps remain authoritative; a branch-protection or GitHub-token issue while publishing the convenience status file can no longer turn an otherwise verified APK build red.
 - Commit: fef0e0e9caa5bb39ea9985d0cf77c42961bdd0d0.
+
+## Engineering continuation — 2026-11-20: tolerate valid empty CPython asset directories
+
+- Corrected a runtime extraction edge case: Android's AssetManager can return an empty listing for a valid empty directory. The previous strict missing-asset check treated that as a missing file and aborted extraction. Empty directories are now created normally; missing required files are still caught by the packaged-file preflight and the real CPython/Legendary instrumentation self-test.
+- Commit: 848b1a0b4afc154d2b32a7e46ada26fb7034bce8.
