@@ -207,30 +207,17 @@ def main() -> None:
         "            self.stop()",
     )
 
-    # Process-only cleanup is invalid for threads. Stop workers cooperatively,
-    # join them, and leave queue lifetime to Python's in-process queue objects.
+    # Process-only cleanup is invalid for threads. Join cooperatively and
+    # do not call multiprocessing queue lifecycle methods on queue.Queue.
     replace_once(
         manager,
-        "            # forcibly kill DL workers that are not actually dead yet\\n"
-        "            for child in self.children:\\n"
-        "                child.join(timeout=5.0)\\n"
         "                if child.exitcode is None:\\n"
-        "                    child.terminate()\\n\\n"
-        "            # clean up all the queues, otherwise this process won't terminate properly\\n"
-        "            for name, q in zip(('Download jobs', 'Writer jobs', 'Download results', 'Writer results'),\\n"
-        "                               (self.dl_worker_queue, self.writer_queue, self.dl_result_q, self.writer_result_q)):\\n"
-        "                self.log.debug(f'Cleaning up queue \\"{name}\\"')\\n"
-        "                try:\\n"
-        "                    while True:\\n"
-        "                        _ = q.get_nowait()\\n"
-        "                except Empty:\\n"
-        "                    q.close()\\n"
-        "                    q.join_thread()",
-        "            for child in self.children:\\n"
-        "                child.join(timeout=30.0)\\n"
+        "                    child.terminate()",
         "                if child.is_alive():\\n"
         "                    self.log.warning(f'Worker thread did not terminate: {child!r}')",
     )
+    replace_once(manager, "                    q.close()", "                    pass")
+    replace_once(manager, "                    q.join_thread()", "                    pass")
     replace_once(manager, "        exit(0)", "        return")
 
     # Every worker receives the same mmap object. Only the manager may close it.
