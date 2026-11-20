@@ -161,16 +161,12 @@ Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeInitialize(
     if (!PyStatus_Exception(status)) {
         status = Py_InitializeFromConfig(&config);
     }
-    PyConfig_Clear(&config);
     if (PyStatus_Exception(status)) {
         LOGE("CPython initialization failed: %s", status.err_msg ? status.err_msg : "unknown error");
+        PyConfig_Clear(&config);
         goto init_failed;
     }
-
-    if (PyRun_SimpleString("import sys\n") != 0) {
-        LOGE("Unable to initialize Python sys module");
-        goto init_failed;
-    }
+    PyConfig_Clear(&config);
     g_initialized = 1;
     PyEval_SaveThread();
     (*env)->ReleaseStringUTFChars(env, home, home_utf8);
