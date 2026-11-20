@@ -212,8 +212,9 @@ public final class EpicFragment extends Fragment {
     }
 
     private void runCommand(String method, String payload, CommandCallback callback) {
+        android.content.Context appContext = requireContext().getApplicationContext();
         io.execute(() -> {
-            Bundle response = EpicBridgeClient.call(requireContext(), method, payload);
+            Bundle response = EpicBridgeClient.call(appContext, method, payload);
             JSONObject json;
             try {
                 String body = response.getString("result_json");
