@@ -953,3 +953,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Extended the successful CI status record to include the SHA-256 digest of each published APK, so the final install pair can be checked against the exact artifact bytes without extracting the workflow artifact first.
 - Commit: b495bcef96cfdda6199ba372721fab84af6c2176.
+
+## Engineering continuation — 2026-11-20: enforce companion all-files permission at the IPC boundary
+
+- Added a provider-side permission gate for install/uninstall job creation on Android 11+. The companion now rejects these operations with a specific `STORAGE_PERMISSION_REQUIRED` response unless its own package has all-files access, rather than relying only on the host UI to prevent an eventual filesystem failure.
+- Commit: 14532f916aaedc4e5118a6fde4eb477bdd355ebc.
