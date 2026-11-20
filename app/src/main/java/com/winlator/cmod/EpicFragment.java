@@ -500,8 +500,8 @@ public final class EpicFragment extends Fragment {
                         result.optString("message"));
                 return;
             }
-            statusText.setText(title + (update ? " updated." : " installed.") +
-                    " You can now launch it in a Winlator container.");
+            statusText.setText(title + (update ? " updated in " : " installed in ") +
+                    targetContainer.getName() + ". Select that container to launch the game.");
             refreshLibrary();
         });
     }
