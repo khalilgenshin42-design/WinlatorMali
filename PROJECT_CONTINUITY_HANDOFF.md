@@ -572,3 +572,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. Require the Android emulator runtime smoke, Legendary patch application/compile/static check, host CLI/thread/AES-GCM smoke, dual-ABI package build, and archive audit to pass.
 3. Only then require the downstream integration workflow to extract both runtime packages, pass Android x86_64 JNI/instrumentation checks, build the ARM64 APK, and upload both APKs plus hashes.
 4. After an installable artifact exists, ask the user only for Xiaomi 15T validation of Epic browser login, owned library, one real install, and launch through a selected container. The official Epic Launcher fallback remains a separate later milestone.
+
+
+## Engineering continuation — 2026-11-20: Epic library merge hardening
+
+- Re-verified that the CPython workflow file on `development/maliwinlator-1.2.1-bootstrap` contains the corrected archive-audit regular expressions from `ead4aabacfe92d26dbb79439477deb03a0585748`. GitHub's combined commit-status endpoint returned no status checks for that commit; this is not evidence of a passing build. The connector available in this session exposes workflow jobs/artifacts by run ID but no repository-wide workflow-run listing, so a new run ID could not be established from the available API.
+- Performed a focused source audit of the Legendary runner, JNI runtime, Android provider/service, manifests, and app-side bridge client. Confirmed the host manifest declares the companion's signature permission and package visibility query. No device-level authentication or install test is claimed.
+- Found a defensive edge case in `_library()`: non-asset DLC results could reference a catalog ID absent from the primary asset DLC map, causing a `KeyError`. The previous generator-based non-asset game merge also did not add newly appended names to the deduplication set, so duplicate non-asset records could pass through.
+- Fixed both cases in commit `e7a9c90ddf3f1cc5a49f37275cc73483cddebee0` (`fix: merge non-asset Epic DLC catalogs defensively`): non-asset games are now appended with incremental deduplication, and DLC lists use `setdefault` before extension.
+- This is a source-level correctness hardening only. It has not yet been exercised against Epic's live library API or by the Android runtime CI. The next validation should add/execute focused fake-catalog tests, then observe the dual-ABI CPython workflow and downstream Android instrumentation/APK pipeline.
