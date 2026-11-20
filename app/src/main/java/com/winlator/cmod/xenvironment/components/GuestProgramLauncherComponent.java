@@ -24,6 +24,7 @@ import com.winlator.cmod.core.KeyValueSet;
 import com.winlator.cmod.core.ProcessHelper;
 import com.winlator.cmod.core.TarCompressorUtils;
 import com.winlator.cmod.core.WineInfo;
+import com.winlator.cmod.epic.EpicLaunchPayloadStore;
 import com.winlator.cmod.fexcore.FEXCoreManager;
 import com.winlator.cmod.fexcore.FEXCorePreset;
 import com.winlator.cmod.fexcore.FEXCorePresetManager;
@@ -50,6 +51,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private String[] bindingPaths;
     private EnvVars envVars;
     private EnvVars secretEnvVars;
+    private String epicLaunchPayloadToken;
     private boolean secureLaunch;
     private WineInfo wineInfo;
     private String box64Preset = Box64Preset.COMPATIBILITY;
@@ -544,6 +546,12 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         // As in Bannerlator: bring a stale prefix up to date before the session, with Wine Mono's download prompt off.
         String wineLauncher = wineInfo.isArm64EC() ? winePath + "/wine" : imageFs.getBinDir() + "/box64 wine";
         updatePrefixBeforeSession(execEnvVars, wineLauncher, rootDir, imageFs);
+
+        if (epicLaunchPayloadToken != null) {
+            EpicLaunchPayloadStore.Payload payload = EpicLaunchPayloadStore.take(epicLaunchPayloadToken);
+            epicLaunchPayloadToken = null;
+            if (payload != null) execEnvVars.putAll(payload.environment);
+        }
 
         // Apply one-shot authentication values only to the actual game process, never to prefix setup.
         if (secretEnvVars != null) {
