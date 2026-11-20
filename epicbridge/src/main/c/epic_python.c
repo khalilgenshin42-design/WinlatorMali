@@ -141,7 +141,6 @@ Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeInitialize(
         return JNI_FALSE;
     }
 
-    setenv("HOME", home_utf8, 1);
     setenv("TMPDIR", temp_utf8, 1);
     setenv("PYTHONHOME", home_utf8, 1);
     if (PyImport_AppendInittab("_epiccrypto", PyInit__epiccrypto) == -1) {
