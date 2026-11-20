@@ -1002,3 +1002,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Extended the main progress-loop watchdog to monitor the third helper thread (`fw_results_handler`) as well as the FileWorker itself. That handler should remain alive until the manager queues the writer termination marker after all file tasks finish; an early exit now produces a clear manager error instead of an unbounded wait.
 - Commit: 0bb099742d72e84ba1bffb58d6c958a03ac97956.
+
+## Engineering continuation — 2026-11-20: exercise LegendaryCore during runtime instrumentation
+
+- Extended the embedded Android runtime self-test to import and instantiate the actual pinned `LegendaryCore` class through the same `_core()` singleton used by login/library/install operations, then read its installed-game metadata. This catches missing runtime dependencies or import regressions that a downloader-only smoke would miss.
+- Commit: 939e16efbc14ccec035ad1fb3b6d244c6d140756.
