@@ -856,3 +856,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Hardened the per-container Wine C: symlink setup: if `.wine/drive_c/Games/Epic` is occupied by a regular file, setup now fails safely instead of deleting it. An existing real directory is replaced only when it is empty; non-empty directories and symlinks to other targets are preserved and reported.
 - Commit: 87769948f07afc738de5f0a27837500171123f4a.
+
+## Engineering continuation — 2026-11-20: assert downloader exception cleanup in Android instrumentation
+
+- The embedded Python runtime self-test already reports a dedicated `download_failure_cleanup` result after forcing a manager exception and verifying the thread backend captures it and releases resources. Added an explicit Android instrumentation assertion for that result so this regression cannot silently remain untested.
+- Commit: 855a47c393dd9e31068340d4fc1dcf03e2323525.
