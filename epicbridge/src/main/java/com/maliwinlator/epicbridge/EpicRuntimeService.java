@@ -153,6 +153,14 @@ public final class EpicRuntimeService extends Service {
 
     @Override
     public void onDestroy() {
+        android.content.SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        for (String jobId : ACTIVE_JOB_IDS) {
+            if ("running".equals(prefs.getString(jobId + ".state", "unknown"))) {
+                prefs.edit().putString(jobId + ".state", "interrupted")
+                        .putLong(jobId + ".finished_at", System.currentTimeMillis()).apply();
+            }
+        }
+        ACTIVE_JOB_IDS.clear();
         executor.shutdownNow();
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
         super.onDestroy();
