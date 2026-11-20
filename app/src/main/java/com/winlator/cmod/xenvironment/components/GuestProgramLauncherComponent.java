@@ -49,6 +49,8 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private static int pid = -1;
     private String[] bindingPaths;
     private EnvVars envVars;
+    private EnvVars secretEnvVars;
+    private boolean secureLaunch;
     private WineInfo wineInfo;
     private String box64Preset = Box64Preset.COMPATIBILITY;
     private String fexcorePreset = FEXCorePreset.INTERMEDIATE;
@@ -315,6 +317,14 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.envVars = envVars;
     }
 
+    public void setSecretEnvVars(EnvVars secretEnvVars) {
+        this.secretEnvVars = secretEnvVars;
+    }
+
+    public void setSecureLaunch(boolean secureLaunch) {
+        this.secureLaunch = secureLaunch;
+    }
+
     public String getBox64Preset() {
         return box64Preset;
     }
@@ -535,15 +545,25 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         String wineLauncher = wineInfo.isArm64EC() ? winePath + "/wine" : imageFs.getBinDir() + "/box64 wine";
         updatePrefixBeforeSession(execEnvVars, wineLauncher, rootDir, imageFs);
 
-        Log.d("GuestLauncher", "Executing command: " + command);
-        return ProcessHelper.exec(command, execEnvVars.toStringArray(), rootDir, (status) -> {
+        // Apply one-shot authentication values only to the actual game process, never to prefix setup.
+        if (secretEnvVars != null) {
+            execEnvVars.putAll(secretEnvVars);
+            secretEnvVars = null;
+        }
+
+        if (!secureLaunch) Log.d("GuestLauncher", "Executing command: " + command);
+        Callback<Integer> callback = (status) -> {
             synchronized (lock) {
                 pid = -1;
             }
 
             if (terminationCallback != null)
                 terminationCallback.call(status);
-        });
+        };
+        if (secureLaunch) {
+            return ProcessHelper.execSecure(command, execEnvVars.toStringArray(), rootDir, callback);
+        }
+        return ProcessHelper.exec(command, execEnvVars.toStringArray(), rootDir, callback);
     }
 
     /**
