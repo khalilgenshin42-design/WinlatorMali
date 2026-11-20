@@ -29,7 +29,8 @@ public final class EpicPythonRuntime {
              InputStream legendary = context.getAssets().open(
                     ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py");
              InputStream runner = context.getAssets().open(
-                    ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py")) {
+                    ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py");
+             InputStream version = context.getAssets().open(ASSET_ROOT + "/.runtime-version")) {
             return true;
         } catch (IOException e) {
             return false;
