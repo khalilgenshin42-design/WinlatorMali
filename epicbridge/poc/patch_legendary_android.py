@@ -216,9 +216,13 @@ def main() -> None:
         "            for worker in self.children + self.threads:\n"
         "                if worker.is_alive():\n"
         "                    worker.join(timeout=10.0)\n"
-        "            if self.shared_memory is not None:\n"
+        "            alive_workers = [worker for worker in self.children + self.threads if worker.is_alive()]\n"
+        "            if alive_workers:\n"
+        "                self.log.error(f'Leaving Android mmap open while workers remain alive: {alive_workers!r}')\n"
+        "            elif self.shared_memory is not None:\n"
         "                self.shared_memory.close()\n"
-        "                self.shared_memory.unlink()\n\n"
+        "                self.shared_memory.unlink()\n"
+        "                self.shared_memory = None\n\n"
         "    def run_real(self):",
     )
 
