@@ -1467,3 +1467,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The NIST AES-128-GCM positive known-answer vector had already succeeded; the traceback showed failure only when deliberately passing a corrupted tag. JNI maps the Android JCA authentication exception to Python `ValueError`, but `epicbridge_runner._runtime_self_test()` incorrectly caught only `RuntimeError`. The production crypto path was not shown to be failing; the self-test expected the wrong exception type.
 - Fixed the negative-tag assertion to catch the shim's documented `ValueError`, preserving the security requirement that a corrupted tag must be rejected. Commit: `84c1d67`.
 - Next: run the full Epic workflow again. Require positive NIST vector, corrupted-tag rejection, worker-thread JCA callback, runtime imports, manager lifecycle tests, ARM64 production runtime, companion APK audit, and host APK audit. Do not call this ready until all pass.
+
+
+## 2026-11-21 — CPython Android prerequisite CI retry
+- Epic runtime run `44835831594` at source commit `84c1d677878d1f5bfb0bf98a639a98839cb02334` failed before production ARM64 runtime build or Epic Bridge instrumentation. The x86_64 CPython build, Legendary patch validation, library aggregation regression tests, host Python smoke test, and Legendary staging all passed.
+- The failing step was the managed x86_64 Android runtime prerequisite smoke. Gradle dependency resolution was rate-limited by Maven Central HTTP 429 responses (37+ dependencies), not by a source/test assertion. The previous AES-GCM negative-tag correction was therefore not exercised in this run.
+- The standard MaliWinlator 1.2.1 debug build run `44835831756` succeeded.
+- Requested GitHub to rerun failed jobs for run `44835831594`; await that retry before changing source. No Epic APK artifact was produced or verified; do not install.
