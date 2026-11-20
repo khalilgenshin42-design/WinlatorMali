@@ -240,8 +240,8 @@ jobs:
           set -euo pipefail
           X86_PACKAGE="$(find cross-build/x86_64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
           test -n "$X86_PACKAGE"
-          tar -tzf "$X86_PACKAGE" | grep -E '(^|/)libpython.*\\.so'
-          tar -tzf "$X86_PACKAGE" | grep -E 'site-packages/legendary_gl-0\\.21\\.1\\.dist-info/METADATA'
+          tar -tzf "$X86_PACKAGE" | grep -E '(^|/)libpython.*\.so'
+          tar -tzf "$X86_PACKAGE" | grep -E 'site-packages/legendary_gl-0\.21\.1\.dist-info/METADATA'
           PACKAGE="$(find cross-build/aarch64-linux-android/dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
           test -n "$PACKAGE"
           tar -tzf "$PACKAGE" | grep -E '(^|/)libpython.*\.so'
