@@ -78,45 +78,23 @@ jobs:
           python3 Platforms/Android configure-host --help
           git rev-parse HEAD
 
-      - name: Build, package, and test with upstream CPython Android CI
+      - name: Build x86_64 Android runtime for managed-emulator validation
         working-directory: cpython
         run: |
           set -euo pipefail
-          # The managed emulator on the x86_64 GitHub runner requires an
-          # x86_64 app APK. Test a matching x86_64 CPython package first.
-          # This is a host-emulator validation, not the ARM64 target artifact.
-          python3 Platforms/Android ci x86_64-linux-android --fast-ci
+          python3 Platforms/Android configure-build
+          python3 Platforms/Android make-build
+          python3 Platforms/Android configure-host x86_64-linux-android
+          python3 Platforms/Android make-host x86_64-linux-android
+          python3 Platforms/Android package x86_64-linux-android
 
-      - name: Smoke-test POSIX shared memory and multiprocessing on Android
+      - name: Smoke-test Legendary runtime prerequisites on Android
         working-directory: cpython
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/epic-site"
-          cat > "$RUNNER_TEMP/epic-site/epic_mp_smoke.py" <<'PY'
-          from multiprocessing.shared_memory import SharedMemory
-
-          def read_shared_memory(name, result_queue):
-              shm = SharedMemory(name=name)
-              result_queue.put(bytes(shm.buf[:8]))
-              shm.close()
-          PY
-          python3 Platforms/Android test --managed maxVersion --site-packages "$RUNNER_TEMP/epic-site" -- -c '
-          import multiprocessing
-          from multiprocessing.shared_memory import SharedMemory
-          from epic_mp_smoke import read_shared_memory
-          if __name__ == "__main__":
-              shm = SharedMemory(create=True, size=4096)
-              shm.buf[:8] = b"MALIWINL"
-              queue = multiprocessing.Queue()
-              process = multiprocessing.Process(target=read_shared_memory, args=(shm.name, queue))
-              process.start()
-              assert queue.get(timeout=30) == b"MALIWINL"
-              process.join(30)
-              assert process.exitcode == 0, process.exitcode
-              shm.close()
-              shm.unlink()
-              print("ANDROID_POSIXSHMEM_MULTIPROCESS_OK")
-          '
+          python3 Platforms/Android test --managed maxVersion \
+            --site-packages "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages" \
+            -- -m epic_runtime_smoke
 
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
