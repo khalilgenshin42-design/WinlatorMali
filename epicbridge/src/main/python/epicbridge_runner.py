@@ -173,7 +173,7 @@ def _runtime_self_test():
     import importlib.metadata
     import ssl
     from queue import Queue
-    from threading import Thread
+    from threading import Condition, Thread
 
     import certifi
     import filelock
@@ -182,7 +182,7 @@ def _runtime_self_test():
     from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
     from legendary.downloader.mp.manager import DLManager
     from legendary.downloader.mp.workers import DLWorker, FileWorker
-    from legendary.models.downloading import TerminateWorkerTask
+    from legendary.models.downloading import TaskFlags, TerminateWorkerTask, WriterTaskResult
 
     ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
     tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
@@ -225,6 +225,18 @@ def _runtime_self_test():
     failed_manager.join(timeout=5)
     if failed_manager.is_alive() or not isinstance(failed_manager.error, RuntimeError):
         raise RuntimeError("Legendary download-manager exception cleanup failed")
+
+    # A failed writer result must stop the install and reach the bridge caller.
+    failure_manager = DLManager("/tmp/epic-runtime-smoke", "https://cdn.invalid", {})
+    failure_manager.conditions = [Condition()]
+    failure_manager.writer_result_q = Queue()
+    failure_manager.writer_result_q.put(WriterTaskResult(
+        filename="failed.bin", flags=TaskFlags.NONE, success=False
+    ))
+    failure_manager.writer_result_q.put(TerminateWorkerTask())
+    failure_manager.fw_results_handler(Condition())
+    if failure_manager.running or not isinstance(failure_manager.error, RuntimeError):
+        raise RuntimeError("Legendary writer failures are not propagated")
 
     buffer = AndroidSharedBuffer(4096)
     try:
