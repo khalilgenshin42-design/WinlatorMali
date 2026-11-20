@@ -897,3 +897,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added an in-process active-job registry to EpicRuntimeService. The provider now compares persisted `running` state with that registry and marks a job `interrupted` if the service process has disappeared, with a 30-second startup grace to avoid racing the initial `startForegroundService` launch.
 - The host recognizes `interrupted` as a terminal state, clears its persisted tracking key, and tells the user to retry instead of polling a dead job forever. This does not attempt to resume a partially downloaded job itself; Legendary's existing resume metadata remains the recovery mechanism for a retry.
 - Commits: 9955cdb568d8e9ffe23890f72eb17d0ffa12fb13 (service active-job registry); 0092cd0323f077e26a3b406232896031533f3cc2 (provider interruption detection); 61710bc44476985de62e872ece418b99e4000012 and 0ad3ef285eceaace62311c05b28c24d1c6d012eb (host retry handling); 70d941e1d863535bb280816ce49b544978dc4840 (startup grace).
+
+## Engineering continuation — 2026-11-20: persist interruption state on graceful service destruction
+
+- Added an `onDestroy()` safeguard that marks any still-running persisted Epic jobs as interrupted before shutting down the service executor and releasing its wake lock. Normal completion removes job IDs first, so completed jobs are not overwritten.
+- Commit: 6be23b842150c1f2932104a1d60162c6988736d1.
