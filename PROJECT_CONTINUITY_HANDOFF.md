@@ -630,3 +630,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added the failure-propagation case to the embedded runtime self-test: it feeds a failed WriterTaskResult into fw_results_handler and requires the manager to stop and retain a RuntimeError.
 - Commits: ddf760b07c239999696b28142cc428d7bf3c685a (bounded chunk retries and writer error propagation in patcher); dd5595a3a37345b29f6e159b01263474083f8d47 (runtime self-test coverage).
 - The patcher and runtime test are committed on the active 1.2.1 branch. GitHub's combined status endpoint and commit-associated workflow endpoint currently return no checks/runs for these commits; no CI result is claimed. The next proof must apply the patch to the pinned Legendary commit, compile it, run the host smoke and Android instrumentation self-test, and complete the ARM64 packaging/integration workflow.
+
+## Engineering continuation — 2026-11-20: make Android runtime prerequisite smoke an actual CI gate
+
+- Audited the pinned CPython 3.15.2 Android build instructions against the active POC workflow. The workflow built and packaged the x86_64 test runtime, but did not actually invoke the committed third-party Android smoke script; the workflow metadata's statement that it was emulator-tested was therefore not backed by a step in the current YAML.
+- Added a managed x86_64 Android emulator step after staging Legendary and its pure-Python dependencies. It now runs CPython's documented command form: Platforms/Android test --managed maxVersion --site-packages <staged site-packages> -- -m epic_runtime_smoke.
+- The smoke covers 64-bit process, zlib, concurrent anonymous mmap, SQLite, CA/TLS, POSIX advisory locks, and Bionic subprocess creation. The step is required to pass before the ARM64 production runtime is built and uploaded.
+- Workflow commit: 811e56367c254e6439170cf0ba1633a83b27bc64. Because the workflow file itself is in its push path filter, this commit should trigger a fresh POC run on the development branch.
+- This is a CI-gate correction, not a test result. The new managed emulator step has not yet been observed passing; no runtime artifact or device-ready APK is claimed.
