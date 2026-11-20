@@ -68,16 +68,8 @@ public final class EpicPythonRuntime {
         File sitePackages = new File(pythonLib, "site-packages");
         File extensionDir = new File(pythonLib, "lib-dynload");
         File[] extensionFiles = extensionDir.listFiles();
-        boolean runtimeExtensionsExecutable = extensionDir.isDirectory() && extensionFiles != null;
-        if (runtimeExtensionsExecutable) {
-            for (File extension : extensionFiles) {
-                if (extension.isFile() && extension.getName().matches(".*\\.so(?:\\..*)?$")
-                        && !extension.canExecute()) {
-                    runtimeExtensionsExecutable = false;
-                    break;
-                }
-            }
-        }
+        boolean runtimeExtensionsExecutable = extensionDir.isDirectory()
+                && extensionFiles != null && sharedLibrariesExecutable(pythonLib);
         boolean runtimeFilesPresent = runtimeExtensionsExecutable
                 && new File(pythonLib, "os.py").isFile()
                 && new File(sitePackages, "epicbridge_runner.py").isFile()
@@ -101,19 +93,12 @@ public final class EpicPythonRuntime {
                 extractAssetDirectory(context.getAssets(), ASSET_ROOT, runtimeRoot);
                 File extractedPythonLib = new File(pythonHome, "lib/python3.15");
                 File extractedSitePackages = new File(extractedPythonLib, "site-packages");
-                File[] extractedExtensions = new File(extractedPythonLib, "lib-dynload").listFiles();
                 if (!new File(extractedPythonLib, "os.py").isFile()
                         || !new File(extractedSitePackages, "legendary/__init__.py").isFile()
                         || !new File(extractedSitePackages, "legendary/android_crypto.py").isFile()
                         || !new File(extractedSitePackages, "epicbridge_runner.py").isFile()
-                        || extractedExtensions == null) {
-                    throw new IOException("Extracted CPython runtime is incomplete");
-                }
-                for (File extension : extractedExtensions) {
-                    if (extension.isFile() && extension.getName().matches(".*\\.so(?:\\..*)?$")
-                            && !extension.canExecute()) {
-                        throw new IOException("Extracted CPython extension is not executable: " + extension);
-                    }
+                        || !sharedLibrariesExecutable(extractedPythonLib)) {
+                    throw new IOException("Extracted CPython runtime is incomplete or contains a non-executable shared extension");
                 }
                 File cwd = new File(pythonHome, "cwd");
                 if (!cwd.mkdirs() && !cwd.isDirectory()) {
@@ -216,6 +201,22 @@ public final class EpicPythonRuntime {
                 throw new IOException("Unable to mark Python extension executable: " + target);
             }
         }
+    }
+
+    private static boolean sharedLibrariesExecutable(File directory) {
+        if (directory == null || !directory.isDirectory()) return false;
+        File[] children = directory.listFiles();
+        if (children == null) return false;
+        for (File child : children) {
+            if (child.isDirectory()) {
+                if (!sharedLibrariesExecutable(child)) return false;
+            } else if (child.isFile()
+                    && child.getName().matches(".*\\\\.so(?:\\\\..*)?$")
+                    && !child.canExecute()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean deleteRecursively(File file) {
