@@ -924,3 +924,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Extended the final APK content audit to fail if the ARM64 companion APK accidentally retains x86, x86_64, or armeabi-v7a JNI libraries after the sequential emulator-test/production-ABI Gradle builds. The expected ARM64 JNI libraries remain explicitly required.
 - Commit: 216be82e580811f02d832770019a5105b2b9ef06.
+
+## Engineering continuation — 2026-11-20: retain one-shot Epic launch credentials through slow prefix setup
+
+- Found a launch-time expiry race: the host previously passed only a payload token into `GuestProgramLauncherComponent`, which retrieved it after Wine prefix preparation. A first-run prefix update could exceed the payload store's five-minute TTL, dropping Epic's one-shot environment values before the game process started.
+- `XServerDisplayActivity` now consumes the payload immediately and passes the in-memory payload object directly to the guest launcher. The launcher applies its environment only after prefix setup and then clears its reference. The command line and Wine working directory continue to be copied into the transient shortcut object, and secure launch logging remains enabled.
+- Commits: 97bf155443009facbd68ff5cf7d5c07df977381e (activity consumes/transfers payload); bb4f2951cd53aa51304ce875d4796758f2107b98 (guest launcher retains payload through prefix update).
+- Static launch-flow fix; actual first-run launch still needs a device test.
