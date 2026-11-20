@@ -760,3 +760,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Corrected runtime-build metadata to describe the actual managed-emulator command.
 - Commits: c7a02bef54249bce2a9448ef66fb5cf5da03ad6f (real smoke step); c08687643953043a0c432db3305b0430af67ab87 (metadata correction).
 - The POC workflow itself is now the source of truth; the emulator step must visibly pass before the downstream Android JNI test and ARM64 APK build can proceed.
+
+## Engineering continuation — 2026-11-20: stabilize the real x86_64 prerequisite smoke
+
+- Revalidated the live POC workflow after subsequent edits and restored the managed Android test step after Legendary/dependency staging, not immediately after the bare CPython prefix build. The test therefore exercises the exact x86_64 prefix that is later packaged for Android instrumentation.
+- Switched the network/TLS probe from the Legendary project website to stable https://example.com so the smoke validates DNS, CA trust, and TLS without depending on a third-party project's site uptime.
+- Corrected the smoke script's invocation documentation to require the staged prefix site-packages directory, matching the workflow's actual copy-and-run sequence.
+- Commits: c7a02bef54249bce2a9448ef66fb5cf5da03ad6f (managed emulator gate restored at correct stage); c08687643953043a0c432db3305b0430af67ab87 (build metadata); 4f9c61943551d6bf62123742dc055ea2c2771e40 (stable TLS endpoint); 2b95880eb5310ffb3550d3932f67adede4eb52f9 (invocation documentation).
+- This is the latest POC workflow configuration. Its managed emulator run must complete successfully before any APK build or device-test handoff.
