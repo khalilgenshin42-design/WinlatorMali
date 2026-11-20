@@ -1,0 +1,125 @@
+name: Epic integration — test and build MaliWinlator 1.2.1
+
+on:
+  workflow_run:
+    workflows:
+      - Epic runtime — CPython Android ARM64 POC
+    types:
+      - completed
+    branches:
+      - development/maliwinlator-1.2.1-bootstrap
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: epic-integration-\${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  test-and-build:
+    if: \${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Check out the 1.2.1 development branch
+        uses: actions/checkout@v4
+        with:
+          ref: development/maliwinlator-1.2.1-bootstrap
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Download CPython and Legendary runtime artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          run-id: \${{ github.event.workflow_run.id }}
+          github-token: \${{ github.token }}
+          path: runtime-artifacts
+
+      - name: Extract and locate Android runtime prefixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          X86_PACKAGE="$(find runtime-artifacts -type f -path '*x86_64*' -name '*.tar.gz' -print -quit)"
+          ARM64_PACKAGE="$(find runtime-artifacts -type f -path '*aarch64*' -name '*.tar.gz' -print -quit)"
+          test -n "$X86_PACKAGE"
+          test -n "$ARM64_PACKAGE"
+          mkdir -p "$RUNNER_TEMP/epic-runtime-x86_64" "$RUNNER_TEMP/epic-runtime-arm64"
+          tar -xzf "$X86_PACKAGE" -C "$RUNNER_TEMP/epic-runtime-x86_64"
+          tar -xzf "$ARM64_PACKAGE" -C "$RUNNER_TEMP/epic-runtime-arm64"
+          X86_HEADER="$(find "$RUNNER_TEMP/epic-runtime-x86_64" -type f -path '*/include/python3.15/Python.h' -print -quit)"
+          ARM64_HEADER="$(find "$RUNNER_TEMP/epic-runtime-arm64" -type f -path '*/include/python3.15/Python.h' -print -quit)"
+          test -n "$X86_HEADER"
+          test -n "$ARM64_HEADER"
+          X86_PREFIX="\${X86_HEADER%/include/python3.15/Python.h}"
+          ARM64_PREFIX="\${ARM64_HEADER%/include/python3.15/Python.h}"
+          test -f "$X86_PREFIX/lib/libpython3.15.so"
+          test -f "$ARM64_PREFIX/lib/libpython3.15.so"
+          echo "EPIC_X86_PREFIX=$X86_PREFIX" >> "$GITHUB_ENV"
+          echo "EPIC_ARM64_PREFIX=$ARM64_PREFIX" >> "$GITHUB_ENV"
+          echo "Runtime artifact from POC run \${{ github.event.workflow_run.id }}" > epic-runtime-build.txt
+          echo "x86_64 prefix: $X86_PREFIX" >> epic-runtime-build.txt
+          echo "arm64 prefix: $ARM64_PREFIX" >> epic-runtime-build.txt
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK and NDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android build packages
+        run: |
+          sdkmanager \
+            "platforms;android-34" \
+            "build-tools;35.0.0" \
+            "cmake;3.22.1" \
+            "ndk;29.0.14206865"
+          chmod +x ./gradlew
+
+      - name: Instrumented test of the embedded Legendary runtime on Android x86_64
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            ./gradlew :epicbridge:connectedDebugAndroidTest \
+              -PepicRuntimePrefix="$EPIC_X86_PREFIX" \
+              -PepicRuntimeAbi=x86_64 \
+              --no-daemon --stacktrace
+
+      - name: Build production MaliWinlator 1.2.1 ARM64 APK with Epic integration
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleStandardDebug \
+            -PepicRuntimePrefix="$EPIC_ARM64_PREFIX" \
+            -PepicRuntimeAbi=arm64-v8a \
+            --no-daemon --stacktrace
+          BRIDGE_APK="epicbridge/build/outputs/apk/debug/epicbridge-debug.apk"
+          HOST_APK="$(find app/build/outputs/apk -type f -name '*.apk' -print -quit)"
+          test -f "$BRIDGE_APK"
+          test -n "$HOST_APK"
+          unzip -l "$BRIDGE_APK" | grep -E 'lib/arm64-v8a/libepic_python.so'
+          unzip -l "$BRIDGE_APK" | grep -E 'assets/python/lib/python3.15/os.py'
+          unzip -l "$HOST_APK" | grep -E 'assets/epicbridge.apk'
+          echo "Epic Bridge companion: $BRIDGE_APK" >> epic-runtime-build.txt
+          echo "MaliWinlator host: $HOST_APK" >> epic-runtime-build.txt
+          sha256sum "$BRIDGE_APK" "$HOST_APK" >> epic-runtime-build.txt
+
+      - name: Upload runtime-enabled MaliWinlator and Epic Bridge APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-epic-integration-arm64
+          path: |
+            app/build/outputs/apk/**/*.apk
+            epicbridge/build/outputs/apk/debug/*.apk
+            epic-runtime-build.txt
+          if-no-files-found: error
+          retention-days: 14
