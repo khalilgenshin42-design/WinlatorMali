@@ -318,6 +318,18 @@ def main() -> None:
         "            self.dl_worker_queue.put_nowait(TerminateWorkerTask())",
     )
 
+    # An up-to-date game can legitimately produce no writer tasks.
+    replace_once(
+        manager,
+        "    def run_real(self):\n"
+        "        self.shared_memory = AndroidSharedBuffer(self.max_shared_memory)\n",
+        "    def run_real(self):\n"
+        "        if not self.tasks:\n"
+        "            self.log.info('No download tasks required; skipping worker startup.')\n"
+        "            return\n"
+        "        self.shared_memory = AndroidSharedBuffer(self.max_shared_memory)\n",
+    )
+
     # Surface permanent chunk failures instead of retrying forever.
     replace_once(
         manager,
