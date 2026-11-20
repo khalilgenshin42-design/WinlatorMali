@@ -394,6 +394,7 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           TAG="maliwinlator-1.2.1-epic-${GITHUB_SHA:0:12}"
