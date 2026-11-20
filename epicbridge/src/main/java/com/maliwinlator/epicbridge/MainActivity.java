@@ -11,10 +11,15 @@ import android.view.Gravity;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private TextView statusView;
     private TextView noticeView;
+    private Button selfTestButton;
+    private final ExecutorService io = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +50,11 @@ public class MainActivity extends Activity {
         noticeView.setPadding(0, pad, 0, 0);
         root.addView(noticeView);
 
+        selfTestButton = new Button(this);
+        selfTestButton.setText("Validate Epic runtime");
+        selfTestButton.setOnClickListener(v -> runRuntimeSelfTest());
+        root.addView(selfTestButton);
+
         setContentView(root);
         refreshStatus();
     }
@@ -69,6 +79,30 @@ public class MainActivity extends Activity {
         noticeView.setText(runtimePackaged
                 ? "Epic account data and Legendary run in this separate companion package. Return to MaliWinlator to sign in and manage your Epic library."
                 : "This is a bootstrap companion build. Epic login, library, downloads and launch features become available when the Android CPython/Legendary runtime is bundled.");
+    }
+
+    private void runRuntimeSelfTest() {
+        selfTestButton.setEnabled(false);
+        statusView.setText("Initializing CPython and validating Legendary, Android AES-GCM and downloader threads...");
+        io.execute(() -> {
+            String output = EpicPythonRuntime.call(this, "runtime_self_test", "{}");
+            runOnUiThread(() -> {
+                selfTestButton.setEnabled(true);
+                try {
+                    JSONObject result = new JSONObject(output);
+                    if (result.optBoolean("ok", false)) {
+                        statusView.setText("Epic runtime self-test passed");
+                        noticeView.setText(result.optJSONObject("self_test").toString());
+                    } else {
+                        statusView.setText("Epic runtime self-test failed");
+                        noticeView.setText(result.optString("message", output));
+                    }
+                } catch (Exception e) {
+                    statusView.setText("Epic runtime self-test failed");
+                    noticeView.setText(output);
+                }
+            });
+        });
     }
 
     private void requestStorageAccess() {
