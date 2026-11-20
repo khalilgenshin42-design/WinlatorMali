@@ -94,7 +94,7 @@ tasks.register('stageEpicPythonRuntime', Sync) {
             exclude '**/*.pyc'
         }
         from("${epicRuntimePrefix}/lib") {
-            into 'jniLibs/arm64-v8a'
+            into "jniLibs/${epicRuntimeAbi}"
             include 'lib*.so*'
         }
         from('src/main/python') {
