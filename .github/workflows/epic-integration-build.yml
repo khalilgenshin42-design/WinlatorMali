@@ -123,6 +123,35 @@ jobs:
               | grep -E 'SHA256:' >> epic-runtime-build.txt
           fi
 
+      - name: Download the previous 1.2.1 APK for signing-identity comparison
+        uses: actions/download-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-standard-debug-86d583f96fa479c8a7411e9a36fac1b245cb0620
+          run-id: 44655229820
+          github-token: ${{ github.token }}
+          path: previous-build
+
+      - name: Record whether this APK can update the previous 1.2.1 install
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIOUS_APK="$(find previous-build/app/build/outputs/apk/standard/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          CURRENT_APK="$(find app/build/outputs/apk/standard/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$PREVIOUS_APK"
+          test -n "$CURRENT_APK"
+          PREVIOUS_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$PREVIOUS_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
+          CURRENT_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$CURRENT_APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1)"
+          test -n "$PREVIOUS_CERT"
+          test -n "$CURRENT_CERT"
+          echo "Previous 1.2.1 signer: $PREVIOUS_CERT" >> epic-runtime-build.txt
+          echo "Current Epic build signer: $CURRENT_CERT" >> epic-runtime-build.txt
+          if [ "$PREVIOUS_CERT" = "$CURRENT_CERT" ]; then
+            echo "UPDATE_SIGNATURE_MATCH=true" >> epic-runtime-build.txt
+          else
+            echo "UPDATE_SIGNATURE_MATCH=false" >> epic-runtime-build.txt
+            echo "::warning::The Epic build signer differs from the previous 1.2.1 APK. Do not uninstall the old app until its container data is backed up."
+          fi
+
       - name: Upload runtime-enabled MaliWinlator and Epic Bridge APKs
         uses: actions/upload-artifact@v4
         with:
