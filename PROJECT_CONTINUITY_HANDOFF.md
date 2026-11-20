@@ -1013,3 +1013,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added a final-package ELF audit using the NDK's `llvm-readelf`. It extracts every ARM64 JNI library and CPython `lib-dynload/*.so` module from the companion APK, reads each `DT_NEEDED` entry, and requires the dependency to exist either in the APK's ARM64 native-library directory or the Android API 35 NDK system-library stubs.
 - This catches missing OpenSSL, libffi, sqlite, zlib, libpython, or other shared-library dependencies before the artifact is handed to the device.
 - Commits: 15509326e96d1e166514ca6a41709bd766b303ad (ELF closure audit); 76322d2d51a5f211a3e47208f19fb25e41ba5968 (corrected readelf dependency parser).
+
+## Engineering continuation — 2026-11-20: test corrupted-tag rejection through the actual JNI path
+
+- Extended the CPython runtime self-test to flip one bit of the NIST AES-GCM authentication tag and require the native _epiccrypto → JNI → Android JCA path to raise a Python RuntimeError. Added an explicit Android instrumentation assertion for this result.
+- The existing Java known-answer test already verifies JCA tag rejection directly; this new case verifies exception propagation through the C/JNI bridge used by Legendary.
+- Commits: fe6dbfc1625c74cbc459e8ebc68b1011ca99df3f (runtime negative test); f0c12e728a5bf88edff5b8cb1cbaf1f80fc89601 (instrumentation assertion).
