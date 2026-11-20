@@ -297,13 +297,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: |
-            set -eu
-            cd maliwinlator
-            chmod +x ./gradlew
-            ./gradlew --no-daemon --stacktrace \
-              :epicbridge:connectedDebugAndroidTest \
-              -PepicRuntimeAbi=x86_64 \
-              -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/x86_64-linux-android/prefix"
+            (cd maliwinlator && chmod +x ./gradlew && ./gradlew --no-daemon --stacktrace :epicbridge:connectedDebugAndroidTest -PepicRuntimeAbi=x86_64 -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/x86_64-linux-android/prefix")
 
       - name: Build ARM64 Epic companion and MaliWinlator host APK
         working-directory: maliwinlator
