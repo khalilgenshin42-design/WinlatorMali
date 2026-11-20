@@ -936,3 +936,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Extended the one-shot Epic ownership-token file cleanup delay from 15 to 30 minutes to match the stale-file sweep window and allow a slow first Wine prefix preparation to complete before the game reads its token. Files remain private to the host app UID and are removed by the delayed cleanup or the next launch's stale-file sweep.
 - Commit: 1ee412644c1c423c246b558d6cb0d53890d20dbf.
+
+## Engineering continuation — 2026-11-20: make CI outcome and artifact URL discoverable without a run link
+
+- Added a best-effort end-of-workflow status publisher. After both APK and CPython runtime artifacts upload, the workflow writes `PROJECT_EPIC_CI_STATUS.md` to the development branch with the exact source SHA, run URL, result, run attempt, artifact URL, package IDs, and verification scope. A failure path writes a clear "do not install" report with the failed run URL.
+- The status commit uses the workflow's scoped `contents: write` token and `[skip ci]`; status publication is best-effort and cannot turn a successful build into a failed build if branch writes are blocked. This removes the need for the user to locate or send an Actions run URL manually.
+- Commits: eae82aeccff46b77f6d48d1bfac0f3ad7862ce0e (status report publisher); 1db92c18ab8b11b59125f85339d3caa28177036e (publish after all artifacts); 3ce5b92292a4ec533817ccf1735e5733852c0985 and d7a7371de5b492c86ff73c40a1ad3d2b454ffb41 (best-effort report handling).
+- The publisher itself is not evidence of a passing build. Its report must be read after the workflow runs.
