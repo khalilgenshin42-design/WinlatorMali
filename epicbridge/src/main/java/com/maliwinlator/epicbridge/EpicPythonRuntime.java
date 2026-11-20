@@ -89,7 +89,10 @@ public final class EpicPythonRuntime {
         if (!packagedVersion.equals(installedVersion) || !runtimeFilesPresent) {
             // Runtime assets are content-addressed. Updates to Python, Legendary,
             // or the bridge runner replace stale extracted files without touching HOME.
-            deleteRecursively(pythonHome);
+            if (!deleteRecursively(pythonHome)) {
+                Log.e(TAG, "Unable to remove the previous incomplete Python runtime");
+                return false;
+            }
             if (!runtimeRoot.mkdirs() && !runtimeRoot.isDirectory()) {
                 Log.e(TAG, "Unable to create runtime directory");
                 return false;
@@ -211,13 +214,23 @@ public final class EpicPythonRuntime {
         }
     }
 
-    private static void deleteRecursively(File file) {
-        if (file == null || !file.exists()) return;
+    private static boolean deleteRecursively(File file) {
+        if (file == null || !file.exists()) return true;
         if (file.isDirectory()) {
             File[] children = file.listFiles();
-            if (children != null) for (File child : children) deleteRecursively(child);
+            if (children == null) {
+                Log.w(TAG, "Unable to list runtime directory for deletion: " + file);
+                return false;
+            }
+            for (File child : children) {
+                if (!deleteRecursively(child)) return false;
+            }
         }
-        if (!file.delete()) Log.w(TAG, "Unable to delete " + file);
+        if (!file.delete() && file.exists()) {
+            Log.w(TAG, "Unable to delete " + file);
+            return false;
+        }
+        return true;
     }
 
     private static synchronized boolean ensureNativeLibraryLoaded() {
