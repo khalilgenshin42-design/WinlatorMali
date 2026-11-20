@@ -113,13 +113,14 @@ tasks.register('stageEpicPythonRuntime', Sync) {
     if (epicRuntimePrefix) {
         from("${epicRuntimePrefix}/lib/python3.15") {
             into 'assets/python/lib/python3.15'
+            exclude '**/zipfile/_path/**'
             exclude '**/__pycache__/**'
             exclude '**/*.pyc'
         }
         // Gradle's directory traversal can omit the relocated CPython 3.15
         // zipfile helper directory on some filesystems. Stage it explicitly.
         from("${epicRuntimePrefix}/lib/python3.15/zipfile/_path") {
-            into 'assets/python/lib/python3.15/zipfile/_path'
+            into 'assets/python/lib/python3.15/zipfile/path_pkg'
             exclude '**/__pycache__/**'
             exclude '**/*.pyc'
         }
@@ -138,7 +139,7 @@ tasks.register('stageEpicPythonRuntime', Sync) {
         }
         if (epicRuntimePrefix && pythonAssets.isDirectory()) {
             File zipfilePackage = new File(pythonAssets, 'lib/python3.15/zipfile/__init__.py')
-            File zipfilePathPackage = new File(pythonAssets, 'lib/python3.15/zipfile/_path/__init__.py')
+            File zipfilePathPackage = new File(pythonAssets, 'lib/python3.15/zipfile/path_pkg/__init__.py')
             if (!zipfilePackage.isFile() || !zipfilePathPackage.isFile()) {
                 throw new GradleException('CPython 3.15 zipfile package is incomplete in staged Epic runtime assets')
             }
