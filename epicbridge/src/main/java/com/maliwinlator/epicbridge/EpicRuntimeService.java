@@ -26,6 +26,7 @@ public final class EpicRuntimeService extends Service {
     public static final String PREFS = "epic_runtime_jobs";
     private static final String CHANNEL_ID = "epic_runtime_jobs";
     private static final String TAG = "EpicRuntimeService";
+    private static final int FOREGROUND_NOTIFICATION_ID = 0x45504943;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicInteger activeJobs = new AtomicInteger();
@@ -60,7 +61,7 @@ public final class EpicRuntimeService extends Service {
         }
 
         if (activeJobs.getAndIncrement() == 0) {
-            startForeground(notificationId(jobId), buildNotification("install".equals(command) ? "Installing Epic game" : "Uninstalling Epic game", true));
+            startForeground(FOREGROUND_NOTIFICATION_ID, buildNotification("install".equals(command) ? "Installing Epic game" : "Uninstalling Epic game", true));
             if (!wakeLock.isHeld()) wakeLock.acquire(6L * 60L * 60L * 1000L);
         }
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
@@ -96,12 +97,19 @@ public final class EpicRuntimeService extends Service {
             int remaining = activeJobs.decrementAndGet();
             if (remaining <= 0) {
                 mainHandler.post(() -> {
-                    if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
-                    stopForeground(STOP_FOREGROUND_REMOVE);
-                    stopSelfResult(startId);
+                    // A new start may arrive after decrementAndGet() but before this
+                    // callback reaches the main thread. Re-check before hiding the FGS.
+                    if (activeJobs.get() == 0) {
+                        if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+                        stopForeground(STOP_FOREGROUND_REMOVE);
+                        stopSelfResult(startId);
+                    } else {
+                        notificationManager.notify(FOREGROUND_NOTIFICATION_ID,
+                                buildNotification("Another Epic download is running", true));
+                    }
                 });
             } else {
-                notificationManager.notify(notificationId(jobId),
+                notificationManager.notify(FOREGROUND_NOTIFICATION_ID,
                         buildNotification("Another Epic download is running", true));
             }
         });
