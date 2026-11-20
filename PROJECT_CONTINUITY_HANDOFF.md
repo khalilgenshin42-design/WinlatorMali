@@ -1380,3 +1380,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - This is now narrowed to the final APK packaging boundary, not CPython source compilation or zipfile archive contents. The workflow's ARM64 APK audit has not yet run because instrumentation is an earlier gate.
 - Added explicit per-entry diagnostics in `EpicPythonRuntime.isPackaged()`: it now reports whether `libepic_python` or a native dependency failed to load, or the exact missing APK asset (stdlib, Legendary package, bridge runner, zipfile._path, or runtime identity). Commit: `1c2a5210ec774d8586f11a8d47ef3aaf68060d88`.
 - Next: rerun the Epic workflow, read the emitted `EpicPythonRuntime` logcat line, then fix the precise source-set/JNI/assets packaging defect. Keep the instrumentation gate strict; do not ship stub or partial runtime APKs.
+
+
+## 2026-11-20 Epic runtime staging correction (commit 7c58e88a68cc97ceff541a25d6e2a38520873d65)
+- Epic workflow run #44793157660 failed Android instrumentation; standard debug APK workflow #44793157665 succeeded, including embedded companion byte match and shared signer audit.
+- Exact Android asset failure from emulator logcat: `python/lib/python3.15/zipfile/_path/__init__.py` missing from companion APK. Other earlier preflight assets were found. Managed x86_64 and ARM64 CPython runtime archive audits both showed the path, so the defect is between runtime-prefix staging and Android asset packaging, not Legendary import/runtime behavior.
+- Updated both x86_64 and ARM64 CPython workflow staging commands from `cp -a` to `cp -aL` for CPython's `Lib/zipfile` package, then added explicit checks that `zipfile/_path` and its `__init__.py` are not symlinks. This forces dereferencing if upstream ships the relocated helper as a symlink, which Android asset packaging may omit. Commit: `7c58e88a68cc97ceff541a25d6e2a38520873d65`.
+- Next gate: confirm fresh workflow #447... passes CPython runtime packaging, Android instrumentation, then ARM64 APK signature/ABI/ELF/asset/embedded-byte audits. Do not distribute prior APKs as Epic-enabled; they are not runtime-verified.
