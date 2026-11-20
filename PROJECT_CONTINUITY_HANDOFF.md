@@ -367,3 +367,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added the same release signing-config logic to the companion module in commit `ef0449db0f793f84d49610e38899016cad0ce03a`. Host and companion will use the project's release keystore when present, otherwise both use the debug signer; the CI signer gate continues to verify the actual built APKs.
 
 - Resolved the exact Legendary source pin: commit `42f6bdeadde3a9526dc8eb713763476999ac217b`, message `release: 0.21.1 Lowlife`. The companion README's abbreviated pin should be expanded to this full hash before the runtime source is vendored/built.
+
+- Follow-up APK CI run **44645970680** completed successfully at source commit `ef0449db0f793f84d49610e38899016cad0ce03a`, including the secure one-shot Epic launch payload path, GPL companion docs, matching release-signing configuration, embedded APK integrity, package-ID, and signer checks. Artifact ID `14589465267`, size 446,638,120 bytes: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44645970680/artifacts/14589465267
