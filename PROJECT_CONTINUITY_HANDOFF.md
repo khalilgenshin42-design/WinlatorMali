@@ -458,3 +458,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Expanded the fast host-side Legendary smoke gate to import both downloader worker classes, assert the manager and workers are all thread-backed, exercise the manager's cooperative stop signal, and verify the anonymous mmap buffer. This catches compatibility regressions before waiting for the managed Android emulator test. Workflow update: `04e1e4215c272dc487ff086062b70e2c33cb172c`.
 
 - Added `epicbridge/poc/requirements-android.txt` to pin the Python runtime dependency set for Legendary 0.21.1: Requests 2.32.4, certifi 2025.1.31, charset-normalizer 3.4.1, idna 3.10, urllib3 2.3.0, filelock 3.18.0, and pycryptodomex 3.23.0. Native dependencies still require Android/CPython 3.15 ARM64 builds; host Linux wheels must not be copied into the Android runtime. Commit `0a7c92f83ece40cf66ab39d957fd6ad5614e0b44`.
+
+- Added the Android dependency lock file to the CPython/Legendary POC workflow path filters so changing dependency pins automatically reruns the validation pipeline. Workflow commit `ce12e689f1b146fb5944f3c5bad2b583924be69a`.
