@@ -272,6 +272,49 @@ jobs:
           } > runtime-build-info.txt
           cat runtime-build-info.txt
 
+      - name: Install MaliWinlator Android build toolchain
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager --install \
+            "platforms;android-34" \
+            "build-tools;35.0.0" \
+            "ndk;29.0.14206865" \
+            "cmake;3.22.1"
+
+      - name: Run Epic Bridge x86_64 Android instrumentation tests
+        working-directory: maliwinlator
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace \
+            :epicbridge:connectedDebugAndroidTest \
+            -PepicRuntimeAbi=x86_64 \
+            -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/x86_64-linux-android/prefix"
+
+      - name: Build ARM64 Epic companion and MaliWinlator host APK
+        working-directory: maliwinlator
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --stacktrace \
+            :app:assembleStandardDebug \
+            -PepicRuntimeAbi=arm64-v8a \
+            -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
+          test -s epicbridge/build/outputs/apk/debug/epicbridge-debug.apk
+          test -s app/build/outputs/apk/standard/debug/app-standard-debug.apk
+          mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
+          cp epicbridge/build/outputs/apk/debug/epicbridge-debug.apk "$GITHUB_WORKSPACE/epic-apk-output/"
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk "$GITHUB_WORKSPACE/epic-apk-output/"
+          sha256sum "$GITHUB_WORKSPACE/epic-apk-output/"*.apk | tee "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"
+
+      - name: Upload installable MaliWinlator Epic APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-epic-arm64-debug
+          path: epic-apk-output/*
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload CPython Android runtime POC
         uses: actions/upload-artifact@v4
         with:
