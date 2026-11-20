@@ -356,3 +356,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - APK CI run **44645158888** caught a Java scope error: `epicLaunchToken` was declared inside the startup block but referenced later during launcher setup. Corrected it to an Activity field in commit `e01c1d0327551f275393e89b9c08cf03b58bbb3e`. The next app CI run must confirm the fix.
 
 - APK CI run **44645410357** found the next integration error: `XServerDisplayActivity` called `setEpicLaunchPayloadToken`, but the setter insertion had not landed in `GuestProgramLauncherComponent`. Added the missing setter in commit `d9401d7bb52ee63b60a11a705385e58f4a363b6e`. A new build will validate it.
+
+- Added a safe Legendary launch policy in design commit `834f77fd93453ba92bb8018b075dd32da05078d8`: do not execute host wrappers or arbitrary `pre_launch_command`; the initial bridge rejects non-empty pre-launch/host launch commands and passes only the game executable/arguments through Wine.
