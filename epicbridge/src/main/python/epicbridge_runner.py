@@ -35,6 +35,11 @@ def _require_login(core):
 def _library(core):
     _require_login(core)
     games, dlc_by_catalog = core.get_game_and_dlc_list(platform="Windows")
+    non_asset_games, non_asset_dlc = core.get_non_asset_library_items()
+    known = {game.app_name for game in games}
+    games.extend(game for game in non_asset_games if game.app_name not in known)
+    for catalog_id, dlcs in non_asset_dlc.items():
+        dlc_by_catalog[catalog_id].extend(dlcs)
     result = []
     for game in sorted(games, key=lambda item: item.app_title.casefold()):
         dlcs = []
