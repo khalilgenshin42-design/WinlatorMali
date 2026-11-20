@@ -113,9 +113,15 @@ public final class EpicBridgeProvider extends ContentProvider {
             String jobId = arg == null ? "" : arg;
             android.content.SharedPreferences prefs = getContext().getSharedPreferences(
                     EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
+            String jobState = prefs.getString(jobId + ".state", "unknown");
+            if ("running".equals(jobState) && !EpicRuntimeService.isJobActive(jobId)) {
+                jobState = "interrupted";
+                prefs.edit().putString(jobId + ".state", jobState)
+                        .putLong(jobId + ".finished_at", System.currentTimeMillis()).apply();
+            }
             result.putBoolean("ok", true);
             result.putString("job_id", jobId);
-            result.putString("state", prefs.getString(jobId + ".state", "unknown"));
+            result.putString("state", jobState);
             result.putString("result_json", prefs.getString(jobId + ".result", ""));
             return result;
         }
