@@ -76,7 +76,7 @@ public final class EpicRuntimeService extends Service {
                 .putString(jobId + ".state", "running")
                 .putString(jobId + ".result", "")
                 .putLong(jobId + ".started_at", System.currentTimeMillis())
-                .apply();
+                .commit();
 
         executor.execute(() -> {
             String response;
@@ -109,7 +109,7 @@ public final class EpicRuntimeService extends Service {
                     .putString(jobId + ".state", success ? "complete" : "failed")
                     .putString(jobId + ".result", response)
                     .putLong(jobId + ".finished_at", System.currentTimeMillis())
-                    .apply();
+                    .commit();
             ACTIVE_JOB_IDS.remove(jobId);
 
             int remaining = activeJobs.decrementAndGet();
@@ -166,7 +166,7 @@ public final class EpicRuntimeService extends Service {
         for (String jobId : ACTIVE_JOB_IDS) {
             if ("running".equals(prefs.getString(jobId + ".state", "unknown"))) {
                 prefs.edit().putString(jobId + ".state", "interrupted")
-                        .putLong(jobId + ".finished_at", System.currentTimeMillis()).apply();
+                        .putLong(jobId + ".finished_at", System.currentTimeMillis()).commit();
             }
         }
         ACTIVE_JOB_IDS.clear();
