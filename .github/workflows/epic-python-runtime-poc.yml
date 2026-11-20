@@ -414,7 +414,7 @@ jobs:
           - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
           - Built host package: com.maliwinlator.app (versionCode 24)
           - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
-          - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/embedded companion audits.
+          - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
           EOF
           {
             echo
