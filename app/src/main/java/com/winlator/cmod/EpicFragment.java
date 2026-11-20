@@ -235,8 +235,8 @@ public final class EpicFragment extends Fragment {
         android.content.Context appContext = requireContext().getApplicationContext();
         io.execute(() -> {
             JSONObject json;
-            if ("install".equals(method)) {
-                Bundle started = EpicBridgeClient.call(appContext, "start_job", "install", payload);
+            if ("install".equals(method) || "uninstall".equals(method)) {
+                Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
                 if (!started.getBoolean("ok", false)) {
                     json = new JSONObject();
                     try {
