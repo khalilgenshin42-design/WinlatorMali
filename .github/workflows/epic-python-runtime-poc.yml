@@ -125,6 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --disable-pip-version-check requests filelock pycryptodomex==3.23.0
+          python3 -m pip install --disable-pip-version-check --no-deps ./legendary
           mkdir -p "$RUNNER_TEMP/epic-host-shim"
           cat > "$RUNNER_TEMP/epic-host-shim/_epiccrypto.py" <<'PY'
           from Cryptodome.Cipher import AES
