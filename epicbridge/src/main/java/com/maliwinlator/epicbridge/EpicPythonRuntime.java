@@ -14,7 +14,7 @@ import java.io.IOException;
 public final class EpicPythonRuntime {
     private static final String TAG = "EpicPythonRuntime";
     private static final String ASSET_ROOT = "python";
-    private static final String RUNTIME_MARKER = ".maliwinlator-runtime-3.15.2";
+    private static final String RUNTIME_MARKER = ".maliwinlator-runtime-3.15.2-legendary-0.21.1";
     private static volatile boolean initialized;
 
     private EpicPythonRuntime() {}
