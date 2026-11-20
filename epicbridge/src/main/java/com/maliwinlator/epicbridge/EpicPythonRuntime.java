@@ -20,10 +20,15 @@ public final class EpicPythonRuntime {
     private EpicPythonRuntime() {}
 
     public static boolean isPackaged(Context context) {
-        File nativeLibrary = new File(context.getApplicationInfo().nativeLibraryDir, "libepic_python.so");
-        if (!nativeLibrary.isFile()) return false;
+        File nativeDir = new File(context.getApplicationInfo().nativeLibraryDir);
+        if (!new File(nativeDir, "libepic_python.so").isFile()
+                || !new File(nativeDir, "libpython3.15.so").isFile()) return false;
         try (InputStream ignored = context.getAssets().open(
-                ASSET_ROOT + "/lib/python3.15/os.py")) {
+                    ASSET_ROOT + "/lib/python3.15/os.py");
+             InputStream legendary = context.getAssets().open(
+                    ASSET_ROOT + "/lib/python3.15/site-packages/legendary/__init__.py");
+             InputStream runner = context.getAssets().open(
+                    ASSET_ROOT + "/lib/python3.15/site-packages/epicbridge_runner.py")) {
             return true;
         } catch (IOException e) {
             return false;
