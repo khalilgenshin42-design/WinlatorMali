@@ -1129,3 +1129,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - The independent standard-debug workflow triggered by source commit `937947ced07a3b1ccac569b96e4f92061c6cef78` completed its actual build, embedded Epic Bridge APK/signer audit, and APK upload steps successfully (run `44731340295`). This verifies the host Java/Gradle integration compiles and the companion asset is embedded with a matching signer.
 - This is **not** the Epic-specific runtime package verification: the separate CPython/Legendary workflow `44731340221` is still building its Android runtime. No Epic companion ARM64 runtime APK is yet declared ready.
+
+## Documentation — 2026-11-20: prepare the first device-test procedure
+
+- Added `EPIC_GAMES_TESTING_GUIDE.md` with the install order for the host/companion pair, per-app all-files permission steps, runtime self-test, Epic browser sign-in, container selection, install/launch flow, limitations, and safe bug-report checklist.
+- Commit: `753dd7df3e02b66872925146b87c479611df868a`.
+- The guide explicitly says to use only the successful Epic ARM64 prerelease and not to treat an unverified or bootstrap-only artifact as ready.
