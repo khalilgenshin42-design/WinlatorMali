@@ -12,7 +12,7 @@ import android.os.Environment;
 public final class EpicBridgeProvider extends ContentProvider {
     public static final String AUTHORITY = "com.maliwinlator.epicbridge.provider";
     public static final int PROTOCOL_VERSION = 2;
-    static final String HOST_PACKAGE = "com.winlator.cmod";
+    static final String HOST_PACKAGE = "com.maliwinlator.app";
     private static volatile Boolean cryptoSelfTest;
 
     @Override
