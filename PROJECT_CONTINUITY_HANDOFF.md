@@ -1164,3 +1164,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The workflow has advanced to step 19, **Install MaliWinlator Android build toolchain**. Epic Bridge x86_64 instrumentation (step 20), ARM64 companion + host APK build (step 21), uploads (steps 22–23), and prerelease publication (step 24) remain pending.
 - This is meaningful progress beyond the earlier x86_64 emulator smoke: the production ARM64 CPython runtime has now compiled and passed its package audit. It is still not a downloadable/validated Epic APK pair until all remaining steps succeed.
 - Handoff documentation was updated in commit `30eaf220f8faa48d23239bdb31911810341879dc`; this follow-up records the newly completed ARM64 stages.
+
+## Live CI update — 2026-11-20: Android build toolchain ready; instrumentation running
+
+- Epic workflow run **44731972181** has now completed the Android SDK/NDK/CMake toolchain installation successfully and entered step 20, **Run Epic Bridge x86_64 Android instrumentation tests**.
+- Steps 1–19 are all successful, including production ARM64 CPython runtime compilation and packaged-runtime audit, plus the managed x86_64 runtime smoke.
+- Steps 21–24 (ARM64 APK build, artifact uploads, and prerelease publication) have not yet started. No Epic APK pair is published at this checkpoint.
+- The workflow definition's release gate is correctly sequenced after Android JNI instrumentation, APK signature/package/ABI checks, ELF dependency closure, and exact embedded-companion byte comparison. Do not bypass these gates to distribute the baseline host-only APK.
