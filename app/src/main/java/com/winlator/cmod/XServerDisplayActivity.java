@@ -171,6 +171,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private Runnable editInputControlsCallback;
     private Shortcut shortcut;
     private EpicLaunchPayloadStore.Payload epicLaunchPayload;
+    private String epicLaunchToken;
     private String graphicsDriver = Container.DEFAULT_GRAPHICS_DRIVER;
     private HashMap<String, String> graphicsDriverConfig;
     private String audioDriver = Container.DEFAULT_AUDIO_DRIVER;
@@ -529,7 +530,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
 
-        String epicLaunchToken = getIntent().getStringExtra("epic_launch_token");
+        epicLaunchToken = getIntent().getStringExtra("epic_launch_token");
         epicLaunchPayload = EpicLaunchPayloadStore.get(epicLaunchToken);
         if (epicLaunchPayload != null && shortcut != null) {
             shortcut.putExtra("execArgs", epicLaunchPayload.commandLine);
