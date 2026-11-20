@@ -992,3 +992,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added a corresponding watchdog to Legendary's download-result handler. If all DLWorker threads have exited unexpectedly while the manager is still running and an in-flight result is awaited, the manager records a hard error and stops cooperatively rather than waiting forever on an empty result queue.
 - Normal cancellation is excluded from this error path; it is already signaled by `self.running = False`.
 - Commit: aa191ecfadc23d264fac32380c93cf3fe1bc0dfb.
+
+## Engineering continuation — 2026-11-20: fail fast if the Epic file-writer thread exits with pending work
+
+- Added a main progress-loop watchdog for the final FileWorker thread. If the writer exits while Legendary still has unprocessed file tasks, the manager records an error and stops rather than waiting indefinitely for writer-result notifications that can never arrive.
+- Commit: 7e7653580613964b455883ec5eb06816403116cb.
