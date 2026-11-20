@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "MaliWinlator"
-include ':app'
+include ':app', ':epicbridge'
