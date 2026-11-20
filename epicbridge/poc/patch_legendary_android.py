@@ -261,6 +261,13 @@ def main() -> None:
         "                raise",
     )
 
+    # Ensure cancellation exits the progress loop and reaches ordered queue shutdown.
+    replace_once(
+        manager,
+        "        while processed_tasks < num_tasks:\\n",
+        "        while processed_tasks < num_tasks and self.running:\\n",
+    )
+
     replace_once(
         manager,
         "            while self.active_tasks < self.max_workers * 2 and self.chunks_to_dl:",
