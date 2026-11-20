@@ -128,8 +128,16 @@ jobs:
           PYTHONPATH="$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
           from threading import Thread
           from legendary.downloader.mp.manager import DLManager
+          from legendary.downloader.mp.workers import DLWorker, FileWorker
           from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
           assert issubclass(DLManager, Thread)
+          assert issubclass(DLWorker, Thread)
+          assert issubclass(FileWorker, Thread)
+          manager = DLManager.__new__(DLManager)
+          manager.running = True
+          manager.conditions = []
+          manager.stop()
+          assert manager.running is False
           buffer = AndroidSharedBuffer(4096)
           buffer.buf[:8] = b"MALIWINL"
           assert buffer.buf[:8] == b"MALIWINL"
