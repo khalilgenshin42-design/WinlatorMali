@@ -134,11 +134,12 @@ jobs:
           PY
           PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 -m legendary --version
           PYTHONPATH="$RUNNER_TEMP/epic-host-shim:$GITHUB_WORKSPACE/legendary" python3 - <<'PY'
-          from threading import Thread
+          from queue import Queue
           from legendary.android_crypto import AES
           from legendary.downloader.mp.manager import DLManager
           from legendary.downloader.mp.workers import DLWorker, FileWorker
           from legendary.downloader.mp.android_shared_buffer import AndroidSharedBuffer
+          from legendary.models.downloading import TerminateWorkerTask
           # NIST AES-128-GCM known-answer vector (zero key and nonce).
           ciphertext = bytes.fromhex("0388dace60b6a392f328c2b971b2fe78")
           tag = bytes.fromhex("ab6e47d42cec13bdf53a67b21257bddf")
@@ -146,14 +147,28 @@ jobs:
           assert issubclass(DLManager, Thread)
           assert issubclass(DLWorker, Thread)
           assert issubclass(FileWorker, Thread)
-          manager = DLManager.__new__(DLManager)
-          manager.running = True
-          manager.conditions = []
+          manager = DLManager("/tmp/epic-smoke", "https://cdn.invalid", {})
+          assert manager.error is None
           manager.stop()
           assert manager.running is False
           buffer = AndroidSharedBuffer(4096)
           buffer.buf[:8] = b"MALIWINL"
           assert buffer.buf[:8] == b"MALIWINL"
+          log_queue, download_queue, download_results = Queue(), Queue(), Queue()
+          writer_queue, writer_results = Queue(), Queue()
+          download_worker = DLWorker("epic-download-smoke", download_queue, download_results,
+                                     buffer, logging_queue=log_queue)
+          writer_worker = FileWorker(writer_queue, writer_results, "/tmp/epic-smoke",
+                                     buffer, logging_queue=log_queue)
+          download_worker.start()
+          writer_worker.start()
+          download_queue.put(TerminateWorkerTask())
+          writer_queue.put(TerminateWorkerTask())
+          download_worker.join(timeout=5)
+          writer_worker.join(timeout=5)
+          assert not download_worker.is_alive(), "download worker did not stop"
+          assert not writer_worker.is_alive(), "writer worker did not stop"
+          assert isinstance(writer_results.get(timeout=1), TerminateWorkerTask)
           buffer.close()
           buffer.unlink()
           print("LEGENDARY_ANDROID_THREAD_BACKEND_HOST_SMOKE_OK")
