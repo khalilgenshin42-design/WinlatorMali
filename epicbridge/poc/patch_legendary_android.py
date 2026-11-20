@@ -207,8 +207,12 @@ def main() -> None:
     # do not call multiprocessing queue lifecycle methods on queue.Queue.
     replace_once(
         manager,
+        "            for child in self.children:\\n"
+        "                child.join(timeout=5.0)\\n"
         "                if child.exitcode is None:\\n"
         "                    child.terminate()",
+        "            for child in self.children:\\n"
+        "                child.join(timeout=30.0)\\n"
         "                if child.is_alive():\\n"
         "                    self.log.warning(f'Worker thread did not terminate: {child!r}')",
     )
