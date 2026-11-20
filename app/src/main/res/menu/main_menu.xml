@@ -16,6 +16,17 @@
         </menu>
     </item>
 
+    <item android:title="Stores">
+        <menu>
+            <group android:id="@+id/group_stores" android:checkableBehavior="single">
+                <item
+                    android:id="@+id/main_menu_epic"
+                    android:icon="@drawable/ic_package_install"
+                    android:title="Epic Games" />
+            </group>
+        </menu>
+    </item>
+
     <item android:title="Tools &amp; Drivers">
         <menu>
             <group android:id="@+id/group_tools" android:checkableBehavior="single">
