@@ -1050,3 +1050,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Refactored recursive extraction so only `AssetManager.open(childAsset)` failures are interpreted as directory entries. A `FileNotFoundException` from the destination `FileOutputStream` is now propagated as a real extraction failure instead of being misclassified as a directory and silently skipped.
 - Commit: 8bf2eba3a2bc1563a62953bd0923f310bfb01679.
+
+## Engineering continuation — 2026-11-20: tolerate installed entries with incomplete executable metadata
+
+- Hardened installed-game serialization so a missing executable or install path in Legendary's metadata no longer crashes the entire installed-library response. Entries retain their title/path metadata, and launch validation still rejects a game with no usable executable.
+- Commit: 8a2645f946dcbf2de83bccc6312ff5a5321e7d0e.
