@@ -470,3 +470,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated `PROJECT_ROADMAP.md` to reflect the current state: host/companion packaging and Android CPython runtime probe are validated; Legendary thread backend, ARM64 native dependency packaging, JNI integration, and all store operations remain open. Commit `1bd6c1c7fb6b26a71d2526f0eba8da8928850253`.
 
 - Expanded the Android runtime probe to validate the exact anonymous mmap primitive required by the thread-based downloader: allocate a 1 MiB anonymous mapping, have eight Python threads write independent regions concurrently, join them, verify the bytes, and close the mapping. Probe commit `cc7db466ddb377517b17b0cc2070d4be4d2b2298`. This is not yet device-tested; the next CPython run will cover it.
+
+- Pre-correction run **44651049229** again passed the full Android runtime probe (`EPIC_ANDROID_RUNTIME_PREREQUISITES_OK`) and then reproduced the known KeyboardInterrupt cleanup anchor mismatch. It was built from commit `ce12e689...`, before patcher fix `16f3c6fd...`; it does not test the corrected anchor.
