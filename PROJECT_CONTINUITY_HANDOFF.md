@@ -1240,3 +1240,15 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Commits: `c5ffae24bfe84ed862750b9bf2e3afc6d5a511a7` (isolated Bash test/diagnostic script); `4956279731d299f4e9e361b9a12af44ad81d1925` (workflow invokes script).
 - Expected new Epic runtime run is triggered by the workflow update. Next: verify it passes step 20 and retrieve the actual `EpicBridgePython` logcat exception if either CPython test still fails. Only then proceed to the ARM64 companion/host APK build and gated release audits.
 - Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44739838824
+
+
+## CI failure analysis and workspace-path correction — 2026-11-20
+
+- Epic runtime run **44742212167** (run #180), source commit `4956279731d299f4e9e361b9a12af44ad81d1925`, passed the managed x86_64 CPython runtime smoke, production Android ARM64 CPython build, packaged-runtime audit, and Android SDK/NDK/CMake installation.
+- It failed at step 20 before Gradle or any instrumentation assertion ran. Exact error: `bash: tools/ci/run-epic-android-instrumentation.sh: No such file or directory`. The emulator action starts its script from `$GITHUB_WORKSPACE`; the repository itself was checked out under `$GITHUB_WORKSPACE/maliwinlator`. The script existed, but the workflow invoked it without the checkout prefix.
+- Corrected the workflow invocation to `bash maliwinlator/tools/ci/run-epic-android-instrumentation.sh`. The script itself changes directory relative to its own location, so it then runs Gradle from the checked-out project root and retains logcat diagnostics on genuine test failures.
+- Fix commit: `022126e2768103da2c9140189ff3d815cbebaa6c` (`ci: invoke Epic instrumentation script from workspace root`). This triggers a new full workflow run.
+- This is a CI path/orchestration failure, **not** evidence of a CPython/JNI regression. The original two `PYTHON_RUNTIME_ERROR` failures from run #176 remain undiagnosed because instrumentation has still not run with the diagnostic logging enabled.
+- Run #180 produced no installable APK artifacts; its gated APK build/upload/release steps were skipped. Do not install a host-only baseline APK or claim Epic integration is ready.
+- Next: follow the new workflow run; require the JNI instrumentation to actually execute, inspect `EpicBridgePython` logcat if it fails, then validate the matched ARM64 host+companion APKs, signer/package/ABI/ELF audits, embedded-companion byte identity, SHA-256 manifest, uploaded artifacts, and prerelease assets.
+- Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44742212167
