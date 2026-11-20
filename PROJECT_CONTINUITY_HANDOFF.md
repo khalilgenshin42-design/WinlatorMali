@@ -718,3 +718,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated the patcher to remove per-worker root-handler reconfiguration and the now-unused QueueHandler import from workers.py. Thread workers inherit the manager/application root logger; the manager remains the only owner of any queue-based logging setup.
 - Commit: 3e1f67185fc3c16e8fc0468c02defcef8c766ee5.
 - This fix is included in the next Epic runtime POC run and Android worker lifecycle test.
+
+## Engineering continuation — 2026-11-20: test worker logging isolation
+
+- Extended the embedded runtime self-test to install a sentinel root logger handler, start and stop both Legendary worker threads, and assert that the global root handler list is unchanged. The sentinel handler is removed in a finally block even if the worker smoke fails.
+- Commits: 511102a8bb878bfd40e1d32539ef89b6fd6a3736 (logging preservation assertion); 202a04ed50065faa0dd8af9544c861daa3aebb02 (guaranteed test cleanup).
+- The latest changes touch epicbridge/** and therefore trigger the full CPython/Legendary POC workflow, followed by the SHA-pinned Android instrumentation and ARM64 APK workflow if the POC passes.
