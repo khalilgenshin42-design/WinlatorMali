@@ -1,7 +1,7 @@
 # Epic APK CI status
 - Result: **FAILURE**
 - Run attempt: 1
-- Source commit: 92f93243c707a4b161ce58e11919ffcc314b557c
-- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44778405080
+- Source commit: 5dfb36dcaee2fc7d49b43a47a8932ea3857e2ce8
+- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44780743921
 - APK artifact: not verified; do not install.
 - Failure details: inspect the failed steps in the workflow run above.
