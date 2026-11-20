@@ -468,3 +468,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - No Legendary patch or CLI smoke has passed yet; the next workflow run must prove the patch applies, all Python files compile, multiprocessing imports/process-only calls are gone, and the patched CLI imports/runs.
 
 - Updated `PROJECT_ROADMAP.md` to reflect the current state: host/companion packaging and Android CPython runtime probe are validated; Legendary thread backend, ARM64 native dependency packaging, JNI integration, and all store operations remain open. Commit `1bd6c1c7fb6b26a71d2526f0eba8da8928850253`.
+
+- Expanded the Android runtime probe to validate the exact anonymous mmap primitive required by the thread-based downloader: allocate a 1 MiB anonymous mapping, have eight Python threads write independent regions concurrently, join them, verify the bytes, and close the mapping. Probe commit `cc7db466ddb377517b17b0cc2070d4be4d2b2298`. This is not yet device-tested; the next CPython run will cover it.
