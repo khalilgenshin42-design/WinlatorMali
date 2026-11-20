@@ -48,7 +48,7 @@ def main() -> None:
     replace_once(
         manager,
         "self.max_workers = max_workers or min(cpu_count() * 2, 16)",
-        "self.max_workers = max_workers or max(1, min(os.cpu_count() or 1, 4))",
+        "self.max_workers = max(1, min(max_workers or (os.cpu_count() or 1), 4))",
     )
     replace_once(
         manager,
