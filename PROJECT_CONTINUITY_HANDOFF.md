@@ -1189,3 +1189,13 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Reworked the emulator script into one parenthesized shell command: `(cd maliwinlator && chmod +x ./gradlew && ./gradlew ... )`, keeping the directory change, wrapper permission fix, and instrumentation invocation in the same shell process.
 - Fix commit: `4bc34b9b334b101f0d0675c20b92d6b5636935c5`. A new run should be triggered by the workflow-file path filter. Instrumentation, ARM64 APK packaging, APK audits, artifact upload, and prerelease publication remain unverified until that run passes.
 - Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44733619638
+
+
+## Live CI checkpoint — 2026-11-20: corrected emulator command reached instrumentation
+
+- Corrected Epic runtime workflow run **44737481566** (run #176), source commit `4bc34b9b334b101f0d0675c20b92d6b5636935c5`, has passed steps 1–19, including x86_64 Android runtime build, Legendary patch/static validation, Epic library aggregation tests, host smoke, managed x86_64 emulator runtime prerequisite smoke, production ARM64 CPython runtime build, runtime archive audit, and Android SDK/NDK/CMake installation.
+- The workflow has advanced to step 20, **Run Epic Bridge x86_64 Android instrumentation tests**. This is the first attempt to get beyond the two earlier emulator-script orchestration failures and actually execute the Gradle instrumentation task.
+- At this checkpoint, the job remains `in_progress`; steps 21–24 (ARM64 host+companion APK build, APK audits, artifact uploads, and prerelease publication) have not started. No installable Epic APK pair is available yet.
+- GitHub's job-log blob is not yet available while the job is active (log endpoint returned BlobNotFound); no instrumentation result should be inferred from that.
+- Next action: poll run **44737481566**. If instrumentation fails, retrieve the completed job log and fix the first actual Gradle/test failure. If it passes, verify the ARM64 APK pair, signer/package/ABI/ELF checks, embedded-companion byte identity, SHA-256 manifest, uploaded artifacts, and prerelease assets before calling the build ready.
+- Run URL: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44737481566
