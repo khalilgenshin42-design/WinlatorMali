@@ -40,10 +40,11 @@ class LibraryMergeTests(unittest.TestCase):
 
     def test_non_asset_catalog_is_added_without_key_error(self):
         base = game("BASE", "Base Game")
+        extra_base = game("EXTRA", "Extra Game", "catalog-new")
         extra_dlc = game("BONUS", "Bonus Content", "catalog-new", is_dlc=True)
-        result = self.run_library([base], {}, [], {"catalog-new": [extra_dlc]})
-        self.assertEqual(len(result), 1)
-        self.assertEqual([item["app_name"] for item in result[0]["dlcs"]], ["BONUS"])
+        result = self.run_library([base], {}, [extra_base], {"catalog-new": [extra_dlc]})
+        self.assertEqual(len(result), 2)
+        self.assertEqual([item["app_name"] for item in result[1]["dlcs"]], ["BONUS"])
 
     def test_duplicate_non_asset_games_are_removed(self):
         base = game("BASE", "Base Game")
