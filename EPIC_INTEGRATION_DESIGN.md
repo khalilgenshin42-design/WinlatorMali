@@ -178,3 +178,7 @@ Selected implementation investigation: patch only the separately licensed Androi
 - Keep the unmodified upstream implementation for desktop builds; this adaptation belongs only in the Android companion source package and must retain GPL notices/source patches.
 
 This is a proposed compatibility adaptation, not implemented or validated yet. The focused CPython probe now checks the APIs needed by this path (TLS/CA/DNS/HTTPS, ctypes, SQLite, zlib, file locks, hashing, and Android subprocess creation). After that probe and ARM64 package build pass, build the thread-backend patch into the emulator package and test Legendary imports, `--version`, login metadata, then a small controlled install before exposing game downloads in the UI.
+
+### Android TLS trust configuration
+
+The first managed-emulator CPython probe showed that the embedded OpenSSL build does not automatically locate Android's system CA store. Do not disable certificate verification or use an insecure context. The Epic companion must bundle a pinned certifi CA bundle alongside Requests and use Requests' default certifi trust path for Epic endpoints. Any direct urllib/OpenSSL calls must be given the same explicit CA file. The runtime probe validates a real HTTPS request with certificate verification enabled.
