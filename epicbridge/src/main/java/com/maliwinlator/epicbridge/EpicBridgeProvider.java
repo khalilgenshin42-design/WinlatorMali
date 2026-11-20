@@ -89,6 +89,12 @@ public final class EpicBridgeProvider extends ContentProvider {
                 result.putString("error", "UNSUPPORTED_JOB");
                 return result;
             }
+            if (Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager()) {
+                result.putBoolean("ok", false);
+                result.putString("error", "STORAGE_PERMISSION_REQUIRED");
+                result.putString("message", "Grant all-files access to Epic Bridge before installing or uninstalling games");
+                return result;
+            }
             String jobId = java.util.UUID.randomUUID().toString();
             String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
             android.content.Intent intent = new android.content.Intent(getContext(), EpicRuntimeService.class);
