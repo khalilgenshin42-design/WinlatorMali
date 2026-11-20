@@ -246,6 +246,16 @@ def main() -> None:
         "            while self.active_tasks < self.max_workers * 2 and self.chunks_to_dl and self.running:",
     )
 
+    # Keep the file-writer result handler alive through cancellation so it can
+    # record completed files in the resume file and release mmap segments.
+    replace_once(
+        manager,
+        "    def fw_results_handler(self, shm_cond: Condition):\\n"
+        "        while self.running:",
+        "    def fw_results_handler(self, shm_cond: Condition):\\n"
+        "        while True:",
+    )
+
     # The manager's result-handler threads must stop producing writer tasks
     # before the writer termination marker is queued. On cancellation, discard
     # only not-yet-started download jobs; active workers finish their current I/O.
