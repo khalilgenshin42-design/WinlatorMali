@@ -147,6 +147,13 @@ public final class EpicBridgeProvider extends ContentProvider {
             case "uninstall":
             case "launch_info":
             case "runtime_self_test": {
+                if (("install".equals(method) || "uninstall".equals(method))
+                        && Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager()) {
+                    result.putBoolean("ok", false);
+                    result.putString("error", "STORAGE_PERMISSION_REQUIRED");
+                    result.putString("message", "Grant all-files access to Epic Bridge before installing or uninstalling games");
+                    return result;
+                }
                 String payload = extras == null ? "{}" : extras.getString("payload_json", "{}");
                 String runtimeCommand = "account_status".equals(method) ? "status" : method;
                 String response = EpicPythonRuntime.call(getContext(), runtimeCommand, payload);
