@@ -75,11 +75,15 @@ public final class EpicBridgeClient {
     }
 
     public static Bundle call(Context context, String method, String payloadJson) {
+        return call(context, method, null, payloadJson);
+    }
+
+    public static Bundle call(Context context, String method, String arg, String payloadJson) {
         Bundle extras = new Bundle();
         extras.putString("payload_json", payloadJson == null ? "{}" : payloadJson);
         try {
             Bundle result = context.getContentResolver().call(
-                    Uri.parse("content://" + AUTHORITY), method, null, extras);
+                    Uri.parse("content://" + AUTHORITY), method, arg, extras);
             if (result == null) {
                 Bundle unavailable = new Bundle();
                 unavailable.putBoolean("ok", false);
