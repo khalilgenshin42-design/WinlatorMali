@@ -375,6 +375,41 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Publish installable Epic APK GitHub prerelease
+        id: epic_release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="maliwinlator-1.2.1-epic-${GITHUB_SHA:0:12}"
+          TITLE="MaliWinlator 1.2.1 Epic test build (${GITHUB_SHA:0:12})"
+          APK_FILES=("$GITHUB_WORKSPACE/epic-apk-output/"*.apk)
+          test "${#APK_FILES[@]}" -eq 2
+          NOTES_FILE="$RUNNER_TEMP/epic-release-notes.md"
+          cat > "$NOTES_FILE" <<EOF
+          Experimental ARM64 debug build of the independent Winlator Mali 1.2.1 fork with Legendary-powered Epic account, library, install, update, uninstall, and launch integration.
+
+          Source commit: $GITHUB_SHA
+          Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          Verification completed before publication:
+          - CPython 3.15.2 Android x86_64 managed-emulator runtime smoke
+          - Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative, worker-thread, mmap and downloader lifecycle)
+          - ARM64 APK build and embedded companion byte comparison
+          - Package/signature/ABI/assets/ELF dependency-closure audits
+
+          These are debug-signed test APKs, not production release builds. A different debug certificate may require uninstalling a previous debug package before installation.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+          else
+            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" \
+              --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
+          fi
+          echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
+
       - name: Upload CPython Android runtime POC
         uses: actions/upload-artifact@v4
         with:
@@ -392,6 +427,7 @@ jobs:
         working-directory: maliwinlator
         env:
           EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
+          EPIC_RELEASE_URL: ${{ steps.epic_release.outputs.url }}
         run: |
           set -euo pipefail
           if ! git fetch origin "$GITHUB_REF_NAME"; then
@@ -409,7 +445,8 @@ jobs:
           - Run attempt: $GITHUB_RUN_ATTEMPT
           - Source commit: $GITHUB_SHA
           - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-          - APK artifact: $EPIC_APK_ARTIFACT_URL
+          - GitHub prerelease: $EPIC_RELEASE_URL
+          - Actions artifact: $EPIC_APK_ARTIFACT_URL
           - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
           - Built host package: com.maliwinlator.app (versionCode 24)
           - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
