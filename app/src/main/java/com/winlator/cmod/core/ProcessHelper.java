@@ -155,6 +155,48 @@ public abstract class ProcessHelper {
         return pid;
     }
 
+    /**
+     * Launch a guest process without logging or globally persisting its command/environment.
+     * Used for short-lived authenticated game launches whose environment may contain Epic/EOS tokens.
+     */
+    public static int execSecure(String command, String[] envp, File workingDir,
+                                 Callback<Integer> terminationCallback) {
+        int pid = -1;
+        java.lang.Process process = null;
+        try {
+            String[] splitCommand = splitCommand(command);
+            ProcessBuilder pb = new ProcessBuilder(splitCommand);
+            pb.directory(workingDir);
+            if (envp != null) {
+                for (String entry : envp) {
+                    int separator = entry.indexOf('=');
+                    if (separator > 0) {
+                        pb.environment().put(entry.substring(0, separator), entry.substring(separator + 1));
+                    }
+                }
+            }
+
+            File nullFile = new File("/dev/null");
+            pb.redirectError(nullFile);
+            pb.redirectOutput(nullFile);
+            process = pb.start();
+
+            Field pidField = process.getClass().getDeclaredField("pid");
+            pidField.setAccessible(true);
+            pid = pidField.getInt(process);
+            pidField.setAccessible(false);
+
+            if (terminationCallback != null) {
+                createWaitForThread(process, terminationCallback);
+            }
+        } catch (Exception e) {
+            if (process != null) process.destroy();
+            // Deliberately omit command, environment, and exception details: they may contain auth data.
+            Log.e("ProcessHelper", "Secure guest process launch failed (details redacted)");
+        }
+        return pid;
+    }
+
     public static boolean setLinuxAffinity(int linuxPid, int mask) {
         if (linuxPid <= 0 || mask == 0) return false;
         try {
