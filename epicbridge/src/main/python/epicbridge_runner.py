@@ -69,17 +69,25 @@ def _library(core):
 
 def _installed(core):
     games = core.get_installed_list(include_dlc=True)
-    return [{
-        "app_name": game.app_name,
-        "title": game.title,
-        "version": game.version,
-        "install_path": game.install_path,
-        "executable": game.executable,
-        "working_directory": os.path.dirname(os.path.join(game.install_path, game.executable)),
-        "platform": game.platform,
-        "is_dlc": bool(game.is_dlc),
-        "install_size": int(game.install_size or 0),
-    } for game in sorted(games, key=lambda item: item.title.casefold())]
+    result = []
+    for game in sorted(games, key=lambda item: (item.title or item.app_name).casefold()):
+        executable = game.executable or ""
+        install_path = game.install_path or ""
+        result.append({
+            "app_name": game.app_name,
+            "title": game.title or game.app_name,
+            "version": game.version or "",
+            "install_path": install_path,
+            "executable": executable,
+            "working_directory": (
+                os.path.dirname(os.path.join(install_path, executable))
+                if executable else install_path
+            ),
+            "platform": game.platform,
+            "is_dlc": bool(game.is_dlc),
+            "install_size": int(game.install_size or 0),
+        })
+    return result
 
 
 def _install(core, payload):
