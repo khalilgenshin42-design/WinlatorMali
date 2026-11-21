@@ -557,6 +557,10 @@ def handle(command: str, payload_json: str = "{}") -> str:
 
         if command == "job_lock_probe":
             lock_path = str(payload.get("job_lock_path", "")).strip()
+            attempt_path = str(payload.get("attempt_path", "")).strip()
+            if attempt_path:
+                with open(attempt_path, "w", encoding="utf-8") as marker:
+                    marker.write("attempting")
             with _exclusive_job_lock(lock_path):
                 return _dump({"ok": True, "lock_acquired": True})
 
