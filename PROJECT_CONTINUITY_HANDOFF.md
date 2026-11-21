@@ -1677,3 +1677,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 ### Follow-up test refinement
 
 - Extended `providerAuthorizesUidOnlyWhenItsPackageSetContainsTheHost` to cover the single-package host UID case in addition to mixed package sets, untrusted-only sets, empty sets, and null. Source commit `e2243e72c8d45a73100d068817fe11186eb5787c` is the latest code change and requires fresh CI. This remains unit-level package-list coverage, not a separate-process Binder integration test.
+
+
+## 2026-11-21 — Add genuine cross-package Epic provider Binder test
+
+- Added a test-only Android application module `epicbridge-host-test` whose application ID is exactly `com.maliwinlator.app`, requests the companion's signature permission, and runs instrumentation under a separate host UID. The test calls `content://com.maliwinlator.epicbridge.provider` using the host process ContentResolver and asserts protocol v2, provider acceptance, and packaged runtime readiness.
+- Updated `tools/ci/run-epic-android-instrumentation.sh` to build/install the host fixture and its instrumentation APK after the companion instrumentation suite, then invoke the test via `am instrument`. The test validates both Android signature permission enforcement and the provider's Binder UID package allowlist, assuming both debug APKs are signed by the same CI debug keystore.
+- Added module to `settings.gradle`. New source commits: settings `4101bbfd2e1f56805e1b4b752e07add83435aa2e`; host module files `15d039a4a9678b14b0dd49a70871fe16a2daf130`, `3abacebba11baec29bf829b95875fabfb2628e68`, `83b9ce675d015ddba57bec6bbe6de0a13bf5c253`, `44caeffdd7a71b43d9f0e7ad6449a638e0032a8b`; CI script `b0341272254c1621865d7f0ad096ab5b767f00b5`.
+- This is a CI-only host identity fixture, not the production host APK and not a release artifact. Fresh CI must confirm the provider accepts the distinct host UID; if installation or instrumentation fails, diagnose exact signer/manifest/task issue before treating it as a regression.
