@@ -41,6 +41,23 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void staleRunningJobsBecomeInterruptedOnlyAfterGracePeriod() {
+        long startedAt = 1_000L;
+        assertFalse(EpicBridgeProvider.shouldMarkJobInterrupted(
+                "running", startedAt, startedAt + 30_000L, false));
+        assertTrue(EpicBridgeProvider.shouldMarkJobInterrupted(
+                "running", startedAt, startedAt + 30_001L, false));
+        assertFalse(EpicBridgeProvider.shouldMarkJobInterrupted(
+                "running", startedAt, startedAt + 60_000L, true));
+        assertFalse(EpicBridgeProvider.shouldMarkJobInterrupted(
+                "complete", startedAt, startedAt + 60_000L, false));
+        assertFalse(EpicBridgeProvider.shouldMarkJobInterrupted(
+                "running", 0L, 60_000L, false));
+        assertFalse(EpicBridgeProvider.shouldMarkJobInterrupted(
+                "running", startedAt, startedAt - 1L, false));
+    }
+
+    @Test
     public void cancellationEligibilityRequiresAnActiveRunningInstall() {
         String jobId = java.util.UUID.randomUUID().toString();
         assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
