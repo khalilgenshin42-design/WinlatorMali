@@ -223,7 +223,8 @@ class InstallJobControlTests(unittest.TestCase):
         class FakeDownloader:
             def __init__(self):
                 self.alive = False
-                self.stop_called = False
+                self.stop_calls = 0
+                self.join_calls = 0
                 self.error = None
 
             def start(self):
@@ -233,11 +234,12 @@ class InstallJobControlTests(unittest.TestCase):
                 return self.alive
 
             def stop(self):
-                self.stop_called = True
-                self.alive = False
+                self.stop_calls += 1
 
             def join(self, timeout=None):
-                return None
+                self.join_calls += 1
+                if self.join_calls >= 3:
+                    self.alive = False
 
         downloader = FakeDownloader()
         install_game_called = []
@@ -256,21 +258,22 @@ class InstallJobControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
-            # Initial, post-metadata, and post-prepare gates are clear; the
-            # next poll simulates cancellation after downloader start.
-            with patch.object(runner, "_cancel_requested", side_effect=[False, False, False, True]):
+            # Three early gates pass; cancellation remains asserted while the
+            # worker takes multiple join cycles to exit.
+            cancel_polls = [False, False, False, True] + [True] * 8
+            with patch.object(runner, "_cancel_requested", side_effect=cancel_polls):
                 result = runner._install(core, {
                     "app_name": "TEST", "base_path": "/games",
                     "job_control_path": control, "job_status_path": status,
                 })
             self.assertTrue(result["cancelled"])
-            self.assertTrue(downloader.stop_called)
+            self.assertEqual(downloader.stop_calls, 1)
+            self.assertEqual(downloader.join_calls, 3)
             self.assertEqual(install_game_called, [])
             with open(status, encoding="utf-8") as source:
                 snapshot = json.load(source)
             self.assertEqual(snapshot["state"], "cancelled")
             self.assertEqual(snapshot["phase"], "cancelled")
-
 
 class ErrorSanitizationTests(unittest.TestCase):
     def test_command_failure_does_not_return_exception_message_or_traceback(self):
