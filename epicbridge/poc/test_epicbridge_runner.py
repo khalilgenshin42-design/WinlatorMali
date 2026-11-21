@@ -208,7 +208,7 @@ class InstallJobControlTests(unittest.TestCase):
         # First poll (pre-start) is false; final post-worker poll sees cancellation.
         with tempfile.TemporaryDirectory() as directory:
             status = os.path.join(directory, "status.json")
-            with patch.object(runner, "_cancel_requested", side_effect=[False, True]):
+            with patch.object(runner, "_cancel_requested", side_effect=[False, False, False, True]):
                 result = runner._install(core, {
                     "app_name": "TEST", "base_path": "/games",
                     "job_control_path": os.path.join(directory, "control.json"),
