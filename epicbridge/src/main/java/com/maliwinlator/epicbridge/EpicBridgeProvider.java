@@ -30,6 +30,12 @@ public final class EpicBridgeProvider extends ContentProvider {
         return HOST_PACKAGE.equals(packageName);
     }
 
+    static boolean shouldMarkJobInterrupted(String state, long startedAt,
+            long now, boolean active) {
+        return "running".equals(state) && startedAt > 0
+                && now - startedAt > 30_000L && !active;
+    }
+
     private boolean isAuthorizedHost() {
         if (getContext() == null) return false;
         String[] packages = getContext().getPackageManager().getPackagesForUid(Binder.getCallingUid());
@@ -208,10 +214,8 @@ public final class EpicBridgeProvider extends ContentProvider {
                     EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
             String jobState = prefs.getString(jobId + ".state", "unknown");
             long jobStartedAt = prefs.getLong(jobId + ".started_at", 0L);
-            boolean startupGraceExpired = jobStartedAt > 0
-                    && System.currentTimeMillis() - jobStartedAt > 30_000L;
-            if ("running".equals(jobState) && startupGraceExpired
-                    && !EpicRuntimeService.isJobActive(jobId)) {
+            if (shouldMarkJobInterrupted(jobState, jobStartedAt,
+                    System.currentTimeMillis(), EpicRuntimeService.isJobActive(jobId))) {
                 jobState = "interrupted";
                 prefs.edit().putString(jobId + ".state", jobState)
                         .putLong(jobId + ".finished_at", System.currentTimeMillis()).apply();
