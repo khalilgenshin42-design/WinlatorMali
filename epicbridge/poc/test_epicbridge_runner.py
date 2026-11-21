@@ -208,7 +208,7 @@ class InstallJobControlTests(unittest.TestCase):
         # First poll (pre-start) is false; final post-worker poll sees cancellation.
         with tempfile.TemporaryDirectory() as directory:
             status = os.path.join(directory, "status.json")
-            with patch.object(runner, "_cancel_requested", side_effect=[False, False, False, True]):
+            with patch.object(runner, "_cancel_requested", side_effect=[False, True]):
                 result = runner._install(core, {
                     "app_name": "TEST", "base_path": "/games",
                     "job_control_path": os.path.join(directory, "control.json"),
@@ -256,9 +256,9 @@ class InstallJobControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
-            # The initial gate is clear; the next poll simulates a request
-            # arriving after the downloader thread has started.
-            with patch.object(runner, "_cancel_requested", side_effect=[False, True]):
+            # Initial, post-metadata, and post-prepare gates are clear; the
+            # next poll simulates cancellation after downloader start.
+            with patch.object(runner, "_cancel_requested", side_effect=[False, False, False, True]):
                 result = runner._install(core, {
                     "app_name": "TEST", "base_path": "/games",
                     "job_control_path": control, "job_status_path": status,
