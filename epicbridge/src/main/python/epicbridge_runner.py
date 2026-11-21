@@ -89,6 +89,44 @@ def _installed(core):
     return result
 
 
+def _write_job_status(path, state, **fields):
+    """Atomically publish a sanitized job snapshot for the Android provider."""
+    if not path:
+        return
+    snapshot = {"state": state}
+    for key in ("phase", "progress", "download_speed", "write_speed", "read_speed"):
+        value = fields.get(key)
+        if isinstance(value, (int, float)) and value >= 0:
+            snapshot[key] = min(float(value), 100.0) if key == "progress" else float(value)
+    temporary = path + ".tmp"
+    try:
+        with open(temporary, "w", encoding="utf-8") as output:
+            json.dump(snapshot, output, separators=(",", ":"))
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, path)
+    finally:
+        try:
+            if os.path.exists(temporary):
+                os.remove(temporary)
+        except OSError:
+            pass
+
+
+def _cancel_requested(path):
+    if not path:
+        return False
+    try:
+        with open(path, "r", encoding="utf-8") as control:
+            value = json.load(control)
+        return isinstance(value, dict) and value.get("cancel") is True
+    except FileNotFoundError:
+        return False
+    except (OSError, ValueError, TypeError):
+        # A transient/invalid control snapshot must never cancel an install.
+        return False
+
+
 def _install(core, payload):
     _require_login(core)
     app_name = str(payload.get("app_name", "")).strip()
@@ -116,13 +154,66 @@ def _install(core, payload):
     if conditions.failures:
         raise RuntimeError("; ".join(sorted(conditions.failures)))
 
+    control_path = str(payload.get("job_control_path", "")).strip()
+    status_path = str(payload.get("job_status_path", "")).strip()
+    if bool(control_path) != bool(status_path):
+        raise ValueError("job control and status paths must be supplied together")
+    if control_path and (not os.path.isabs(control_path) or not os.path.isabs(status_path)):
+        raise ValueError("job control and status paths must be absolute")
+
+    _write_job_status(status_path, "running", phase="preparing", progress=0)
     dlm.start()
-    dlm.join()
+    cancelled = False
+    last_update = None
+    try:
+        while dlm.is_alive():
+            if _cancel_requested(control_path):
+                cancelled = True
+                _write_job_status(status_path, "cancelling", phase="stopping")
+                stop = getattr(dlm, "stop", None)
+                if callable(stop):
+                    stop()
+                else:
+                    raise RuntimeError("The Android downloader does not support cooperative cancellation")
+
+            # Legendary's UIUpdate objects are optional across pinned revisions.
+            # Drain only when this manager exposes a non-blocking status queue.
+            status_queue = getattr(dlm, "status_queue", None)
+            if status_queue is not None:
+                try:
+                    while True:
+                        update = status_queue.get_nowait()
+                        progress = getattr(update, "progress", None)
+                        values = {
+                            "phase": "downloading",
+                            "progress": progress,
+                            "download_speed": getattr(update, "download_speed", None),
+                            "write_speed": getattr(update, "write_speed", None),
+                            "read_speed": getattr(update, "read_speed", None),
+                        }
+                        last_update = values
+                except Exception:
+                    pass
+            if last_update:
+                _write_job_status(status_path, "cancelling" if cancelled else "running", **last_update)
+            elif status_path:
+                _write_job_status(status_path, "cancelling" if cancelled else "running",
+                                  phase="downloading")
+            dlm.join(timeout=0.5)
+    finally:
+        if dlm.is_alive() and cancelled:
+            # Do not close downloader-owned mmap state until every worker has exited.
+            dlm.join()
+
     if dlm.is_alive():
         raise RuntimeError("Legendary download worker did not stop")
+    if cancelled:
+        _write_job_status(status_path, "cancelled", phase="cancelled")
+        return {"cancelled": True, "app_name": app_name}
     worker_error = getattr(dlm, "error", None)
     if worker_error:
         raise RuntimeError(f"Legendary download failed: {worker_error}")
+    _write_job_status(status_path, "running", phase="installing", progress=100)
     prerequisites = core.install_game(installed_game) or {}
     return {
         "app_name": installed_game.app_name,
@@ -392,6 +483,10 @@ def handle(command: str, payload_json: str = "{}") -> str:
 
         if command == "install":
             result = _install(core, payload)
+            if result.get("cancelled"):
+                return _dump({"ok": False, "cancelled": True,
+                              "error": "OPERATION_CANCELLED",
+                              "message": "Epic installation was cancelled"})
             return _dump({"ok": True, "game": result})
 
         if command == "uninstall":
