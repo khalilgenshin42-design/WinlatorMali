@@ -40,8 +40,13 @@ public final class EpicRuntimeService extends Service {
     }
 
     /** Keep cancellation eligibility identical for the cancel and status APIs. */
-    static boolean isJobCancellable(String jobId, String state, String command) {
-        return isJobActive(jobId) && "running".equals(state) && "install".equals(command);
+    static boolean isJobCancellable(String jobId, String state, String command, String phase) {
+        // Once Legendary enters its final metadata/install phase, downloader
+        // cancellation can no longer be guaranteed. Expose cancellation only
+        // while preparation or file transfer is still cooperatively stoppable.
+        boolean cancellablePhase = "preparing".equals(phase) || "downloading".equals(phase);
+        return isJobActive(jobId) && "running".equals(state)
+                && "install".equals(command) && cancellablePhase;
     }
 
     /**
