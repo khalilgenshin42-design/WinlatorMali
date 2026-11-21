@@ -56,9 +56,28 @@ HOST_APK="epicbridge-host-test/build/outputs/apk/debug/epicbridge-host-test-debu
 HOST_TEST_APK="epicbridge-host-test/build/outputs/apk/androidTest/debug/epicbridge-host-test-debug-androidTest.apk"
 test -s "$HOST_APK"
 test -s "$HOST_TEST_APK"
+
+# connectedDebugAndroidTest may leave its target package absent after teardown.
+# Explicitly install the companion APK before probing its provider authority.
+adb install -r "$BRIDGE_APK"
 adb install -r "$HOST_APK"
 adb install -r "$HOST_TEST_APK"
-adb shell am instrument -w -r \
+adb shell pm path com.maliwinlator.epicbridge | grep -q '^package:'
+adb shell pm path com.maliwinlator.app | grep -q '^package:'
+
+# adb shell am instrument can return a successful shell exit status even when
+# JUnit reports a failed test. Gate CI on the instrumentation/JUnit result too.
+HOST_TEST_OUTPUT="$(adb shell am instrument -w -r \
   -e class com.maliwinlator.epicbridge.hosttest.EpicBridgeCrossPackageTest \
-  com.maliwinlator.app.test/androidx.test.runner.AndroidJUnitRunner
-echo "Epic Bridge cross-package Binder integration passed."
+  com.maliwinlator.app.test/androidx.test.runner.AndroidJUnitRunner 2>&1)" || {
+    printf '%s\\n' "$HOST_TEST_OUTPUT"
+    exit 1
+  }
+printf '%s\\n' "$HOST_TEST_OUTPUT"
+if grep -Fq 'FAILURES!!!' <<<"$HOST_TEST_OUTPUT" ||
+   grep -Fq 'INSTRUMENTATION_STATUS_CODE: -2' <<<"$HOST_TEST_OUTPUT" ||
+   ! grep -Fq 'OK (1 test)' <<<"$HOST_TEST_OUTPUT"; then
+  echo "ERROR: cross-package Binder instrumentation did not report one passing test." >&2
+  exit 1
+fi
+echo "Epic Bridge cross-package Binder integration passed (1/1)."
