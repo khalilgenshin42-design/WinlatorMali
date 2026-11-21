@@ -39,6 +39,11 @@ public final class EpicRuntimeService extends Service {
         return jobId != null && ACTIVE_JOB_IDS.contains(jobId);
     }
 
+    /** Keep cancellation eligibility identical for the cancel and status APIs. */
+    static boolean isJobCancellable(String jobId, String state, String command) {
+        return isJobActive(jobId) && "running".equals(state) && "install".equals(command);
+    }
+
     /**
      * Atomically reserve the single Epic install slot before the provider starts
      * the service. This closes the window where two rapid host requests could
