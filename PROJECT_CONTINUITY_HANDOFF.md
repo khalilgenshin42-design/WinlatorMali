@@ -1663,3 +1663,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Source commits: provider refactor `ab490c0ab93bcd4a930f56b81b2a6d61f05e713d`; instrumentation test `933e66926e62271725f788b821cf8b8b1cb06cc8`.
 - These commits supersede the previously green CI source tip. Await new Epic runtime and standard APK workflows before claiming this regression test is validated. This is testability/edge-case hardening, not proof of process-death recovery under real Android lifecycle pressure.
 - Next: verify both workflows, then prioritize a genuine host-to-provider Binder authorization test and real install cancellation/process-death acceptance. Xiaomi 15T Epic login/library/download/launch acceptance remains outstanding.
+
+
+## 2026-11-21 — Stale-job recovery CI passed; UID allowlist coverage expanded
+
+- CI for source commit `933e66926e62271725f788b821cf8b8b1cb06cc8` completed successfully: Epic runtime workflow **44904004951** and standard APK workflow **44904005022** both succeeded. Epic workflow log explicitly printed `Epic Bridge instrumentation passed.` after successful Android instrumentation; ARM64 debug bundle artifact **14707426901** (507,997,580 bytes, SHA-256 `88eabeb69853b57ca222b879bb1c9b27de6be925659869c1bfc6f0bfc32298b7`) and CPython ARM64 POC artifact **14707242287** (49,959,552 bytes, SHA-256 `2f20b4032cb5ab4bed70adb99d61531f2721ef30ca53a41a326ab688f3f1e8ad`) were uploaded.
+- Extracted provider UID-package authorization loop into `isAllowedHostUidPackages(String[])`, preserving the requirement that the calling UID package list contain exactly the trusted host package. Added instrumentation coverage for mixed package lists, no host package, empty arrays, and null arrays.
+- New source commits: provider refactor `12da81fb3c0b3311a560b58043c41518fe87d0af`; instrumentation test `3da114bcd56a6ec11525d4255a2f71ab98d8990f`. These are newer than the green CI source and must pass fresh CI.
+- Security boundary note: this unit-level allowlist coverage does not substitute for a cross-package Binder call from an independently installed host UID. Provider manifest remains exported behind the signature permission and provider repeats caller package validation; host manifest requests that permission. A real host-to-provider instrumentation test is still a separate integration gap.
+- Device acceptance remains outstanding: Xiaomi 15T Epic authentication, library sync, real network install/cancel/retry, update/uninstall, and launching from the selected Wine container.
