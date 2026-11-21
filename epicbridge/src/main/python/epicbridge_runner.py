@@ -152,6 +152,9 @@ def _install(core, payload):
         max_workers=max(1, min(int(payload.get("max_workers", 4)), 4)),
         max_shm=max(128, min(int(payload.get("max_shared_memory_mib", 512)), 512)),
         dl_timeout=30,
+        # Legendary's pinned UIUpdate queue is the supported progress channel.
+        # Android patching converts multiprocessing.Queue to queue.Queue.
+        status_q=Queue(),
     )
     conditions = core.check_installation_conditions(analysis, installed_game, game)
     if conditions.failures:
