@@ -1,6 +1,9 @@
 """Focused regression tests for Legendary library aggregation."""
 from __future__ import annotations
 
+import json
+import os
+import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -76,6 +79,75 @@ class LibraryMergeTests(unittest.TestCase):
             [item["app_name"] for item in result[0]["dlcs"]],
             ["DLC_A", "DLC_B"],
         )
+
+
+class InstallJobControlTests(unittest.TestCase):
+    def test_status_snapshot_is_atomic_and_contains_only_supported_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "status.json")
+            runner._write_job_status(
+                path, "running", phase="downloading", progress=42.5,
+                download_speed=1234, private_path="/must/not/be/serialized",
+            )
+            with open(path, encoding="utf-8") as source:
+                snapshot = json.load(source)
+            self.assertEqual(snapshot["state"], "running")
+            self.assertEqual(snapshot["phase"], "downloading")
+            self.assertEqual(snapshot["progress"], 42.5)
+            self.assertEqual(snapshot["download_speed"], 1234.0)
+            self.assertNotIn("private_path", snapshot)
+            self.assertFalse(os.path.exists(path + ".tmp"))
+
+    def test_cancelled_install_stops_downloader_and_skips_install_game(self):
+        class FakeDownloader:
+            def __init__(self):
+                self.alive = False
+                self.stop_called = False
+                self.error = None
+
+            def start(self):
+                self.alive = True
+
+            def is_alive(self):
+                return self.alive
+
+            def stop(self):
+                self.stop_called = True
+                self.alive = False
+
+            def join(self, timeout=None):
+                return None
+
+        downloader = FakeDownloader()
+        install_game_called = []
+        fake_game = SimpleNamespace(
+            app_name="TEST", third_party_store=None, title="Test",
+            install_path="/games/Test", executable="test.exe", version="1",
+        )
+        conditions = SimpleNamespace(failures=[], warnings=[])
+        core = SimpleNamespace(
+            login=lambda: True,
+            get_game=lambda *args, **kwargs: fake_game,
+            prepare_download=lambda *args, **kwargs: (downloader, object(), fake_game),
+            check_installation_conditions=lambda *args: conditions,
+            install_game=lambda *args: install_game_called.append(True),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            control = os.path.join(directory, "control.json")
+            status = os.path.join(directory, "status.json")
+            with open(control, "w", encoding="utf-8") as output:
+                json.dump({"cancel": True}, output)
+            result = runner._install(core, {
+                "app_name": "TEST", "base_path": "/games",
+                "job_control_path": control, "job_status_path": status,
+            })
+            self.assertTrue(result["cancelled"])
+            self.assertTrue(downloader.stop_called)
+            self.assertEqual(install_game_called, [])
+            with open(status, encoding="utf-8") as source:
+                snapshot = json.load(source)
+            self.assertEqual(snapshot["state"], "cancelled")
+            self.assertEqual(snapshot["phase"], "cancelled")
 
 
 class ErrorSanitizationTests(unittest.TestCase):
