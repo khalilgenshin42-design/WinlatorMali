@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import base64
+import fcntl
 import uuid
+from contextlib import contextmanager
 import json
 import logging
 import os
@@ -131,6 +133,20 @@ def _cancel_requested(path):
         return False
 
 
+
+@contextmanager
+def _exclusive_job_lock(path):
+    """Interoperate with Android Os.flock on the per-job lock inode."""
+    if not path or not os.path.isabs(path):
+        raise ValueError("job lock path must be an absolute path")
+    with open(path, "a+b") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
 def _install(core, payload):
     _require_login(core)
     app_name = str(payload.get("app_name", "")).strip()
@@ -142,10 +158,11 @@ def _install(core, payload):
 
     control_path = str(payload.get("job_control_path", "")).strip()
     status_path = str(payload.get("job_status_path", "")).strip()
-    if bool(control_path) != bool(status_path):
-        raise ValueError("job control and status paths must be supplied together")
-    if control_path and (not os.path.isabs(control_path) or not os.path.isabs(status_path)):
-        raise ValueError("job control and status paths must be absolute")
+    lock_path = str(payload.get("job_lock_path", "")).strip()
+    if len({bool(control_path), bool(status_path), bool(lock_path)}) != 1:
+        raise ValueError("job control, status, and lock paths must be supplied together")
+    if control_path and any(not os.path.isabs(path) for path in (control_path, status_path, lock_path)):
+        raise ValueError("job control, status, and lock paths must be absolute")
 
     # Avoid library metadata calls and downloader/shared-memory setup when a
     # cancellation request is already waiting.
@@ -239,10 +256,17 @@ def _install(core, payload):
     worker_error = getattr(dlm, "error", None)
     if worker_error:
         raise RuntimeError(f"Legendary download failed: {worker_error}")
-    # Publish the non-cancellable phase before the final control-file check.
-    # The provider uses this phase to reject late cancellation requests.
-    _write_job_status(status_path, "running", phase="installing", progress=100)
-    if _cancel_requested(control_path):
+    # Serialize the final cancellation check and phase transition against the
+    # provider's cancel_job handler. Whichever side acquires flock first wins:
+    # cancellation is published before installing, or installing is published
+    # before the provider re-checks eligibility and rejects cancellation.
+    with _exclusive_job_lock(lock_path):
+        if _cancel_requested(control_path):
+            cancelled = True
+        else:
+            _write_job_status(status_path, "running", phase="installing", progress=100)
+            cancelled = False
+    if cancelled:
         _write_job_status(status_path, "cancelled", phase="cancelled")
         return {"cancelled": True, "app_name": app_name}
     prerequisites = core.install_game(installed_game) or {}
@@ -352,6 +376,7 @@ def _runtime_self_test():
             "base_path": cancel_dir,
             "job_control_path": control_path,
             "job_status_path": status_path,
+            "job_lock_path": os.path.join(cancel_dir, "job.lock"),
         }
         # Already cancelled: metadata lookup itself must be skipped.
         with open(control_path, "w", encoding="utf-8") as control:
