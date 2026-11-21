@@ -1653,3 +1653,13 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Follow-up inspection of the completed Epic job log found the managed Android emulator summary: **15 Tests, 8/8 completed, 0 skipped, 0 failed**, followed by `Epic Bridge instrumentation passed.` This confirms the instrumentation stage did execute on the latest source commit `d6c13af90df73429da17bdb74cee6e4965496ae8`; the earlier note above saying the available excerpt did not establish execution is superseded.
 - The suite-level report does not print individual JUnit method names in the captured summary, so retain the 8/8 aggregate as the precise evidence rather than asserting a named test from that line alone.
+
+
+## 2026-11-21 — Add deterministic stale-job recovery coverage
+
+- Reviewed provider authorization and lifecycle handling. The companion provider is exported only behind the signature-level `com.maliwinlator.epicbridge.permission.ACCESS` permission, the host declares that permission, and provider code additionally allowlists the host package resolved from the Binder calling UID. The service itself remains non-exported. A real cross-package Binder authorization test is still a separate gap.
+- Extracted the provider's process-recovery rule into package-visible pure predicate `shouldMarkJobInterrupted(state, startedAt, now, active)`. It preserves the existing 30-second startup grace and only marks an orphaned persisted `running` job interrupted after the grace period when the in-memory active set does not contain it.
+- Added deterministic instrumentation coverage for exact grace-period boundary, expired grace, active job, terminal state, missing start timestamp, and backwards clock input.
+- Source commits: provider refactor `ab490c0ab93bcd4a930f56b81b2a6d61f05e713d`; instrumentation test `933e66926e62271725f788b821cf8b8b1cb06cc8`.
+- These commits supersede the previously green CI source tip. Await new Epic runtime and standard APK workflows before claiming this regression test is validated. This is testability/edge-case hardening, not proof of process-death recovery under real Android lifecycle pressure.
+- Next: verify both workflows, then prioritize a genuine host-to-provider Binder authorization test and real install cancellation/process-death acceptance. Xiaomi 15T Epic login/library/download/launch acceptance remains outstanding.
