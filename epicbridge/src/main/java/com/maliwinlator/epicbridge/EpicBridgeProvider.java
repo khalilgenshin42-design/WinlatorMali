@@ -134,7 +134,8 @@ public final class EpicBridgeProvider extends ContentProvider {
             android.content.SharedPreferences prefs = getContext().getSharedPreferences(
                     EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
             if (!EpicRuntimeService.isJobActive(jobId)
-                    || !"running".equals(prefs.getString(jobId + ".state", "unknown"))) {
+                    || !"running".equals(prefs.getString(jobId + ".state", "unknown"))
+                    || !"install".equals(prefs.getString(jobId + ".command", ""))) {
                 result.putBoolean("ok", false);
                 result.putString("error", "JOB_NOT_CANCELLABLE");
                 result.putString("message", "The Epic job is no longer running");
@@ -176,6 +177,7 @@ public final class EpicBridgeProvider extends ContentProvider {
             result.putBoolean("ok", true);
             result.putString("job_id", jobId);
             result.putString("state", jobState);
+            result.putBoolean("can_cancel", "install".equals(prefs.getString(jobId + ".command", "")));
             result.putString("result_json", prefs.getString(jobId + ".result", ""));
             String statusPath = prefs.getString(jobId + ".status_path", "");
             if (!statusPath.isEmpty()) {
