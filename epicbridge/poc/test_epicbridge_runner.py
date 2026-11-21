@@ -78,5 +78,30 @@ class LibraryMergeTests(unittest.TestCase):
         )
 
 
+class ErrorSanitizationTests(unittest.TestCase):
+    def test_command_failure_does_not_return_exception_message_or_traceback(self):
+        secret_path = "/storage/emulated/0/MaliWinlator/private-install/token.dat"
+
+        def fail_core():
+            raise RuntimeError(f"download failed at {secret_path}")
+
+        with patch.object(runner, "_core", side_effect=fail_core):
+            response = runner.handle("installed", "{}")
+
+        self.assertIn('"error":"EPIC_OPERATION_FAILED"', response)
+        self.assertIn("Epic operation failed", response)
+        self.assertNotIn(secret_path, response)
+        self.assertNotIn("RuntimeError", response)
+        self.assertNotIn("Traceback", response)
+
+    def test_invalid_payload_does_not_echo_sensitive_payload_content(self):
+        secret_path = "/data/user/0/com.maliwinlator.epicbridge/files/private"
+
+        response = runner.handle("installed", '{"secret":"' + secret_path + '"}')
+
+        self.assertIn('"error":"EPIC_OPERATION_FAILED"', response)
+        self.assertNotIn(secret_path, response)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
