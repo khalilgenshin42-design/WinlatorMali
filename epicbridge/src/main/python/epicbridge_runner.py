@@ -6,7 +6,6 @@ import uuid
 import json
 import logging
 import os
-import traceback
 
 log = logging.getLogger("EpicBridge")
 
@@ -409,10 +408,12 @@ def handle(command: str, payload_json: str = "{}") -> str:
 
         raise ValueError(f"Unsupported Epic Bridge command: {command}")
     except Exception as exc:
-        log.exception("Epic Bridge command failed: %s", command)
+        # Exception text and tracebacks can contain private install paths,
+        # account metadata, or request details. Never serialize exception contents.
+        log.error("Epic Bridge command failed (command=%s, exception=%s)",
+                  command, type(exc).__name__)
         return _dump({
             "ok": False,
-            "error": type(exc).__name__,
-            "message": str(exc),
-            "trace": traceback.format_exc(limit=4),
+            "error": "EPIC_OPERATION_FAILED",
+            "message": "Epic operation failed. Review the app diagnostic log.",
         })
