@@ -184,8 +184,8 @@ def _install(core, payload):
         game,
         base_path=base_path,
         platform="Windows",
-        max_workers=max(1, min(int(payload.get("max_workers", 4)), 4)),
-        max_shm=max(128, min(int(payload.get("max_shared_memory_mib", 512)), 512)),
+        max_workers=max(1, min(int(payload.get("max_workers", 2)), 4)),
+        max_shm=max(128, min(int(payload.get("max_shared_memory_mib", 256)), 512)),
         dl_timeout=30,
         # Legendary's pinned UIUpdate queue is the supported progress channel.
         # Android patching converts multiprocessing.Queue to queue.Queue.
