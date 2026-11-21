@@ -196,31 +196,39 @@ public final class EpicBridgeProvider extends ContentProvider {
             String jobId = arg == null ? "" : arg;
             android.content.SharedPreferences prefs = getContext().getSharedPreferences(
                     EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
-            String statusPath = prefs.getString(jobId + ".status_path", "");
-            String progressSnapshot = statusPath.isEmpty()
-                    ? null : readProgressSnapshot(new File(statusPath));
-            String phase = readProgressPhase(progressSnapshot);
-            if (!EpicRuntimeService.isJobCancellable(jobId,
-                    prefs.getString(jobId + ".state", "unknown"),
-                    prefs.getString(jobId + ".command", ""), phase)) {
+            String lockPath = prefs.getString(jobId + ".lock_path", "");
+            if (lockPath.isEmpty()) {
                 result.putBoolean("ok", false);
-                result.putString("error", "JOB_NOT_CANCELLABLE");
-                result.putString("message", "The Epic job is no longer in a cancellable download phase");
+                result.putString("error", "JOB_LOCK_UNAVAILABLE");
                 return result;
             }
-            String controlPath = prefs.getString(jobId + ".control_path", "");
-            if (controlPath.isEmpty()) {
-                result.putBoolean("ok", false);
-                result.putString("error", "JOB_CONTROL_UNAVAILABLE");
-                return result;
-            }
-            try {
+            try (EpicJobLock ignored = EpicJobLock.acquire(new File(lockPath))) {
+                // Re-read every eligibility input while holding the same lock
+                // Python takes before its final cancel check and installing transition.
+                String statusPath = prefs.getString(jobId + ".status_path", "");
+                String progressSnapshot = statusPath.isEmpty()
+                        ? null : readProgressSnapshot(new File(statusPath));
+                String phase = readProgressPhase(progressSnapshot);
+                if (!EpicRuntimeService.isJobCancellable(jobId,
+                        prefs.getString(jobId + ".state", "unknown"),
+                        prefs.getString(jobId + ".command", ""), phase)) {
+                    result.putBoolean("ok", false);
+                    result.putString("error", "JOB_NOT_CANCELLABLE");
+                    result.putString("message", "The Epic job is no longer in a cancellable download phase");
+                    return result;
+                }
+                String controlPath = prefs.getString(jobId + ".control_path", "");
+                if (controlPath.isEmpty()) {
+                    result.putBoolean("ok", false);
+                    result.putString("error", "JOB_CONTROL_UNAVAILABLE");
+                    return result;
+                }
                 writeCancelRequest(new File(controlPath));
                 result.putBoolean("ok", true);
                 result.putString("state", "cancelling");
             } catch (Exception failure) {
                 result.putBoolean("ok", false);
-                result.putString("error", "JOB_CONTROL_WRITE_FAILED");
+                result.putString("error", "JOB_CANCEL_FAILED");
                 result.putString("message", "Unable to request Epic job cancellation");
             }
             return result;
