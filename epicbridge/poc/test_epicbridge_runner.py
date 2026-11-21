@@ -201,12 +201,13 @@ class InstallJobControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
-            with open(control, "w", encoding="utf-8") as output:
-                json.dump({"cancel": True}, output)
-            result = runner._install(core, {
-                "app_name": "TEST", "base_path": "/games",
-                "job_control_path": control, "job_status_path": status,
-            })
+            # The initial gate is clear; the next poll simulates a request
+            # arriving after the downloader thread has started.
+            with patch.object(runner, "_cancel_requested", side_effect=[False, True]):
+                result = runner._install(core, {
+                    "app_name": "TEST", "base_path": "/games",
+                    "job_control_path": control, "job_status_path": status,
+                })
             self.assertTrue(result["cancelled"])
             self.assertTrue(downloader.stop_called)
             self.assertEqual(install_game_called, [])
