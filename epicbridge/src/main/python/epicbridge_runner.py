@@ -189,7 +189,7 @@ def _install(core, payload):
     last_update = None
     try:
         while dlm.is_alive():
-            if _cancel_requested(control_path):
+            if not cancelled and _cancel_requested(control_path):
                 cancelled = True
                 _write_job_status(status_path, "cancelling", phase="stopping")
                 stop = getattr(dlm, "stop", None)
