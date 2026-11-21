@@ -28,6 +28,8 @@ public final class EpicRuntimeInstrumentedTest {
     public void providerAuthorizesUidOnlyWhenItsPackageSetContainsTheHost() {
         assertTrue(EpicBridgeProvider.isAllowedHostUidPackages(
                 new String[] {"com.example.other", "com.maliwinlator.app"}));
+        assertTrue(EpicBridgeProvider.isAllowedHostUidPackages(
+                new String[] {"com.maliwinlator.app"}));
         assertFalse(EpicBridgeProvider.isAllowedHostUidPackages(
                 new String[] {"com.example.other", "com.winlator.cmod"}));
         assertFalse(EpicBridgeProvider.isAllowedHostUidPackages(new String[0]));
