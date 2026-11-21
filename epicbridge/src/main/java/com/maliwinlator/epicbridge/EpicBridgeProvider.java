@@ -46,7 +46,13 @@ public final class EpicBridgeProvider extends ContentProvider {
 
     private boolean isAuthorizedHost() {
         if (getContext() == null) return false;
-        String[] packages = getContext().getPackageManager().getPackagesForUid(Binder.getCallingUid());
+        int callingUid = Binder.getCallingUid();
+        // The future in-package runtime provider is private (exported=false)
+        // and executes under the host application's UID. Permit that same-UID
+        // call for every product flavor; retain the explicit host-package gate
+        // for the separately installed companion provider.
+        if (callingUid == android.os.Process.myUid()) return true;
+        String[] packages = getContext().getPackageManager().getPackagesForUid(callingUid);
         return isAllowedHostUidPackages(packages);
     }
 
