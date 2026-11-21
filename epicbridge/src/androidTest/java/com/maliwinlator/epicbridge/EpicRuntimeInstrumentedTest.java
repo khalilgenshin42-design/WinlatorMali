@@ -130,6 +130,54 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void javaAndEmbeddedPythonFlockInteroperate() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File directory = new File(context.getCacheDir(),
+                "epic-flock-test-" + java.util.UUID.randomUUID());
+        assertTrue(directory.mkdirs());
+        File lock = new File(directory, "job.lock");
+        File attempt = new File(directory, "python-attempted");
+        EpicJobLock held = EpicJobLock.acquire(lock);
+        final java.util.concurrent.CountDownLatch completed =
+                new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.atomic.AtomicReference<String> response =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        Thread python = new Thread(() -> {
+            try {
+                String payload = new JSONObject()
+                        .put("job_lock_path", lock.getAbsolutePath())
+                        .put("attempt_path", attempt.getAbsolutePath()).toString();
+                response.set(EpicPythonRuntime.call(context, "job_lock_probe", payload));
+            } catch (Exception failure) {
+                response.set(null);
+            } finally {
+                completed.countDown();
+            }
+        }, "epic-python-flock-interoperability");
+        try {
+            python.start();
+            long deadline = System.currentTimeMillis() + 5_000L;
+            while (!attempt.isFile() && System.currentTimeMillis() < deadline) {
+                Thread.sleep(10L);
+            }
+            assertTrue("Python runtime did not reach the lock attempt", attempt.isFile());
+            assertEquals("Python must block while Java owns LOCK_EX", 1L,
+                    completed.getCount());
+        } finally {
+            held.close();
+        }
+        assertTrue("Python runtime remained blocked after Java unlocked",
+                completed.await(10, java.util.concurrent.TimeUnit.SECONDS));
+        python.join(1_000L);
+        assertFalse(python.isAlive());
+        assertTrue(response.get() != null);
+        assertTrue(new JSONObject(response.get()).getBoolean("lock_acquired"));
+        attempt.delete();
+        lock.delete();
+        directory.delete();
+    }
+
+    @Test
     public void cancellationControlSnapshotIsAtomicallyReplaced() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File directory = new File(context.getCacheDir(), "epic-cancel-test-" + java.util.UUID.randomUUID());
