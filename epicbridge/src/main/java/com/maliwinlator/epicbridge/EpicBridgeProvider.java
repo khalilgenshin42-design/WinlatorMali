@@ -116,8 +116,9 @@ public final class EpicBridgeProvider extends ContentProvider {
             } catch (Exception e) {
                 EpicRuntimeService.releaseJobReservation(jobId);
                 result.putBoolean("ok", false);
+                // Android exception messages can include private filesystem paths.
                 result.putString("error", "JOB_START_FAILED");
-                result.putString("message", e.getMessage());
+                result.putString("message", "Unable to start the Epic background job");
             }
             return result;
         }
