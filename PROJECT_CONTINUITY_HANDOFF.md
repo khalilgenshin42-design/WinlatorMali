@@ -1647,3 +1647,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Run links: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44856059185 and https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44856059211.
 - These are CI/debug artifacts, not a production-signed release and not Xiaomi 15T Epic acceptance. Real provider-to-service cancellation, live network install, and service process-death recovery remain unverified.
 - Next review: verify the test task/report is part of the Epic workflow (and that `cancellationEligibilityRequiresAnActiveRunningInstall` ran), then inspect provider Binder authorization and service restart semantics.
+
+
+### CI log clarification — instrumentation execution confirmed
+
+- Follow-up inspection of the completed Epic job log found the managed Android emulator summary: **15 Tests, 8/8 completed, 0 skipped, 0 failed**, followed by `Epic Bridge instrumentation passed.` This confirms the instrumentation stage did execute on the latest source commit `d6c13af90df73429da17bdb74cee6e4965496ae8`; the earlier note above saying the available excerpt did not establish execution is superseded.
+- The suite-level report does not print individual JUnit method names in the captured summary, so retain the 8/8 aggregate as the precise evidence rather than asserting a named test from that line alone.
