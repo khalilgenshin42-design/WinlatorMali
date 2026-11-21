@@ -1734,3 +1734,7 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Root cause: the test's mocked `_cancel_requested` sequence `[False, True]` was written before `_install()` gained two earlier cancellation gates (before metadata and after metadata). The second `True` now correctly cancels before downloader creation, so the assertion about stopping an active downloader was no longer exercising its intended scenario.
 - Updated the test sequence to `[False, False, False, True]`: initial guard clear, post-metadata guard clear, post-preparation guard clear, then cancellation in the active downloader loop. The separate metadata-stage fake-core self-tests remain responsible for proving cancellation before downloader allocation.
 - Test-only commit: `6706768df9db4dd2d436182d23120c6db49efe6e`. Fresh Epic CI is required; no claim of validation until its regression suite and Android instrumentation pass.
+
+
+- Follow-up source review caught that the first test edit had matched the earlier, similarly shaped `test_cancel_arriving_as_downloader_exits_skips_install_game` instead of the intended active-downloader test. Restored the earlier test's two-poll sequence and applied the four-poll sequence only inside `test_cancelled_install_stops_downloader_and_skips_install_game`. This prevents moving the mismatch to a neighboring regression test.
+- Corrected test commit: `afde4d0fd38f51c90007fb574063e71f4bc32dfa`. The workflow already running for commit `6706768...` cannot validate this later correction; await the newly triggered run for `afde4d0...`.
