@@ -94,7 +94,10 @@ def _write_job_status(path, state, **fields):
     if not path:
         return
     snapshot = {"state": state}
-    for key in ("phase", "progress", "download_speed", "write_speed", "read_speed"):
+    phase = fields.get("phase")
+    if isinstance(phase, str) and phase in ("preparing", "downloading", "stopping", "cancelled", "installing"):
+        snapshot["phase"] = phase
+    for key in ("progress", "download_speed", "write_speed", "read_speed"):
         value = fields.get(key)
         if isinstance(value, (int, float)) and value >= 0:
             snapshot[key] = min(float(value), 100.0) if key == "progress" else float(value)
