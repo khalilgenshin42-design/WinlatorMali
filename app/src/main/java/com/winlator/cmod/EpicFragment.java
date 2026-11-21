@@ -447,10 +447,12 @@ public final class EpicFragment extends Fragment {
         if (jobId.isEmpty()) return;
 
         jobPolling = true;
+        setCancelButtonVisible(true);
         statusText.setText("Resuming the previous Epic operation...");
         io.execute(() -> {
             JSONObject result = waitForJob(appContext, jobId);
             jobPolling = false;
+            setCancelButtonVisible(false);
             if (getActivity() != null) getActivity().runOnUiThread(() -> {
                 if (getView() == null || statusText == null) return;
                 if (result.optBoolean("ok", false)) {
