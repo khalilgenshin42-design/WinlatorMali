@@ -66,6 +66,33 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void progressSnapshotReaderAcceptsBoundedDataAndRejectsOversizedFiles() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File directory = new File(context.getCacheDir(), "epic-progress-test-" + java.util.UUID.randomUUID());
+        assertTrue(directory.mkdirs());
+        File status = new File(directory, "job.status.json");
+        try {
+            String snapshot = "{\\\"state\\\":\\\"running\\\",\\\"phase\\\":\\\"downloading\\\",\\\"progress\\\":42.5}";
+            try (java.io.FileOutputStream output = new java.io.FileOutputStream(status)) {
+                output.write(snapshot.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                output.getFD().sync();
+            }
+            assertEquals(snapshot, EpicBridgeProvider.readProgressSnapshot(status));
+            try (java.io.FileOutputStream output = new java.io.FileOutputStream(status)) {
+                byte[] oversized = new byte[8193];
+                java.util.Arrays.fill(oversized, (byte) 'x');
+                output.write(oversized);
+                output.getFD().sync();
+            }
+            assertEquals(null, EpicBridgeProvider.readProgressSnapshot(status));
+            assertEquals(null, EpicBridgeProvider.readProgressSnapshot(new File(directory, "missing.json")));
+        } finally {
+            status.delete();
+            directory.delete();
+        }
+    }
+
+    @Test
     public void bundledRuntimeLoadsAndPassesNativeSelfTest() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
