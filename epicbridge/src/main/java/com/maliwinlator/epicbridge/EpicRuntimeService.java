@@ -106,8 +106,10 @@ public final class EpicRuntimeService extends Service {
             }
             controlFile = new File(jobsDirectory, jobId + ".control.json");
             statusFile = new File(jobsDirectory, jobId + ".status.json");
+            lockFile = new File(jobsDirectory, jobId + ".lock");
             writePrivateFile(controlFile, "{\"cancel\":false}");
             writePrivateFile(statusFile, "{\"state\":\"queued\",\"phase\":\"preparing\"}");
+            writePrivateFile(lockFile, "");
             JSONObject payloadObject = new JSONObject(payload == null ? "{}" : payload);
             if ("install".equals(command)) {
                 payloadObject.put("job_control_path", controlFile.getAbsolutePath());
