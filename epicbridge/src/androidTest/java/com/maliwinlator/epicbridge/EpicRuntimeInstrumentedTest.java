@@ -167,6 +167,10 @@ public final class EpicRuntimeInstrumentedTest {
                 output.getFD().sync();
             }
             assertEquals(snapshot, EpicBridgeProvider.readProgressSnapshot(status));
+            assertEquals("downloading", EpicBridgeProvider.readProgressPhase(snapshot));
+            assertEquals(null, EpicBridgeProvider.readProgressPhase("{invalid"));
+            assertEquals(null, EpicBridgeProvider.readProgressPhase(null));
+            assertEquals(null, EpicBridgeProvider.readProgressPhase("{\\"state\\":\\"running\\"}"));
             try (java.io.FileOutputStream output = new java.io.FileOutputStream(status)) {
                 byte[] oversized = new byte[8193];
                 java.util.Arrays.fill(oversized, (byte) 'x');
