@@ -1636,3 +1636,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Added instrumentation coverage for active versus inactive reservations and running, queued, complete, cancelled, and uninstall states.
 - Source commits: service `814c58d75ea184b77eb9cb16a003a3da32f44788`; provider `113707fc922bb9c7327d79d1d6af0d51cbcc9721`; instrumentation `d6c13af90df73429da17bdb74cee6e4965496ae8`.
 - This is a consistency/testability refactor, not proof of real cross-process cancellation or downloader teardown. Await CI on the latest source commit before treating it as validated.
+
+
+## 2026-11-21 — Cancellation eligibility validation passed CI
+
+- Latest source commit `d6c13af90df73429da17bdb74cee6e4965496ae8` passed Epic runtime workflow **44856059185** (32/32 steps, success) and standard APK workflow **44856059211** (13/13 steps, success).
+- The Epic job log confirms the Android Gradle build completed successfully. The available log excerpt does not establish that the new cancellation-eligibility instrumentation test was actually executed; retain that as a test-coverage verification item rather than claiming it passed.
+- Epic ARM64 debug bundle: artifact **14688426677**, 507,997,301 bytes, archive SHA-256 `b29b92bf2de6de0073e254d32a4dd499860d3d41ec84515c8e64d4f81e6082be` (expires 2026-12-21).
+- CPython 3.15.2 Android ARM64 POC: artifact **14688322562**, 49,959,133 bytes, archive SHA-256 `1661742bd524f7661204c767e2738aa2189535ac66b27cb377a5663034da96a3` (expires 2026-12-05).
+- Run links: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44856059185 and https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44856059211.
+- These are CI/debug artifacts, not a production-signed release and not Xiaomi 15T Epic acceptance. Real provider-to-service cancellation, live network install, and service process-death recovery remain unverified.
+- Next review: verify the test task/report is part of the Epic workflow (and that `cancellationEligibilityRequiresAnActiveRunningInstall` ran), then inspect provider Binder authorization and service restart semantics.
