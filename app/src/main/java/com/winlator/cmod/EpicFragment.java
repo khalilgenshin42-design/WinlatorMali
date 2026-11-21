@@ -424,7 +424,9 @@ public final class EpicFragment extends Fragment {
     private void cancelActiveJob() {
         if (getContext() == null) return;
         android.content.Context appContext = requireContext().getApplicationContext();
-        io.execute(() -> {
+        // waitForJob occupies the single-thread IO executor while polling.
+        // Use a separate short-lived thread so cancellation is never queued behind it.
+        new Thread(() -> {
             android.content.SharedPreferences prefs = appContext.getSharedPreferences(
                     JOB_PREFS, android.content.Context.MODE_PRIVATE);
             String jobId = prefs.getString(JOB_ID_KEY, "");
@@ -436,7 +438,7 @@ public final class EpicFragment extends Fragment {
             if (getActivity() != null) getActivity().runOnUiThread(() -> {
                 if (statusText != null) statusText.setText(message);
             });
-        });
+        }, "EpicJobCancel").start();
     }
 
     private void resumePendingJob() {
