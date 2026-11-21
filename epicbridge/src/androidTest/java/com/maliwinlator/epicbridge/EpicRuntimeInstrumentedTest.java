@@ -72,7 +72,7 @@ public final class EpicRuntimeInstrumentedTest {
         assertTrue(directory.mkdirs());
         File status = new File(directory, "job.status.json");
         try {
-            String snapshot = "{\\\"state\\\":\\\"running\\\",\\\"phase\\\":\\\"downloading\\\",\\\"progress\\\":42.5}";
+            String snapshot = "{\"state\":\"running\",\"phase\":\"downloading\",\"progress\":42.5}";
             try (java.io.FileOutputStream output = new java.io.FileOutputStream(status)) {
                 output.write(snapshot.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 output.getFD().sync();
