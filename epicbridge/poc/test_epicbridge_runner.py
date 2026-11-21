@@ -98,6 +98,72 @@ class InstallJobControlTests(unittest.TestCase):
             self.assertNotIn("private_path", snapshot)
             self.assertFalse(os.path.exists(path + ".tmp"))
 
+    def test_cancel_before_downloader_start_skips_thread_creation(self):
+        class FakeDownloader:
+            started = False
+            def start(self):
+                self.started = True
+            def is_alive(self):
+                return False
+
+        downloader = FakeDownloader()
+        fake_game = SimpleNamespace(app_name="TEST", third_party_store=None, title="Test")
+        conditions = SimpleNamespace(failures=[], warnings=[])
+        core = SimpleNamespace(
+            login=lambda: True,
+            get_game=lambda *args, **kwargs: fake_game,
+            prepare_download=lambda *args, **kwargs: (downloader, object(), fake_game),
+            check_installation_conditions=lambda *args: conditions,
+            install_game=lambda *args: self.fail("install_game must not run"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            control = os.path.join(directory, "control.json")
+            status = os.path.join(directory, "status.json")
+            with open(control, "w", encoding="utf-8") as output:
+                json.dump({"cancel": True}, output)
+            result = runner._install(core, {
+                "app_name": "TEST", "base_path": "/games",
+                "job_control_path": control, "job_status_path": status,
+            })
+            self.assertTrue(result["cancelled"])
+            self.assertFalse(downloader.started)
+            with open(status, encoding="utf-8") as source:
+                self.assertEqual(json.load(source)["state"], "cancelled")
+
+    def test_cancel_arriving_as_downloader_exits_skips_install_game(self):
+        class FakeDownloader:
+            def start(self):
+                pass
+            def is_alive(self):
+                return False
+            def join(self, timeout=None):
+                pass
+
+        downloader = FakeDownloader()
+        install_game_called = []
+        fake_game = SimpleNamespace(app_name="TEST", third_party_store=None, title="Test")
+        conditions = SimpleNamespace(failures=[], warnings=[])
+        core = SimpleNamespace(
+            login=lambda: True,
+            get_game=lambda *args, **kwargs: fake_game,
+            prepare_download=lambda *args, **kwargs: (downloader, object(), fake_game),
+            check_installation_conditions=lambda *args: conditions,
+            install_game=lambda *args: install_game_called.append(True),
+        )
+        # First poll (pre-start) is false; final post-worker poll sees cancellation.
+        with tempfile.TemporaryDirectory() as directory:
+            status = os.path.join(directory, "status.json")
+            with patch.object(runner, "_cancel_requested", side_effect=[False, True]):
+                result = runner._install(core, {
+                    "app_name": "TEST", "base_path": "/games",
+                    "job_control_path": os.path.join(directory, "control.json"),
+                    "job_status_path": status,
+                })
+            self.assertTrue(result["cancelled"])
+            self.assertEqual(install_game_called, [])
+            with open(status, encoding="utf-8") as source:
+                self.assertEqual(json.load(source)["state"], "cancelled")
+
     def test_cancelled_install_stops_downloader_and_skips_install_game(self):
         class FakeDownloader:
             def __init__(self):
