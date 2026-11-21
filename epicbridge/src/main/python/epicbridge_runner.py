@@ -326,12 +326,20 @@ def _runtime_self_test():
     from legendary.downloader.mp.workers import DLWorker, FileWorker
     from legendary.models.downloading import AnalysisResult, FileTask, TaskFlags, TerminateWorkerTask, WriterTaskResult
 
-    # Cancellation signalled before preparation must not allocate a downloader
-    # or its shared-memory mapping. This uses a fake core and never contacts Epic.
+    # Cancellation before or during metadata lookup must not allocate a
+    # downloader or its shared-memory mapping. These fake cores never contact Epic.
     class CancelledInstallCore:
+        def __init__(self, control_path=None, cancel_on_lookup=False):
+            self.control_path = control_path
+            self.cancel_on_lookup = cancel_on_lookup
+            self.lookup_called = False
         def login(self):
             return True
         def get_game(self, *args, **kwargs):
+            self.lookup_called = True
+            if self.cancel_on_lookup:
+                with open(self.control_path, "w", encoding="utf-8") as control:
+                    json.dump({"cancel": True}, control)
             return SimpleNamespace(third_party_store="")
         def prepare_download(self, *args, **kwargs):
             raise AssertionError("cancelled install unexpectedly prepared downloader")
@@ -339,19 +347,31 @@ def _runtime_self_test():
     with tempfile.TemporaryDirectory(prefix="epic-cancel-before-prepare-") as cancel_dir:
         control_path = os.path.join(cancel_dir, "control.json")
         status_path = os.path.join(cancel_dir, "status.json")
-        with open(control_path, "w", encoding="utf-8") as control:
-            json.dump({"cancel": True}, control)
-        cancelled_result = _install(CancelledInstallCore(), {
+        payload = {
             "app_name": "cancel-smoke",
             "base_path": cancel_dir,
             "job_control_path": control_path,
             "job_status_path": status_path,
-        })
-        if not cancelled_result.get("cancelled"):
-            raise RuntimeError("preparation-stage cancellation was not honored")
+        }
+        # Already cancelled: metadata lookup itself must be skipped.
+        with open(control_path, "w", encoding="utf-8") as control:
+            json.dump({"cancel": True}, control)
+        pre_cancel_core = CancelledInstallCore()
+        cancelled_result = _install(pre_cancel_core, payload)
+        if not cancelled_result.get("cancelled") or pre_cancel_core.lookup_called:
+            raise RuntimeError("pre-metadata cancellation was not honored")
+
+        # Cancellation arriving during metadata lookup must be observed before
+        # prepare_download() allocates downloader/shared-memory state.
+        with open(control_path, "w", encoding="utf-8") as control:
+            json.dump({"cancel": False}, control)
+        metadata_cancel_core = CancelledInstallCore(control_path, cancel_on_lookup=True)
+        cancelled_result = _install(metadata_cancel_core, payload)
+        if not cancelled_result.get("cancelled") or not metadata_cancel_core.lookup_called:
+            raise RuntimeError("metadata-stage cancellation was not honored")
         with open(status_path, "r", encoding="utf-8") as status:
             if json.load(status).get("state") != "cancelled":
-                raise RuntimeError("preparation-stage cancellation status was not published")
+                raise RuntimeError("metadata-stage cancellation status was not published")
 
     core = _core()
     if not isinstance(core, LegendaryCore):
