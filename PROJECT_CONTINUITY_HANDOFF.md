@@ -1612,3 +1612,19 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 1. Run and inspect Epic runtime plus standard APK workflows for commit `9f7d0ae1a3600dc6ad9f77598bc70d1dc03aef7f`.
 2. If green, record test count/artifact evidence, then continue reviewing service restart and cancellation edge cases.
 3. Keep real device validation gates explicit: login, library, install/cancel/retry, update, uninstall, launch, and persistence.
+
+
+## Engineering step log — 2026-11-21: concurrency stress test passed
+
+- Epic runtime workflow **44854159631** passed **32/32** steps on source commit `9f7d0ae1a3600dc6ad9f77598bc70d1dc03aef7f`. The job log explicitly reports `Epic Bridge instrumentation passed.`; the new 16-contender reservation stress test is included in that instrumentation suite.
+- Standard APK workflow **44854159589** passed **13/13** steps on the same source commit.
+- Epic debug APK artifact: [workflow artifact 14687550549](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44854159631/artifacts/14687550549), 507,998,244 bytes, archive SHA-256 `ede2dc731a88333733d64e003aa893d1c637ba4561cd7821dbaece88815a8c04`.
+- Separate CPython 3.15.2 Android ARM64 POC artifact: [workflow artifact 14687451137](https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44854159631/artifacts/14687451137), 49,955,763 bytes, archive SHA-256 `57e07e6c17a65f8eaf1ab94eb45c39c342e88b6d82e52d07113fb2a36340d856`.
+- CI also published prerelease [maliwinlator-1.2.1-epic-9f7d0ae1a360](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-9f7d0ae1a360). These are debug/test outputs; the CI result is not Xiaomi 15T acceptance and not a production-signed release.
+- The workflow automatically published `PROJECT_EPIC_CI_STATUS.md` in commit `e1e7f21` after the successful build.
+- No device-side Epic login/library/download/game-launch test was performed in this step.
+
+### Next engineering focus
+1. Inspect the actual CI instrumentation invocation/report to record exact test cases and improve provider/service lifecycle coverage.
+2. Investigate service stop/restart edge cases and ensure stale persisted running state cannot be mistaken for a live job.
+3. Device acceptance remains required for cross-package provider permission, Epic authentication, library, install/cancel/retry, update/uninstall, launch and persistence.
