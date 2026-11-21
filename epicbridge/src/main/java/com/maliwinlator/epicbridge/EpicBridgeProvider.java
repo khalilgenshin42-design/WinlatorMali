@@ -30,6 +30,14 @@ public final class EpicBridgeProvider extends ContentProvider {
         return HOST_PACKAGE.equals(packageName);
     }
 
+    static boolean isAllowedHostUidPackages(String[] packageNames) {
+        if (packageNames == null) return false;
+        for (String packageName : packageNames) {
+            if (isAllowedHostPackage(packageName)) return true;
+        }
+        return false;
+    }
+
     static boolean shouldMarkJobInterrupted(String state, long startedAt,
             long now, boolean active) {
         return "running".equals(state) && startedAt > 0
@@ -39,11 +47,7 @@ public final class EpicBridgeProvider extends ContentProvider {
     private boolean isAuthorizedHost() {
         if (getContext() == null) return false;
         String[] packages = getContext().getPackageManager().getPackagesForUid(Binder.getCallingUid());
-        if (packages == null) return false;
-        for (String packageName : packages) {
-            if (isAllowedHostPackage(packageName)) return true;
-        }
-        return false;
+        return isAllowedHostUidPackages(packages);
     }
 
     /**
