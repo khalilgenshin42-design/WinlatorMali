@@ -97,7 +97,7 @@ class ErrorSanitizationTests(unittest.TestCase):
     def test_invalid_payload_does_not_echo_sensitive_payload_content(self):
         secret_path = "/data/user/0/com.maliwinlator.epicbridge/files/private"
 
-        response = runner.handle("installed", '{"secret":"' + secret_path + '"}')
+        response = runner.handle("installed", '{"secret":"' + secret_path)
 
         self.assertIn('"error":"EPIC_OPERATION_FAILED"', response)
         self.assertNotIn(secret_path, response)
