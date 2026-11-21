@@ -1901,3 +1901,13 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Corrected root plugin registration in commit `aa9295cfdde7a918fe791abd2f492cc1bf747fad`: root `build.gradle` now declares both `libs.plugins.android.application` and `libs.plugins.android.library` with `apply false`. This makes the exact AGP version available to both application and library subprojects through the version catalog. The previous app-only plugin declaration remains in place; no module is applying a different AGP version.
 - Neither failed run produced a verified installable artifact. Do not install artifacts from these runs. The next gate is rerunning both workflows after this root plugin registration change.
 - The single-package `:epicruntime` module remains unintegrated into `:app`; the separately installed companion remains fallback. Device download responsiveness is not yet fixed or demonstrated by the module split.
+
+
+## 2026-11-22 — Epic AAR CI audit false-negative corrected
+
+- Rechecked the two latest validation workflows after the Gradle plugin registration change. Standard host APK workflow **44959995628** passed and completed `:app:assembleStandardDebug`.
+- Epic runtime workflow **44960034527** reached the final Android build/audit step. CPython x86_64 and ARM64 packaging, managed Android instrumentation, `:epicruntime:assembleDebug`, and `:app:assembleStandardDebug` all completed; the AAR contained `assets/python/lib/python3.15/os.py` and `jni/arm64-v8a/libepic_python.so`.
+- Exact failure cause: CI ran `unzip -l epicruntime-debug.aar | grep EpicRuntimeService`. AAR Java bytecode is nested in `classes.jar`, so the outer AAR listing exposes only `classes.jar`, not individual `.class` paths. The runtime class was therefore not proven missing; the audit inspected the wrong archive layer.
+- Corrected the workflow in commit **6d01678bffc005ea4b24e587000719f1a4ab1343**: extract `classes.jar` from the AAR and inspect it with `jar tf`, explicitly requiring both `com/maliwinlator/epicbridge/EpicRuntimeService.class` and `EpicBridgeProvider.class`. This strengthens the audit instead of weakening/removing the check.
+- The failed run's own CI status update commit was **187805d**. No artifact from run **44960034527** is considered installable or verified. The passing standard APK is also not a one-package Epic build: `:epicruntime` is still not wired into `:app`.
+- Next gate: rerun Epic runtime workflow on the AAR-audit fix and require a green result. If it passes, inspect the AAR and merged manifests before integrating the library into the host application. Preserve the companion APK fallback until the unified host build and Xiaomi 15T device acceptance both pass. No claim is made that the download-lag problem is solved.
