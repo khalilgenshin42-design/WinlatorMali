@@ -555,6 +555,11 @@ def handle(command: str, payload_json: str = "{}") -> str:
         if command == "runtime_self_test":
             return _dump({"ok": True, "self_test": _runtime_self_test()})
 
+        if command == "job_lock_probe":
+            lock_path = str(payload.get("job_lock_path", "")).strip()
+            with _exclusive_job_lock(lock_path):
+                return _dump({"ok": True, "lock_acquired": True})
+
         core = _core()
         if command == "finish_login":
             code = str(payload.get("authorization_code", "")).strip()
