@@ -40,6 +40,32 @@ public final class EpicBridgeProvider extends ContentProvider {
         return false;
     }
 
+    /**
+     * Publish cancellation by atomically replacing the control snapshot. A
+     * reader must see either the previous complete JSON object or the new one,
+     * never a truncated file that could lose a cancellation request.
+     */
+    static void writeCancelRequest(File controlFile) throws Exception {
+        File parent = controlFile.getParentFile();
+        if (parent == null || !parent.isDirectory()) {
+            throw new IllegalStateException("Job control directory is unavailable");
+        }
+        File temporary = new File(parent, controlFile.getName() + ".tmp-" + java.util.UUID.randomUUID());
+        try {
+            try (FileOutputStream output = new FileOutputStream(temporary, false)) {
+                output.write("{\"cancel\":true}".getBytes(StandardCharsets.UTF_8));
+                output.getFD().sync();
+            }
+            // Both paths are in the same private directory, so Android/Linux
+            // rename publishes the fully-synced snapshot atomically.
+            if (!temporary.renameTo(controlFile)) {
+                throw new java.io.IOException("Unable to publish cancellation request");
+            }
+        } finally {
+            if (temporary.exists()) temporary.delete();
+        }
+    }
+
     private static boolean cryptoSelfTest() {
         Boolean cached = cryptoSelfTest;
         if (cached != null) return cached;
@@ -147,9 +173,8 @@ public final class EpicBridgeProvider extends ContentProvider {
                 result.putString("error", "JOB_CONTROL_UNAVAILABLE");
                 return result;
             }
-            try (FileOutputStream output = new FileOutputStream(new File(controlPath), false)) {
-                output.write("{\"cancel\":true}".getBytes(StandardCharsets.UTF_8));
-                output.getFD().sync();
+            try {
+                writeCancelRequest(new File(controlPath));
                 result.putBoolean("ok", true);
                 result.putString("state", "cancelling");
             } catch (Exception failure) {
@@ -177,7 +202,9 @@ public final class EpicBridgeProvider extends ContentProvider {
             result.putBoolean("ok", true);
             result.putString("job_id", jobId);
             result.putString("state", jobState);
-            result.putBoolean("can_cancel", "install".equals(prefs.getString(jobId + ".command", "")));
+            result.putBoolean("can_cancel", "running".equals(jobState)
+                    && EpicRuntimeService.isJobActive(jobId)
+                    && "install".equals(prefs.getString(jobId + ".command", "")));
             result.putString("result_json", prefs.getString(jobId + ".result", ""));
             String statusPath = prefs.getString(jobId + ".status_path", "");
             if (!statusPath.isEmpty()) {
