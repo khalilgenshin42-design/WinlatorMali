@@ -6,6 +6,7 @@ import uuid
 import json
 import logging
 import os
+from queue import Queue
 
 log = logging.getLogger("EpicBridge")
 
