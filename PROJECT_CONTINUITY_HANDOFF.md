@@ -1751,3 +1751,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Compiler diagnostics identified one malformed escaped JSON fixture in `EpicRuntimeInstrumentedTest.progressSnapshotReaderAcceptsBoundedDataAndRejectsOversizedFiles()`: the Java source contained two backslashes before embedded quotes, terminating the string incorrectly. Corrected it to the normal Java JSON literal `"{\"state\":\"running\"}"`.
 - Fix commit: **4c1a01c56a802d8bc628d1829f00f7f4145c1f2b**. Fresh Epic CI is required; this is a source-level correction, not yet a passing build.
 - The same review cycle confirmed the pending provider/Python TOCTOU issue: separate progress and control files do not make the transition to `installing` atomic with provider cancellation acceptance. Do not report that race fixed. Next design work should introduce one shared synchronization protocol and prove Java/Python lock interoperability on Android before relying on it.
+
+
+## 2026-11-21 — Fix stale cancellation helper calls in Android instrumentation
+
+- Fresh Epic runtime CI **44914838447** reached Android instrumentation compilation after host Python regression tests, x86_64 Android runtime prerequisite smoke, ARM64 CPython build, and runtime package audit all passed. Compilation then failed with two Java errors in `EpicRuntimeInstrumentedTest.java`: two legacy three-argument calls to `isJobCancellable(jobId, "running", "install")` remained after the helper was changed to require an explicit phase argument.
+- Corrected both stale calls to pass `null`, preserving their intended assertions that a missing phase is not cancellable. Source commit: **8f95bd006b14b625bba5f6981209dcca61d0c43d**.
+- Standard APK workflow **44914838450** passed **13/13** steps. Epic workflow **44914838447** failed only at Android instrumentation Java compilation; do not treat the Epic APK as validated or install any artifact from that run. Fresh Epic CI on commit 8f95bd0 is required.
+- The separate provider/Python cancellation phase-transition TOCTOU race remains unresolved and must not be represented as fixed. Next: verify the fresh instrumentation compile and test results, then design a single atomic phase/cancel arbitration protocol with deterministic Android coverage.
