@@ -169,6 +169,8 @@ class InstallJobControlTests(unittest.TestCase):
                                        "job_control_path": control,
                                        "job_status_path": status, "job_lock_path": lock})
             self.assertIsNotNone(received.get("status_q"))
+            self.assertEqual(received.get("max_workers"), 2)
+            self.assertEqual(received.get("max_shared_memory"), 256 * 1024 * 1024)
             self.assertTrue(any(
                 call.kwargs.get("progress") == 42.5
                 and call.kwargs.get("download_speed") == 1200
