@@ -140,11 +140,28 @@ def _install(core, payload):
     if not os.path.isabs(base_path):
         raise ValueError("base_path must be an absolute shared-storage path")
 
+    control_path = str(payload.get("job_control_path", "")).strip()
+    status_path = str(payload.get("job_status_path", "")).strip()
+    if bool(control_path) != bool(status_path):
+        raise ValueError("job control and status paths must be supplied together")
+    if control_path and (not os.path.isabs(control_path) or not os.path.isabs(status_path)):
+        raise ValueError("job control and status paths must be absolute")
+
+    # Avoid library metadata calls and downloader/shared-memory setup when a
+    # cancellation request is already waiting.
+    if _cancel_requested(control_path):
+        _write_job_status(status_path, "cancelled", phase="cancelled")
+        return {"cancelled": True, "app_name": app_name}
+
     game = core.get_game(app_name, update_meta=True, platform="Windows")
     if not game:
         raise ValueError("This title is not available in the Windows Epic library")
     if game.third_party_store:
         raise ValueError("This title requires a third-party store and cannot be installed by Legendary")
+    # Metadata lookup may take time; re-check before allocating downloader state.
+    if _cancel_requested(control_path):
+        _write_job_status(status_path, "cancelled", phase="cancelled")
+        return {"cancelled": True, "app_name": app_name}
 
     dlm, analysis, installed_game = core.prepare_download(
         game,
@@ -161,15 +178,7 @@ def _install(core, payload):
     if conditions.failures:
         raise RuntimeError("; ".join(sorted(conditions.failures)))
 
-    control_path = str(payload.get("job_control_path", "")).strip()
-    status_path = str(payload.get("job_status_path", "")).strip()
-    if bool(control_path) != bool(status_path):
-        raise ValueError("job control and status paths must be supplied together")
-    if control_path and (not os.path.isabs(control_path) or not os.path.isabs(status_path)):
-        raise ValueError("job control and status paths must be absolute")
-
-    # Honor a request that arrived while metadata/installation analysis ran.
-    # Do not create downloader threads or mmap state when cancellation is already set.
+    # Honor a request that arrived while downloader analysis ran.
     if _cancel_requested(control_path):
         _write_job_status(status_path, "cancelled", phase="cancelled")
         return {"cancelled": True, "app_name": app_name}
@@ -305,6 +314,7 @@ def _runtime_self_test():
     import tempfile
     from queue import Queue
     from threading import Condition, Thread
+    from types import SimpleNamespace
 
     import certifi
     import filelock
@@ -315,6 +325,33 @@ def _runtime_self_test():
     from legendary.downloader.mp.manager import DLManager
     from legendary.downloader.mp.workers import DLWorker, FileWorker
     from legendary.models.downloading import AnalysisResult, FileTask, TaskFlags, TerminateWorkerTask, WriterTaskResult
+
+    # Cancellation signalled before preparation must not allocate a downloader
+    # or its shared-memory mapping. This uses a fake core and never contacts Epic.
+    class CancelledInstallCore:
+        def login(self):
+            return True
+        def get_game(self, *args, **kwargs):
+            return SimpleNamespace(third_party_store="")
+        def prepare_download(self, *args, **kwargs):
+            raise AssertionError("cancelled install unexpectedly prepared downloader")
+
+    with tempfile.TemporaryDirectory(prefix="epic-cancel-before-prepare-") as cancel_dir:
+        control_path = os.path.join(cancel_dir, "control.json")
+        status_path = os.path.join(cancel_dir, "status.json")
+        with open(control_path, "w", encoding="utf-8") as control:
+            json.dump({"cancel": True}, control)
+        cancelled_result = _install(CancelledInstallCore(), {
+            "app_name": "cancel-smoke",
+            "base_path": cancel_dir,
+            "job_control_path": control_path,
+            "job_status_path": status_path,
+        })
+        if not cancelled_result.get("cancelled"):
+            raise RuntimeError("preparation-stage cancellation was not honored")
+        with open(status_path, "r", encoding="utf-8") as status:
+            if json.load(status).get("state") != "cancelled":
+                raise RuntimeError("preparation-stage cancellation status was not published")
 
     core = _core()
     if not isinstance(core, LegendaryCore):
