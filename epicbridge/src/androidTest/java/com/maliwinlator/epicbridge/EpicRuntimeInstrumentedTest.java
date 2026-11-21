@@ -41,6 +41,45 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void concurrentJobReservationsAdmitExactlyOneWinner() throws Exception {
+        final int contenders = 16;
+        final java.util.concurrent.CountDownLatch ready =
+                new java.util.concurrent.CountDownLatch(contenders);
+        final java.util.concurrent.CountDownLatch start =
+                new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.atomic.AtomicInteger winners =
+                new java.util.concurrent.atomic.AtomicInteger();
+        final java.util.concurrent.atomic.AtomicReference<String> winnerId =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.List<Thread> threads = new java.util.ArrayList<>();
+        for (int i = 0; i < contenders; i++) {
+            final String candidate = java.util.UUID.randomUUID().toString();
+            Thread thread = new Thread(() -> {
+                ready.countDown();
+                try {
+                    start.await();
+                    if (EpicRuntimeService.reserveJob(candidate)) {
+                        winners.incrementAndGet();
+                        winnerId.set(candidate);
+                    }
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            threads.add(thread);
+            thread.start();
+        }
+        ready.await();
+        start.countDown();
+        for (Thread thread : threads) thread.join();
+        assertEquals(1, winners.get());
+        EpicRuntimeService.releaseJobReservation(winnerId.get());
+        String probe = java.util.UUID.randomUUID().toString();
+        assertTrue(EpicRuntimeService.reserveJob(probe));
+        EpicRuntimeService.releaseJobReservation(probe);
+    }
+
+    @Test
     public void cancellationControlSnapshotIsAtomicallyReplaced() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File directory = new File(context.getCacheDir(), "epic-cancel-test-" + java.util.UUID.randomUUID());
