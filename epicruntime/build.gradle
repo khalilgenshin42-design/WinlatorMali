@@ -47,6 +47,3 @@ tasks.configureEach {
     if (name == 'preBuild') dependsOn(':epicbridge:stageEpicPythonRuntime')
 }
 
-dependencies {
-    implementation 'androidx.core:core:1.12.0'
-}
