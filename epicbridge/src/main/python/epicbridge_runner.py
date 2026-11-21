@@ -164,6 +164,12 @@ def _install(core, payload):
     if control_path and (not os.path.isabs(control_path) or not os.path.isabs(status_path)):
         raise ValueError("job control and status paths must be absolute")
 
+    # Honor a request that arrived while metadata/installation analysis ran.
+    # Do not create downloader threads or mmap state when cancellation is already set.
+    if _cancel_requested(control_path):
+        _write_job_status(status_path, "cancelled", phase="cancelled")
+        return {"cancelled": True, "app_name": app_name}
+
     _write_job_status(status_path, "running", phase="preparing", progress=0)
     dlm.start()
     cancelled = False
@@ -210,6 +216,10 @@ def _install(core, payload):
 
     if dlm.is_alive():
         raise RuntimeError("Legendary download worker did not stop")
+    # Close the race where cancellation arrives as the final downloader worker
+    # exits: the loop condition can become false before observing the control file.
+    if not cancelled and _cancel_requested(control_path):
+        cancelled = True
     if cancelled:
         _write_job_status(status_path, "cancelled", phase="cancelled")
         return {"cancelled": True, "app_name": app_name}
