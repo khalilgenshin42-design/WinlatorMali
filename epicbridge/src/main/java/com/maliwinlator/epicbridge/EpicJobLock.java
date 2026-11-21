@@ -8,6 +8,9 @@ import java.io.FileDescriptor;
 
 /** Cross-runtime advisory lock for one Epic job's cancel/install phase boundary. */
 final class EpicJobLock implements AutoCloseable {
+    // Linux <sys/file.h> flock operation values; Android SDK omits these names.
+    private static final int LOCK_EX = 2;
+    private static final int LOCK_UN = 8;
     private final FileDescriptor descriptor;
 
     private EpicJobLock(FileDescriptor descriptor) {
@@ -22,7 +25,7 @@ final class EpicJobLock implements AutoCloseable {
         FileDescriptor descriptor = Os.open(file.getAbsolutePath(),
                 OsConstants.O_CREAT | OsConstants.O_RDWR, 0600);
         try {
-            Os.flock(descriptor, OsConstants.LOCK_EX);
+            Os.flock(descriptor, LOCK_EX);
             return new EpicJobLock(descriptor);
         } catch (Exception failure) {
             try { Os.close(descriptor); } catch (Exception ignored) {}
@@ -33,7 +36,7 @@ final class EpicJobLock implements AutoCloseable {
     @Override
     public void close() throws Exception {
         try {
-            Os.flock(descriptor, OsConstants.LOCK_UN);
+            Os.flock(descriptor, LOCK_UN);
         } finally {
             Os.close(descriptor);
         }
