@@ -147,7 +147,7 @@ public final class EpicBridgeProvider extends ContentProvider {
                 return result;
             }
             try (FileOutputStream output = new FileOutputStream(new File(controlPath), false)) {
-                output.write("{\\"cancel\\":true}".getBytes(StandardCharsets.UTF_8));
+                output.write("{\"cancel\":true}".getBytes(StandardCharsets.UTF_8));
                 output.getFD().sync();
                 result.putBoolean("ok", true);
                 result.putString("state", "cancelling");
