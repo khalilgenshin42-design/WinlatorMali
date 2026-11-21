@@ -117,6 +117,7 @@ public final class EpicRuntimeService extends Service {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString(jobId + ".state", "running")
                 .putString(jobId + ".result", "")
+                .putString(jobId + ".command", command)
                 .putString(jobId + ".control_path", controlFile.getAbsolutePath())
                 .putString(jobId + ".status_path", statusFile.getAbsolutePath())
                 .putLong(jobId + ".started_at", System.currentTimeMillis())
