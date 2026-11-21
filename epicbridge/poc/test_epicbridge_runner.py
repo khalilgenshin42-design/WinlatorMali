@@ -139,10 +139,12 @@ class InstallJobControlTests(unittest.TestCase):
             install_game=lambda *args: {},
         )
         with tempfile.TemporaryDirectory() as directory:
+            control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
             with patch.object(runner, "_write_job_status",
                               wraps=runner._write_job_status) as write_status:
                 runner._install(core, {"app_name": "TEST", "base_path": "/games",
+                                       "job_control_path": control,
                                        "job_status_path": status})
             self.assertIsNotNone(received.get("status_q"))
             self.assertTrue(any(
