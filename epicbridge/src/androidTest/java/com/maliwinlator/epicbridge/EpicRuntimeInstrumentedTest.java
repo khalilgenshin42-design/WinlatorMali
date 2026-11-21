@@ -39,6 +39,31 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void cancellationControlSnapshotIsAtomicallyReplaced() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File directory = new File(context.getCacheDir(), "epic-cancel-test-" + java.util.UUID.randomUUID());
+        assertTrue(directory.mkdirs());
+        File control = new File(directory, "job.control.json");
+        try {
+            try (java.io.FileOutputStream output = new java.io.FileOutputStream(control)) {
+                output.write("{\"cancel\":false}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                output.getFD().sync();
+            }
+            EpicBridgeProvider.writeCancelRequest(control);
+            JSONObject snapshot = new JSONObject(new String(
+                    java.nio.file.Files.readAllBytes(control.toPath()),
+                    java.nio.charset.StandardCharsets.UTF_8));
+            assertTrue(snapshot.getBoolean("cancel"));
+            String[] remaining = directory.list();
+            assertTrue(remaining != null && remaining.length == 1
+                    && "job.control.json".equals(remaining[0]));
+        } finally {
+            control.delete();
+            directory.delete();
+        }
+    }
+
+    @Test
     public void bundledRuntimeLoadsAndPassesNativeSelfTest() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
