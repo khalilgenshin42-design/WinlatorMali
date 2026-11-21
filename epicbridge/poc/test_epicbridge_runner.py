@@ -196,6 +196,7 @@ class InstallJobControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
+            lock = os.path.join(directory, "job.lock")
             with open(control, "w", encoding="utf-8") as output:
                 json.dump({"cancel": True}, output)
             result = runner._install(core, {
@@ -231,11 +232,13 @@ class InstallJobControlTests(unittest.TestCase):
         # First poll (pre-start) is false; final post-worker poll sees cancellation.
         with tempfile.TemporaryDirectory() as directory:
             status = os.path.join(directory, "status.json")
+            lock = os.path.join(directory, "job.lock")
             with patch.object(runner, "_cancel_requested", side_effect=[False, True]):
                 result = runner._install(core, {
                     "app_name": "TEST", "base_path": "/games",
                     "job_control_path": os.path.join(directory, "control.json"),
                     "job_status_path": status,
+                    "job_lock_path": lock,
                 })
             self.assertTrue(result["cancelled"])
             self.assertEqual(install_game_called, [])
@@ -281,6 +284,7 @@ class InstallJobControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
+            lock = os.path.join(directory, "job.lock")
             # Three early gates pass; cancellation remains asserted while the
             # worker takes multiple join cycles to exit.
             cancel_polls = [False, False, False, True] + [True] * 8
@@ -288,6 +292,7 @@ class InstallJobControlTests(unittest.TestCase):
                 result = runner._install(core, {
                     "app_name": "TEST", "base_path": "/games",
                     "job_control_path": control, "job_status_path": status,
+                    "job_lock_path": lock,
                 })
             self.assertTrue(result["cancelled"])
             self.assertEqual(downloader.stop_calls, 1)
