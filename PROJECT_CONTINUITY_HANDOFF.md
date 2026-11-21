@@ -1628,3 +1628,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 1. Inspect the actual CI instrumentation invocation/report to record exact test cases and improve provider/service lifecycle coverage.
 2. Investigate service stop/restart edge cases and ensure stale persisted running state cannot be mistaken for a live job.
 3. Device acceptance remains required for cross-package provider permission, Epic authentication, library, install/cancel/retry, update/uninstall, launch and persistence.
+
+
+## Engineering step log — 2026-11-21: unify cancellation eligibility
+
+- Refactored cancellation gating into `EpicRuntimeService.isJobCancellable(jobId, state, command)`. Both provider `cancel_job` and `job_status.can_cancel` now use the same rule: the job must be in the in-memory active set, persisted state must be `running`, and command must be `install`.
+- Added instrumentation coverage for active versus inactive reservations and running, queued, complete, cancelled, and uninstall states.
+- Source commits: service `814c58d75ea184b77eb9cb16a003a3da32f44788`; provider `113707fc922bb9c7327d79d1d6af0d51cbcc9721`; instrumentation `d6c13af90df73429da17bdb74cee6e4965496ae8`.
+- This is a consistency/testability refactor, not proof of real cross-process cancellation or downloader teardown. Await CI on the latest source commit before treating it as validated.
