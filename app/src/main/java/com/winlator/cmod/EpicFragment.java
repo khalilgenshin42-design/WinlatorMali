@@ -658,8 +658,8 @@ public final class EpicFragment extends Fragment {
         try {
             payload.put("app_name", appName);
             payload.put("base_path", basePath.getAbsolutePath());
-            payload.put("max_workers", 4);
-            payload.put("max_shared_memory_mib", 512);
+            payload.put("max_workers", 2);
+            payload.put("max_shared_memory_mib", 256);
         } catch (Exception ignored) {}
         statusText.setText((update ? "Updating " : "Installing ") + title +
                 ". The foreground download service keeps working if you leave this tab.");
