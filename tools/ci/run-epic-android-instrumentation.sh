@@ -43,3 +43,22 @@ else
   adb logcat -d -s EpicPythonRuntime:E EpicBridgePython:E python:E AndroidRuntime:E || true
   exit "$test_status"
 fi
+
+# Exercise the real cross-package Binder boundary under the production host
+# package ID and a separate Android UID. Both debug APKs are signed by the
+# same CI debug keystore; the host fixture requests the bridge signature
+# permission and calls the exported provider through ContentResolver.
+./gradlew --no-daemon --stacktrace \
+  :epicbridge-host-test:assembleDebug \
+  :epicbridge-host-test:assembleDebugAndroidTest
+
+HOST_APK="epicbridge-host-test/build/outputs/apk/debug/epicbridge-host-test-debug.apk"
+HOST_TEST_APK="epicbridge-host-test/build/outputs/apk/androidTest/debug/epicbridge-host-test-debug-androidTest.apk"
+test -s "$HOST_APK"
+test -s "$HOST_TEST_APK"
+adb install -r "$HOST_APK"
+adb install -r "$HOST_TEST_APK"
+adb shell am instrument -w -r \
+  -e class com.maliwinlator.epicbridge.hosttest.EpicBridgeCrossPackageTest \
+  com.maliwinlator.app.test/androidx.test.runner.AndroidJUnitRunner
+echo "Epic Bridge cross-package Binder integration passed."
