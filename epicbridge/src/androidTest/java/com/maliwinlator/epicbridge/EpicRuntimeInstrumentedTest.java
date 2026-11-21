@@ -75,11 +75,15 @@ public final class EpicRuntimeInstrumentedTest {
         assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
         assertTrue(EpicRuntimeService.reserveJob(jobId));
         try {
-            assertTrue(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
-            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "queued", "install"));
-            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "complete", "install"));
-            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "uninstall"));
-            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "cancelled", "install"));
+            assertTrue(EpicRuntimeService.isJobCancellable(jobId, "running", "install", "preparing"));
+            assertTrue(EpicRuntimeService.isJobCancellable(jobId, "running", "install", "downloading"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install", "stopping"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install", "installing"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install", null));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "queued", "install", "downloading"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "complete", "install", "downloading"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "uninstall", "downloading"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "cancelled", "install", "downloading"));
         } finally {
             EpicRuntimeService.releaseJobReservation(jobId);
         }
