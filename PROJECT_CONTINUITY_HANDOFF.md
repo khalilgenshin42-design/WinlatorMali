@@ -1567,3 +1567,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Fixed by passing a thread-safe `queue.Queue()` as `status_q` to `prepare_download`. The Android patch already changes Legendary core's Queue import from `multiprocessing.Queue` to `queue.Queue`, matching the thread-based manager. Commit: `5e9eca3aca8e3071e9c7c5ceb16d47a3704a0f04`.
 - Added a regression test that asserts a queue is injected, fake Legendary `UIUpdate` metrics are drained, and the progress snapshot includes the percentage and download speed. Commit: `fad0cd61037a9019dbf75818801e7d3bce1138be`.
 - This supersedes the CI runs for earlier commits. Fresh Epic runtime and standard APK workflows must pass on the latest source. Progress is now wired in source but not yet CI-validated or device-validated. Provider/service cancellation IPC authorization and service restart behavior remain test gaps; no Xiaomi 15T acceptance test has been performed.
+
+
+## 2026-11-21 — Fix progress queue import scope after CI
+- Latest Epic runtime workflow #44849647302 failed its Python regression suite: all four install-control tests raised `NameError: Queue is not defined` when `_install` called `prepare_download(status_q=Queue())`. Root cause: `Queue` was imported locally inside `_runtime_self_test()`, not at module scope. This is a real implementation failure, not a flaky test.
+- Added module-level `from queue import Queue` in commit `9af13111d5e67ec85c279c5719e720314616a3c9`. The standard APK workflow #44849647306 passed all 13 steps, but it does not validate the Epic Python runtime and does not clear the Epic failure. The runtime workflow #44849647302 failed; no Epic APK from it is installable/verified.
+- New Epic runtime and standard APK CI must run on the import fix. The progress queue regression test remains enabled. No device acceptance has been performed.
