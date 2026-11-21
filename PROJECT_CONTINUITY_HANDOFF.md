@@ -1723,3 +1723,7 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Moved paired control/status path validation to the beginning of `_install()`, added a pre-metadata cancellation check, and re-checks immediately after game metadata lookup but before `prepare_download()`. Cancellation already waiting therefore returns without constructing downloader state or allocating its shared buffer.
 - Extended the Android runtime self-test with a fake core whose `prepare_download()` raises if called; a pre-signalled cancel must return `cancelled` and publish a cancelled status snapshot. The fake does not contact Epic or start worker threads.
 - Source commit: `412e39a377c00885d6421499a000d3f3c8e50629`. This extends the phase-aware cancellation work above and is not CI-validated yet; a fresh Epic runtime workflow on this source tip must execute the expanded runtime self-test.
+
+
+- Refined the runtime self-test to cover both early-cancel cases: an already-signalled request skips metadata lookup entirely, while a request created during fake metadata lookup is observed before `prepare_download()`. The fake asserts that downloader/shared-memory setup is never reached in either case.
+- Test refinement commit: `75cbdc478c09527be5fc7530e5ccf6ce8317e4be`; fresh Epic runtime CI is required on this exact source tip.
