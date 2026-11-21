@@ -9,6 +9,12 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+
 public final class EpicBridgeProvider extends ContentProvider {
     public static final String AUTHORITY = "com.maliwinlator.epicbridge.provider";
     public static final int PROTOCOL_VERSION = 2;
@@ -123,6 +129,36 @@ public final class EpicBridgeProvider extends ContentProvider {
             return result;
         }
 
+        if ("cancel_job".equals(method)) {
+            String jobId = arg == null ? "" : arg;
+            android.content.SharedPreferences prefs = getContext().getSharedPreferences(
+                    EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
+            if (!EpicRuntimeService.isJobActive(jobId)
+                    || !"running".equals(prefs.getString(jobId + ".state", "unknown"))) {
+                result.putBoolean("ok", false);
+                result.putString("error", "JOB_NOT_CANCELLABLE");
+                result.putString("message", "The Epic job is no longer running");
+                return result;
+            }
+            String controlPath = prefs.getString(jobId + ".control_path", "");
+            if (controlPath.isEmpty()) {
+                result.putBoolean("ok", false);
+                result.putString("error", "JOB_CONTROL_UNAVAILABLE");
+                return result;
+            }
+            try (FileOutputStream output = new FileOutputStream(new File(controlPath), false)) {
+                output.write("{\\"cancel\\":true}".getBytes(StandardCharsets.UTF_8));
+                output.getFD().sync();
+                result.putBoolean("ok", true);
+                result.putString("state", "cancelling");
+            } catch (Exception failure) {
+                result.putBoolean("ok", false);
+                result.putString("error", "JOB_CONTROL_WRITE_FAILED");
+                result.putString("message", "Unable to request Epic job cancellation");
+            }
+            return result;
+        }
+
         if ("job_status".equals(method)) {
             String jobId = arg == null ? "" : arg;
             android.content.SharedPreferences prefs = getContext().getSharedPreferences(
@@ -141,6 +177,21 @@ public final class EpicBridgeProvider extends ContentProvider {
             result.putString("job_id", jobId);
             result.putString("state", jobState);
             result.putString("result_json", prefs.getString(jobId + ".result", ""));
+            String statusPath = prefs.getString(jobId + ".status_path", "");
+            if (!statusPath.isEmpty()) {
+                File statusFile = new File(statusPath);
+                if (statusFile.isFile() && statusFile.length() <= 8192) {
+                    try (FileInputStream input = new FileInputStream(statusFile);
+                         ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                        byte[] chunk = new byte[1024];
+                        int count;
+                        while ((count = input.read(chunk)) != -1) buffer.write(chunk, 0, count);
+                        result.putString("progress_json", buffer.toString("UTF-8"));
+                    } catch (Exception ignored) {
+                        // Progress is best-effort; terminal job state remains authoritative.
+                    }
+                }
+            }
             return result;
         }
 
