@@ -41,6 +41,23 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void cancellationEligibilityRequiresAnActiveRunningInstall() {
+        String jobId = java.util.UUID.randomUUID().toString();
+        assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
+        assertTrue(EpicRuntimeService.reserveJob(jobId));
+        try {
+            assertTrue(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "queued", "install"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "complete", "install"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "uninstall"));
+            assertFalse(EpicRuntimeService.isJobCancellable(jobId, "cancelled", "install"));
+        } finally {
+            EpicRuntimeService.releaseJobReservation(jobId);
+        }
+        assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
+    }
+
+    @Test
     public void concurrentJobReservationsAdmitExactlyOneWinner() throws Exception {
         final int contenders = 16;
         final java.util.concurrent.CountDownLatch ready =
