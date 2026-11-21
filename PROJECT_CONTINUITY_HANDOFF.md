@@ -1727,3 +1727,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Refined the runtime self-test to cover both early-cancel cases: an already-signalled request skips metadata lookup entirely, while a request created during fake metadata lookup is observed before `prepare_download()`. The fake asserts that downloader/shared-memory setup is never reached in either case.
 - Test refinement commit: `75cbdc478c09527be5fc7530e5ccf6ce8317e4be`; fresh Epic runtime CI is required on this exact source tip.
+
+## 2026-11-21 — Correct downloader-cancellation regression test after early guards
+
+- Epic runtime CI run `44909466762` failed in the host-side Legendary regression suite, specifically `test_cancelled_install_stops_downloader_and_skips_install_game`, at the assertion that the fake downloader's `stop()` had been called. The standard Android APK workflow `44909466750` passed all 13 steps.
+- Root cause: the test's mocked `_cancel_requested` sequence `[False, True]` was written before `_install()` gained two earlier cancellation gates (before metadata and after metadata). The second `True` now correctly cancels before downloader creation, so the assertion about stopping an active downloader was no longer exercising its intended scenario.
+- Updated the test sequence to `[False, False, False, True]`: initial guard clear, post-metadata guard clear, post-preparation guard clear, then cancellation in the active downloader loop. The separate metadata-stage fake-core self-tests remain responsible for proving cancellation before downloader allocation.
+- Test-only commit: `6706768df9db4dd2d436182d23120c6db49efe6e`. Fresh Epic CI is required; no claim of validation until its regression suite and Android instrumentation pass.
