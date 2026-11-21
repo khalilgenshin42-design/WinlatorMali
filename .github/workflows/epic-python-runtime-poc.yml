@@ -292,7 +292,11 @@ jobs:
           test -s "$RUNTIME_AAR"
           unzip -l "$RUNTIME_AAR" | grep -F 'assets/python/lib/python3.15/os.py'
           unzip -l "$RUNTIME_AAR" | grep -F 'jni/arm64-v8a/libepic_python.so'
-          unzip -l "$RUNTIME_AAR" | grep -F 'EpicRuntimeService'
+          # Android AARs store compiled Java classes inside classes.jar;
+          # unzip -l only lists the nested archive, not its class entries.
+          unzip -p "$RUNTIME_AAR" classes.jar > "$RUNNER_TEMP/epicruntime-classes.jar"
+          jar tf "$RUNNER_TEMP/epicruntime-classes.jar" | grep -Fx 'com/maliwinlator/epicbridge/EpicRuntimeService.class'
+          jar tf "$RUNNER_TEMP/epicruntime-classes.jar" | grep -Fx 'com/maliwinlator/epicbridge/EpicBridgeProvider.class'
           BRIDGE_APK="$PWD/epicbridge/build/outputs/apk/debug/epicbridge-debug.apk"
           HOST_APK="$PWD/app/build/outputs/apk/standard/debug/app-standard-debug.apk"
           test -s "$BRIDGE_APK" && test -s "$HOST_APK"
