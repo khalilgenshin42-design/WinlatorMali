@@ -1573,3 +1573,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Latest Epic runtime workflow #44849647302 failed its Python regression suite: all four install-control tests raised `NameError: Queue is not defined` when `_install` called `prepare_download(status_q=Queue())`. Root cause: `Queue` was imported locally inside `_runtime_self_test()`, not at module scope. This is a real implementation failure, not a flaky test.
 - Added module-level `from queue import Queue` in commit `9af13111d5e67ec85c279c5719e720314616a3c9`. The standard APK workflow #44849647306 passed all 13 steps, but it does not validate the Epic Python runtime and does not clear the Epic failure. The runtime workflow #44849647302 failed; no Epic APK from it is installable/verified.
 - New Epic runtime and standard APK CI must run on the import fix. The progress queue regression test remains enabled. No device acceptance has been performed.
+
+
+## 2026-11-21 — Correct Epic progress regression fixture
+- Latest Epic runtime run #44850116987 failed only in `test_legendary_status_queue_is_connected_and_progress_is_published`; the test supplied `job_status_path` without the paired `job_control_path`. Production `_install()` correctly rejects mismatched control/status paths. The earlier diagnosis of a progress-queue implementation fault was incorrect; the module-level Queue import fix worked and the failure was a stale/incomplete test fixture.
+- Standard APK workflow #44850117068 passed all 13 steps.
+- Updated the progress test to supply both temporary control and status paths, preserving the production invariant. Commit: `8f4f0dd7eb7f374c3fc63082bcd440b49b730a84`.
+- Fresh Epic runtime and standard APK CI must pass on this revision. No Epic artifact from failed run #44850116987 is verified for installation. Xiaomi 15T device acceptance remains outstanding.
