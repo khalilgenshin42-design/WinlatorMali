@@ -1596,3 +1596,19 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Follow-up review found provider progress reads used a file-length precheck followed by an unbounded read. A concurrent file growth could bypass the precheck and return a larger-than-intended snapshot. Extracted `readProgressSnapshot(File)`, which enforces the 8192-byte cap while streaming and treats missing/read-failure/oversized snapshots as best-effort absence. Provider now uses that helper.
 - Added Android instrumentation for normal snapshot reads, >8192-byte rejection, and missing-file handling. Commits: `576666c` provider helper and bounded read; `1ae9b96` instrumentation; `8b298eb` corrected the test's literal JSON fixture after source inspection.
 - These changes are not CI-validated yet. Fresh Epic runtime and standard APK workflows should run on the latest branch tip. Provider-to-service cancellation IPC and real device network install remain untested; do not mark Epic complete.
+
+
+## Engineering step log — 2026-11-21: bounded progress snapshot CI and reservation race coverage
+
+- The bounded progress snapshot reader and its instrumentation test were validated by Epic runtime workflow **44852218634** (32/32 steps, success) and standard APK workflow **44852218596** (13/13 steps, success). The Epic workflow includes the packaged CPython/Legendary ARM64 and x86_64 runtime checks and the instrumented test stage.
+- Added an instrumentation stress test, `concurrentJobReservationsAdmitExactlyOneWinner()`, which releases 16 competing threads simultaneously against the single-job reservation gate and verifies exactly one reservation wins and that the slot is reusable after release.
+- Test commit: `9f7d0ae1a3600dc6ad9f77598bc70d1dc03aef7f`.
+- This new concurrency test has **not yet run in CI**; the next CI pair must validate it. The previous passing runs do not include this latest test commit.
+- Lifecycle review note: `EpicRuntimeService.onDestroy()` marks persisted running jobs as interrupted, clears in-memory reservations, interrupts the executor, and releases the wake lock. This is process/service teardown recovery, not proof that an in-flight native Python call can be cooperatively cancelled by Java. The established cancellation path remains the private atomic control-file signal polled by Python; do not introduce a second JNI cancellation call while the synchronized runtime call owns the Python GIL.
+- Authorization note: the provider enforces the exact host package by Binder UID package lookup and also declares a signature-level provider permission. Existing instrumentation only unit-tests the package allowlist helper; it does not yet exercise a real cross-package Binder call under the host UID.
+- No Xiaomi 15T device acceptance was performed in this step. The passing workflows produce debug/test artifacts, not a production-signed release.
+
+### Next actions
+1. Run and inspect Epic runtime plus standard APK workflows for commit `9f7d0ae1a3600dc6ad9f77598bc70d1dc03aef7f`.
+2. If green, record test count/artifact evidence, then continue reviewing service restart and cancellation edge cases.
+3. Keep real device validation gates explicit: login, library, install/cancel/retry, update, uninstall, launch, and persistence.
