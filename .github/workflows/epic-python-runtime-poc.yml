@@ -10,6 +10,7 @@ on:
       - 'epicbridge/poc/patch_legendary_android.py'
       - 'epicbridge/poc/requirements-android.txt'
       - 'epicbridge/**'
+      - 'epicruntime/**'
       - 'epicbridge/build.gradle'
       - 'tools/ci/run-epic-android-instrumentation.sh'
       - 'app/src/main/java/**/Epic*.java'
@@ -281,11 +282,16 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: bash maliwinlator/tools/ci/run-epic-android-instrumentation.sh
 
-      - name: Build ARM64 Epic companion and MaliWinlator host APK
+      - name: Build ARM64 Epic runtime library, companion fallback and MaliWinlator host APK
         working-directory: maliwinlator
         run: |
           set -euo pipefail
-          ./gradlew --no-daemon --stacktrace :app:assembleStandardDebug -PepicRuntimeAbi=arm64-v8a -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
+          ./gradlew --no-daemon --stacktrace :epicruntime:assembleDebug :app:assembleStandardDebug -PepicRuntimeAbi=arm64-v8a -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
+          RUNTIME_AAR="$PWD/epicruntime/build/outputs/aar/epicruntime-debug.aar"
+          test -s "$RUNTIME_AAR"
+          unzip -l "$RUNTIME_AAR" | grep -F 'assets/python/lib/python3.15/os.py'
+          unzip -l "$RUNTIME_AAR" | grep -F 'jni/arm64-v8a/libepic_python.so'
+          unzip -l "$RUNTIME_AAR" | grep -F 'EpicRuntimeService'
           BRIDGE_APK="$PWD/epicbridge/build/outputs/apk/debug/epicbridge-debug.apk"
           HOST_APK="$PWD/app/build/outputs/apk/standard/debug/app-standard-debug.apk"
           test -s "$BRIDGE_APK" && test -s "$HOST_APK"
