@@ -1580,3 +1580,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Standard APK workflow #44850117068 passed all 13 steps.
 - Updated the progress test to supply both temporary control and status paths, preserving the production invariant. Commit: `8f4f0dd7eb7f374c3fc63082bcd440b49b730a84`.
 - Fresh Epic runtime and standard APK CI must pass on this revision. No Epic artifact from failed run #44850116987 is verified for installation. Xiaomi 15T device acceptance remains outstanding.
+
+
+## 2026-11-21 — Progress queue fixture correction passed full CI
+- Source revision `8f4f0dd7eb7f374c3fc63082bcd440b49b730a84` corrected the progress regression fixture to supply both paired private job paths (`job_control_path` and `job_status_path`).
+- Epic runtime workflow #44850573339 completed successfully: 32/32 steps. Managed Android x86_64 instrumentation ran five tests and passed; CPython 3.15.2 x86_64 + ARM64 runtime packaging/audits, Legendary 0.21.1 tests, ARM64 host/companion APK build, signer/ABI/native dependency audits, and artifact uploads also passed. Run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44850573339 .
+- Standard APK workflow #44850573454 completed successfully: 13/13 steps. Run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44850573454 .
+- Artifacts: Epic debug bundle `maliwinlator-1.2.1-epic-arm64-debug`, artifact ID 14685766210, 507,998,374 bytes, archive SHA-256 `bd824708210cda4729867e0af42ea6f0c1249cf4470e4743b918cb8d25c99983`; CPython ARM64 POC artifact ID 14686180188, 49,958,118 bytes, SHA-256 `6967f649f7c46b960abd7cb9ecd09f279b298f3daf951c1c022cc27455474855`; standard debug bundle artifact ID 14684818389, 446,694,569 bytes, SHA-256 `451a877a0c3c3157c06ce57efd1b494560454c8de4954e2bd432f68023f2cea0`.
+- These remain debug/test artifacts and managed-emulator CI evidence, not real Xiaomi 15T acceptance. Current Android instrumentation still does not execute an authenticated host-UID provider call through the full provider-to-service cancellation path, nor does it validate actual download progress/cancel races or service process-death behavior. Do not call Epic complete.
+- Next: add focused instrumentation for provider job-state/cancel gating and progress JSON parsing, improve service interruption cleanup semantics, then rerun Epic + standard CI. Device acceptance still needs login/signout, library, install/progress/cancel/retry, update, uninstall, selected-container launch, persistence/shortcuts, and separate fallback-launcher validation.
