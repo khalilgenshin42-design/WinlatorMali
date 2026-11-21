@@ -1,15 +1,15 @@
 # Epic APK CI status
 - Result: **SUCCESS**
 - Run attempt: 1
-- Source commit: 8b298eb25df9916fdf825382396bd8d84a542260
-- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44852218634
-- GitHub prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-8b298eb25df9
-- Actions artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44852218634/artifacts/14685519450
+- Source commit: 9f7d0ae1a3600dc6ad9f77598bc70d1dc03aef7f
+- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44854159631
+- GitHub prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-9f7d0ae1a360
+- Actions artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44854159631/artifacts/14687550549
 - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
 - Built host package: com.maliwinlator.app (versionCode 24)
 - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
 - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
 
 ## APK SHA-256
-- 8e906bae830fa2eadb51cd6b3784c7a08ef598575070ae1497ab58b3a3bc5c05  app-standard-debug.apk
-- d4e4cbdf9b61c106aa2da95603241b24a9fbc0f9370d1f3324db790593396fbf  epicbridge-debug.apk
+- b806c386c8e8c67fec6ecdd5a489b23aac3cfcfcec947da58dfd0ffe02ff20b5  app-standard-debug.apk
+- d8d1156f4f6aa250e4117f155618dcb4bf1a85a169dd250ba514543423923c27  epicbridge-debug.apk
