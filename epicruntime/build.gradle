@@ -1,0 +1,52 @@
+plugins {
+    alias(libs.plugins.android.library)
+}
+
+def epicRuntimePrefix = rootProject.findProperty('epicRuntimePrefix') ?: System.getenv('EPIC_RUNTIME_PREFIX')
+def epicRuntimeAbi = rootProject.findProperty('epicRuntimeAbi') ?: 'arm64-v8a'
+def stagedRuntime = project(':epicbridge').layout.buildDirectory.dir('generated/epicRuntime')
+
+android {
+    namespace 'com.maliwinlator.epicbridge'
+    compileSdk 34
+    ndkVersion '29.0.14206865'
+
+    defaultConfig {
+        minSdk 26
+        ndk { abiFilters epicRuntimeAbi }
+        externalNativeBuild {
+            cmake { arguments "-DPYTHON_PREFIX_DIR=${epicRuntimePrefix ?: ''}" }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path '../epicbridge/src/main/c/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ['../epicbridge/src/main/java']
+                exclude '**/MainActivity.java'
+            }
+            assets.srcDir(stagedRuntime.map { it.dir('assets') })
+            jniLibs.srcDir(stagedRuntime.map { it.dir('jniLibs') })
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.configureEach {
+    if (name == 'preBuild') dependsOn(':epicbridge:stageEpicPythonRuntime')
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.12.0'
+}
