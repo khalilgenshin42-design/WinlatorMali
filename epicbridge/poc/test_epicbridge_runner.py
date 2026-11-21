@@ -98,6 +98,59 @@ class InstallJobControlTests(unittest.TestCase):
             self.assertNotIn("private_path", snapshot)
             self.assertFalse(os.path.exists(path + ".tmp"))
 
+    def test_legendary_status_queue_is_connected_and_progress_is_published(self):
+        class FakeDownloader:
+            def __init__(self):
+                self.alive = False
+                self.status_queue = None
+                self.error = None
+
+            def start(self):
+                self.alive = True
+                self.status_queue.put(SimpleNamespace(
+                    progress=42.5, download_speed=1200,
+                    write_speed=300, read_speed=400,
+                ))
+
+            def is_alive(self):
+                return self.alive
+
+            def join(self, timeout=None):
+                self.alive = False
+
+        downloader = FakeDownloader()
+        fake_game = SimpleNamespace(
+            app_name="TEST", third_party_store=None, title="Test",
+            install_path="/games/Test", executable="test.exe", version="1",
+        )
+        conditions = SimpleNamespace(failures=[], warnings=[])
+        received = {}
+
+        def prepare_download(*args, **kwargs):
+            received.update(kwargs)
+            downloader.status_queue = kwargs["status_q"]
+            return downloader, object(), fake_game
+
+        core = SimpleNamespace(
+            login=lambda: True,
+            get_game=lambda *args, **kwargs: fake_game,
+            prepare_download=prepare_download,
+            check_installation_conditions=lambda *args: conditions,
+            install_game=lambda *args: {},
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            status = os.path.join(directory, "status.json")
+            with patch.object(runner, "_write_job_status",
+                              wraps=runner._write_job_status) as write_status:
+                runner._install(core, {"app_name": "TEST", "base_path": "/games",
+                                       "job_status_path": status})
+            self.assertIsNotNone(received.get("status_q"))
+            self.assertTrue(any(
+                call.kwargs.get("progress") == 42.5
+                and call.kwargs.get("download_speed") == 1200
+                for call in write_status.call_args_list
+            ))
+
     def test_cancel_before_downloader_start_skips_thread_creation(self):
         class FakeDownloader:
             started = False
