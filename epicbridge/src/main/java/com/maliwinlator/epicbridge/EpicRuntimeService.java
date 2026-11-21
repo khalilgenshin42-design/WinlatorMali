@@ -98,6 +98,7 @@ public final class EpicRuntimeService extends Service {
         final String jobPayload;
         final File controlFile;
         final File statusFile;
+        final File lockFile;
         try {
             File jobsDirectory = new File(getFilesDir(), "epic_jobs");
             if (!jobsDirectory.isDirectory() && !jobsDirectory.mkdirs()) {
@@ -111,6 +112,7 @@ public final class EpicRuntimeService extends Service {
             if ("install".equals(command)) {
                 payloadObject.put("job_control_path", controlFile.getAbsolutePath());
                 payloadObject.put("job_status_path", statusFile.getAbsolutePath());
+                payloadObject.put("job_lock_path", lockFile.getAbsolutePath());
             }
             jobPayload = payloadObject.toString();
         } catch (Exception invalidPayload) {
@@ -130,6 +132,7 @@ public final class EpicRuntimeService extends Service {
                 .putString(jobId + ".command", command)
                 .putString(jobId + ".control_path", controlFile.getAbsolutePath())
                 .putString(jobId + ".status_path", statusFile.getAbsolutePath())
+                .putString(jobId + ".lock_path", lockFile.getAbsolutePath())
                 .putLong(jobId + ".started_at", System.currentTimeMillis())
                 .commit();
 
