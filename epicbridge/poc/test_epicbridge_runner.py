@@ -98,6 +98,27 @@ class InstallJobControlTests(unittest.TestCase):
             self.assertNotIn("private_path", snapshot)
             self.assertFalse(os.path.exists(path + ".tmp"))
 
+    def test_job_lock_excludes_other_threads_until_released(self):
+        import threading
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "job.lock")
+            entered = threading.Event()
+            acquired = threading.Event()
+
+            def contender():
+                entered.set()
+                with runner._exclusive_job_lock(path):
+                    acquired.set()
+
+            with runner._exclusive_job_lock(path):
+                thread = threading.Thread(target=contender)
+                thread.start()
+                self.assertTrue(entered.wait(2))
+                self.assertFalse(acquired.wait(0.1))
+            thread.join(2)
+            self.assertFalse(thread.is_alive())
+            self.assertTrue(acquired.is_set())
+
     def test_legendary_status_queue_is_connected_and_progress_is_published(self):
         class FakeDownloader:
             def __init__(self):
@@ -141,11 +162,12 @@ class InstallJobControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             control = os.path.join(directory, "control.json")
             status = os.path.join(directory, "status.json")
+            lock = os.path.join(directory, "job.lock")
             with patch.object(runner, "_write_job_status",
                               wraps=runner._write_job_status) as write_status:
                 runner._install(core, {"app_name": "TEST", "base_path": "/games",
                                        "job_control_path": control,
-                                       "job_status_path": status})
+                                       "job_status_path": status, "job_lock_path": lock})
             self.assertIsNotNone(received.get("status_q"))
             self.assertTrue(any(
                 call.kwargs.get("progress") == 42.5
@@ -179,6 +201,7 @@ class InstallJobControlTests(unittest.TestCase):
             result = runner._install(core, {
                 "app_name": "TEST", "base_path": "/games",
                 "job_control_path": control, "job_status_path": status,
+                    "job_lock_path": lock,
             })
             self.assertTrue(result["cancelled"])
             self.assertFalse(downloader.started)
