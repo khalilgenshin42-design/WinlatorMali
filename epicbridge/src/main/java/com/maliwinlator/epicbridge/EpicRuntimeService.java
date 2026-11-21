@@ -97,12 +97,14 @@ public final class EpicRuntimeService extends Service {
             try {
                 response = EpicPythonRuntime.call(this, command, payload == null ? "{}" : payload);
             } catch (Throwable error) {
-                Log.e(TAG, "Epic install job failed", error);
+                // Throwable messages and stack traces may contain private paths
+                // or sensitive request details; persist only a stable public error.
+                Log.e(TAG, "Epic job failed (exception=" + error.getClass().getSimpleName() + ")");
                 JSONObject failure = new JSONObject();
                 try {
                     failure.put("ok", false);
-                    failure.put("error", error.getClass().getSimpleName());
-                    failure.put("message", error.getMessage() == null ? "Epic install failed" : error.getMessage());
+                    failure.put("error", "EPIC_OPERATION_FAILED");
+                    failure.put("message", "Epic operation failed. Review the app diagnostic log.");
                 } catch (Exception ignored) {}
                 response = failure.toString();
             }
