@@ -72,7 +72,7 @@ public final class EpicRuntimeInstrumentedTest {
     @Test
     public void cancellationEligibilityRequiresAnActiveRunningInstall() {
         String jobId = java.util.UUID.randomUUID().toString();
-        assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
+        assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install", null));
         assertTrue(EpicRuntimeService.reserveJob(jobId));
         try {
             assertTrue(EpicRuntimeService.isJobCancellable(jobId, "running", "install", "preparing"));
@@ -87,7 +87,7 @@ public final class EpicRuntimeInstrumentedTest {
         } finally {
             EpicRuntimeService.releaseJobReservation(jobId);
         }
-        assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install"));
+        assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install", null));
     }
 
     @Test
