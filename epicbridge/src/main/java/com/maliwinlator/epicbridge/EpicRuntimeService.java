@@ -138,6 +138,14 @@ public final class EpicRuntimeService extends Service {
                 .putLong(jobId + ".started_at", System.currentTimeMillis())
                 .commit();
 
+        final Runnable[] progressPoll = new Runnable[1];
+        progressPoll[0] = () -> {
+            if (activeJobs.get() <= 0) return;
+            updateProgressNotification(statusFile, command);
+            mainHandler.postDelayed(progressPoll[0], 1000L);
+        };
+        mainHandler.post(progressPoll[0]);
+
         executor.execute(() -> {
             String response;
             try {
@@ -175,6 +183,7 @@ public final class EpicRuntimeService extends Service {
                     .commit();
             ACTIVE_JOB_IDS.remove(jobId);
 
+            mainHandler.removeCallbacks(progressPoll[0]);
             int remaining = activeJobs.decrementAndGet();
             if (remaining <= 0) {
                 mainHandler.post(() -> {
@@ -207,6 +216,41 @@ public final class EpicRuntimeService extends Service {
     private int notificationId(String jobId) {
         int value = jobId.hashCode() & 0x7fffffff;
         return value == 0 ? 1 : value;
+    }
+
+    private void updateProgressNotification(File statusFile, String command) {
+        String phase = "install".equals(command) ? "Downloading Epic game" : "Uninstalling Epic game";
+        int percent = -1;
+        try {
+            if (statusFile.isFile()) {
+                byte[] bytes = java.nio.file.Files.readAllBytes(statusFile.toPath());
+                JSONObject status = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
+                String reportedPhase = status.optString("phase", "");
+                if (!reportedPhase.isEmpty()) phase = "Epic " + reportedPhase;
+                double value = status.optDouble("progress", -1.0);
+                if (Double.isFinite(value) && value >= 0.0) {
+                    percent = Math.max(0, Math.min(100, (int) Math.round(value)));
+                }
+                double speed = status.optDouble("download_speed", -1.0);
+                if (speed > 0.0 && Double.isFinite(speed)) {
+                    phase += String.format(java.util.Locale.US, " · %.1f MB/s", speed / (1024.0 * 1024.0));
+                }
+            }
+        } catch (Exception error) {
+            Log.w(TAG, "Unable to read Epic progress snapshot (" + error.getClass().getSimpleName() + ")");
+        }
+        Notification.Builder builder = Build.VERSION.SDK_INT >= 26
+                ? new Notification.Builder(this, CHANNEL_ID)
+                : new Notification.Builder(this);
+        builder.setSmallIcon(android.R.drawable.stat_sys_download)
+                .setContentTitle("MaliWinlator Epic Games")
+                .setContentText(percent >= 0 ? phase + " · " + percent + "%" : phase)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setCategory(Notification.CATEGORY_PROGRESS);
+        if (percent >= 0) builder.setProgress(100, percent, false);
+        else builder.setProgress(0, 0, true);
+        notificationManager.notify(FOREGROUND_NOTIFICATION_ID, builder.build());
     }
 
     private Notification buildNotification(String message, boolean ongoing) {
