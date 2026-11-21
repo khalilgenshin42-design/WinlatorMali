@@ -274,7 +274,7 @@ public final class EpicFragment extends Fragment {
                                 String jobId = started.getString("job_id", "");
                                 jobPrefs.edit().putString(JOB_ID_KEY, jobId).commit();
                                 jobPolling = true;
-                                setCancelButtonVisible(true);
+                                setCancelButtonVisible("install".equals(method));
                                 json = waitForJob(appContext, jobId);
                                 jobPolling = false;
                                 setCancelButtonVisible(false);
@@ -292,7 +292,7 @@ public final class EpicFragment extends Fragment {
                             String jobId = started.getString("job_id", "");
                             jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
                             jobPolling = true;
-                            setCancelButtonVisible(true);
+                            setCancelButtonVisible("install".equals(method));
                             json = waitForJob(appContext, jobId);
                             jobPolling = false;
                             setCancelButtonVisible(false);
@@ -347,6 +347,8 @@ public final class EpicFragment extends Fragment {
                     return result;
                 }
                 String jobState = state.getString("state", "unknown");
+                setCancelButtonVisible(state.getBoolean("can_cancel", false)
+                        && ("running".equals(jobState) || "cancelling".equals(jobState)));
                 String progressJson = state.getString("progress_json", "");
                 if (!progressJson.isEmpty()) {
                     try {
@@ -447,7 +449,7 @@ public final class EpicFragment extends Fragment {
         if (jobId.isEmpty()) return;
 
         jobPolling = true;
-        setCancelButtonVisible(true);
+        setCancelButtonVisible(false);
         statusText.setText("Resuming the previous Epic operation...");
         io.execute(() -> {
             JSONObject result = waitForJob(appContext, jobId);
