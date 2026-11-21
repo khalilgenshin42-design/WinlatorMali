@@ -1672,3 +1672,8 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - New source commits: provider refactor `12da81fb3c0b3311a560b58043c41518fe87d0af`; instrumentation test `3da114bcd56a6ec11525d4255a2f71ab98d8990f`. These are newer than the green CI source and must pass fresh CI.
 - Security boundary note: this unit-level allowlist coverage does not substitute for a cross-package Binder call from an independently installed host UID. Provider manifest remains exported behind the signature permission and provider repeats caller package validation; host manifest requests that permission. A real host-to-provider instrumentation test is still a separate integration gap.
 - Device acceptance remains outstanding: Xiaomi 15T Epic authentication, library sync, real network install/cancel/retry, update/uninstall, and launching from the selected Wine container.
+
+
+### Follow-up test refinement
+
+- Extended `providerAuthorizesUidOnlyWhenItsPackageSetContainsTheHost` to cover the single-package host UID case in addition to mixed package sets, untrusted-only sets, empty sets, and null. Source commit `e2243e72c8d45a73100d068817fe11186eb5787c` is the latest code change and requires fresh CI. This remains unit-level package-list coverage, not a separate-process Binder integration test.
