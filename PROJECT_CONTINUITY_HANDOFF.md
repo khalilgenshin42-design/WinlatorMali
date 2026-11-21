@@ -1744,3 +1744,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Review of the active download loop found that once the control file requested cancellation, `_install()` called `DLManager.stop()` on every 500 ms poll until the workers exited. The stop method should be a one-shot request; repeated calls are unnecessary and may not be idempotent across Legendary implementations.
 - Changed the loop to issue `stop()` only on the first observed cancellation, while continuing to join/poll until all workers have exited before allowing mmap/shared-buffer cleanup. Added a regression test with a fake downloader that remains alive for three join cycles; it asserts exactly one `stop()` call, three joins, and no `install_game()` call.
 - Commits: runner `6be3ed712daa7c028d86576ad0579f93b156af10`; regression test `c0d994cf1da36182ad2ad7ddab1c035acd8a880a`. CI validation pending.
+
+## 2026-11-21 — Fix Android instrumentation compile failure in cancellation test suite
+
+- Epic runtime CI **44912860300** failed after the host-side Python tests passed, the x86_64 runtime prerequisite smoke test passed, and the ARM64 CPython runtime build completed. The failure was isolated to Java compilation of `:epicbridge:compileDebugAndroidTestJavaWithJavac`.
+- Compiler diagnostics identified one malformed escaped JSON fixture in `EpicRuntimeInstrumentedTest.progressSnapshotReaderAcceptsBoundedDataAndRejectsOversizedFiles()`: the Java source contained two backslashes before embedded quotes, terminating the string incorrectly. Corrected it to the normal Java JSON literal `"{\"state\":\"running\"}"`.
+- Fix commit: **4c1a01c56a802d8bc628d1829f00f7f4145c1f2b**. Fresh Epic CI is required; this is a source-level correction, not yet a passing build.
+- The same review cycle confirmed the pending provider/Python TOCTOU issue: separate progress and control files do not make the transition to `installing` atomic with provider cancellation acceptance. Do not report that race fixed. Next design work should introduce one shared synchronization protocol and prove Java/Python lock interoperability on Android before relying on it.
