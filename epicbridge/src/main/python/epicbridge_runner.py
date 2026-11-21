@@ -136,7 +136,7 @@ def _cancel_requested(path):
 
 @contextmanager
 def _exclusive_job_lock(path):
-    """Interoperate with Android Os.flock on the per-job lock inode."""
+    """Interoperate with Android JNI flock(2) on the per-job lock inode."""
     if not path or not os.path.isabs(path):
         raise ValueError("job lock path must be an absolute path")
     with open(path, "a+b") as lock_file:
