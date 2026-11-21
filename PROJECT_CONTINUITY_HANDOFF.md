@@ -1738,3 +1738,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Follow-up source review caught that the first test edit had matched the earlier, similarly shaped `test_cancel_arriving_as_downloader_exits_skips_install_game` instead of the intended active-downloader test. Restored the earlier test's two-poll sequence and applied the four-poll sequence only inside `test_cancelled_install_stops_downloader_and_skips_install_game`. This prevents moving the mismatch to a neighboring regression test.
 - Corrected test commit: `afde4d0fd38f51c90007fb574063e71f4bc32dfa`. The workflow already running for commit `6706768...` cannot validate this later correction; await the newly triggered run for `afde4d0...`.
+
+## 2026-11-21 — Make downloader cancellation stop idempotent
+
+- Review of the active download loop found that once the control file requested cancellation, `_install()` called `DLManager.stop()` on every 500 ms poll until the workers exited. The stop method should be a one-shot request; repeated calls are unnecessary and may not be idempotent across Legendary implementations.
+- Changed the loop to issue `stop()` only on the first observed cancellation, while continuing to join/poll until all workers have exited before allowing mmap/shared-buffer cleanup. Added a regression test with a fake downloader that remains alive for three join cycles; it asserts exactly one `stop()` call, three joins, and no `install_game()` call.
+- Commits: runner `6be3ed712daa7c028d86576ad0579f93b156af10`; regression test `c0d994cf1da36182ad2ad7ddab1c035acd8a880a`. CI validation pending.
