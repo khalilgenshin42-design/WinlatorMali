@@ -25,6 +25,16 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void providerAuthorizesUidOnlyWhenItsPackageSetContainsTheHost() {
+        assertTrue(EpicBridgeProvider.isAllowedHostUidPackages(
+                new String[] {"com.example.other", "com.maliwinlator.app"}));
+        assertFalse(EpicBridgeProvider.isAllowedHostUidPackages(
+                new String[] {"com.example.other", "com.winlator.cmod"}));
+        assertFalse(EpicBridgeProvider.isAllowedHostUidPackages(new String[0]));
+        assertFalse(EpicBridgeProvider.isAllowedHostUidPackages(null));
+    }
+
+    @Test
     public void onlyOneEpicBackgroundJobCanBeReservedAtATime() {
         String first = java.util.UUID.randomUUID().toString();
         String second = java.util.UUID.randomUUID().toString();
