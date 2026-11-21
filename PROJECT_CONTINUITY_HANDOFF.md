@@ -1529,3 +1529,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - Additional safety refinement: the service persists each job's command, and provider IPC now permits cancellation only for `install` jobs (uninstall is not interruptible). Job status exposes `can_cancel`; the host UI displays the cancel control only while a cancellable install is active, including resumed jobs. Commits: `ffc2a22`, `d2d05f0`, `7bb3db5`.
 - These changes supersede the previously listed final-source runs. Current authoritative CI is Epic run #44846229536 and standard APK run #44846229545, both targeting `7bb3db5229cfaa7b0c70ebf406cbc2a0fbcd1aec`.
+
+- Static concurrency review found that the host's single-thread IO executor is occupied by the long-running `waitForJob` poll loop. Cancellation IPC is now dispatched on a separate short-lived `EpicJobCancel` thread so the request cannot queue behind the poller. Commit `ff97d26`. This supersedes CI target `7bb3db5`; wait for the newest run pair before treating the implementation as build-validated.
