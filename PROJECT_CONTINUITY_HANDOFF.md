@@ -1715,3 +1715,11 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Commits: service helper `5fd117ba58156fd8f0da0495b2f6035a7bda2dbd`; provider gating `25a1da1d298b3f1ee0308d20bc2e41e425ca035e`; phase boundary tests `b02298167c3d07a74a8a9ced124b81a7836adf22`; Python final-phase check `503226338b1fb06d590fec1c73a9a45799613bab`; progress phase parser tests `de53a8c5cd0c63ee0b5ef3ca15a5e8f1815992be`.
 - **Validation pending:** fresh Epic runtime/Android instrumentation and standard APK CI must run on the latest branch tip. This narrows the late-cancel window and makes the UI/API accurately disable cancellation once installation finalization begins; it is not a proof of an atomic cross-file cancellation handshake or real device download cancellation.
 - Next: inspect CI results, then add deterministic tests for cancellation during metadata preparation and downloader shutdown; retain device validation for actual network transfer, cancellation, retry/resume, and service lifecycle.
+
+
+### Follow-up: cancellation before downloader allocation
+
+- Continued review found that `_install()` validated the cancellation paths and checked the control file only after `core.prepare_download()`. That call constructs the Legendary downloader and can allocate shared-memory/mmap resources even when the host has already requested cancellation during metadata lookup.
+- Moved paired control/status path validation to the beginning of `_install()`, added a pre-metadata cancellation check, and re-checks immediately after game metadata lookup but before `prepare_download()`. Cancellation already waiting therefore returns without constructing downloader state or allocating its shared buffer.
+- Extended the Android runtime self-test with a fake core whose `prepare_download()` raises if called; a pre-signalled cancel must return `cancelled` and publish a cancelled status snapshot. The fake does not contact Epic or start worker threads.
+- Source commit: `412e39a377c00885d6421499a000d3f3c8e50629`. This extends the phase-aware cancellation work above and is not CI-validated yet; a fresh Epic runtime workflow on this source tip must execute the expanded runtime self-test.
