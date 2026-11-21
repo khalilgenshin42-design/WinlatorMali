@@ -1,6 +1,6 @@
 # MaliWinlator — Project Continuity Handoff
 
-Last updated: 2026-11-20
+Last updated: 2026-11-21
 Active branch: `development/maliwinlator-1.2.1-bootstrap`
 Repository: https://github.com/khalilgenshin42-design/WinlatorMali
 
@@ -1770,14 +1770,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - ARM64 CPython 3.15.2 POC artifact ID **14711289492**, archive SHA-256 **e9240e9fcb6fc339b15670685a9afbbafeae86fb62263837d2b5c9e8ce7fef85**.
 - CI published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-8f95bd006b14
 - These are CI/debug artifacts only. Real Xiaomi 15T validation remains outstanding: install both APKs with matching signatures, companion runtime initialization, Epic login/sign-out, library sync, install progress/cancel/retry, update, uninstall, and launch through the selected Wine container. Do not call Epic integration complete before those tests pass.
-- Cancellation phase-transition TOCTOU remains open. The exact race is between provider phase read/control-file publication and Python's final cancel check/transition to `installing`. A candidate fix is a shared Linux `flock(LOCK_EX)` arbitration on a dedicated per-job lock file (Java `android.system.Os.flock`, Python `fcntl.flock`), with both sides opening the same inode independently. This must be proven with an Android Java/Python contention test before relying on it; POSIX `fcntl` record locks must not be substituted because same-process lock semantics differ. No lock implementation has been committed yet.
+- Cancellation phase-transition TOCTOU remains open. The exact race is between provider phase read/control-file publication and Python's final cancel check/transition to `installing`. The follow-on implementation uses JNI Linux `flock(2)` for Java and Python `fcntl.flock()` on the same per-job lock inode. This protocol has now passed the managed Android emulator contention test in workflow 44924071336 (see the validation entry below).
 
 - The published release's individual APK SHA-256 values were independently confirmed from the release asset metadata and generated `PROJECT_EPIC_CI_STATUS.md`: host `app-standard-debug.apk` **57d55b77c331b054dea5f9ed4d25cc955f18a290723a99113faa84b6bc7860e8**; companion `epicbridge-debug.apk` **e0e70155e59679dda2954252d49cdd5effa09d227593270ab469782beecde700**. These differ from the Actions ZIP artifact digest above (which hashes the artifact archive, not either APK).
 
 
 ## 2026-11-21 — Implement shared-lock arbitration for Epic install cancellation (CI pending)
 
-- Closed the previously documented provider/Python cancellation TOCTOU design gap in source: added package-private EpicJobLock, which opens a per-job lock inode with Android Os.open and takes Os.flock(LOCK_EX). The service creates the lock file in its private epic_jobs directory, passes its absolute path to the install runtime, and persists that path with the job metadata.
+- Closed the previously documented provider/Python cancellation TOCTOU design gap in source: added package-private EpicJobLock, which opens a per-job lock inode and takes Linux flock(LOCK_EX) through JNI in libepic_python. Android's Java Os API does not expose flock(). The service creates the lock file in its private epic_jobs directory, passes its absolute path to the install runtime, and persists that path with the job metadata.
 - EpicBridgeProvider.cancel_job now acquires the same lock before re-reading the progress phase, active job state, command, and control path. It publishes the atomic cancellation control snapshot while still holding the lock.
 - Python _install() now requires control/status/lock paths as a complete absolute-path set for managed installs. After downloader shutdown and worker-error checks, it takes fcntl.flock(LOCK_EX) on the same inode, checks the cancellation control, and publishes phase=installing before releasing the lock. Therefore the two outcomes are serialized: provider wins and cancellation is visible before installation, or Python wins and the provider observes installing and rejects cancellation.
 - Added a Python thread-exclusion regression test and an Android instrumentation test that holds the Java lock while the embedded CPython runtime attempts to acquire it, using a marker file to prove Python reached the blocked acquisition before Java unlocks. Added a narrow internal job_lock_probe command for that instrumentation test; it does not initialize Legendary or access Epic credentials.
@@ -1792,12 +1792,12 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Updated EpicJobLock to use the Linux flock operation values (LOCK_EX=2, LOCK_UN=8), while retaining OsConstants.O_CREAT and O_RDWR for open flags. Correction commit af211785b11efa54e3a660978d7839cac9961062. Fresh Epic runtime and baseline workflows must validate this correction; Java/Python flock interoperability remains unproven until the instrumented test passes.
 
 
-### JNI flock implementation correction (2026-11-21; validation pending)
+### JNI flock implementation correction (2026-11-21; validated by workflow 44924071336)
 
 - Fresh standard APK workflow #44922520808 on af211785b11efa54e3a660978d7839cac9961062 found that Android's android.system.Os also lacks a flock(FileDescriptor,int) method, not just named LOCK_EX/LOCK_UN constants. The compile log explicitly reported missing Os.flock at EpicJobLock.java lines 28 and 39. The first correction was therefore incomplete.
 - Replaced the Java Os-based attempt with native Linux flock(2) in the existing libepic_python JNI library. epic_python.c now opens the lock inode with O_CREAT|O_RDWR|O_CLOEXEC, acquires LOCK_EX with EINTR retry, and releases LOCK_UN/closes the descriptor through matching JNI methods. EpicPythonRuntime ensures libepic_python is loaded before exposing package-private acquire/release wrappers; EpicJobLock now holds the native file descriptor as a long. This is the same kernel flock primitive used by Python fcntl.flock, not Java FileChannel record locking.
 - Native implementation commit 174ded71564387ce9fb2120e2cc0ad9f2f10f22f; Java runtime wrappers commit 7caa039f0c6755229ca8aa5c169d3aae566c578b; EpicJobLock replacement commit 39fb38c842968f4cca0c88897e6a17cb59b64990.
-- Prior Epic runtime workflow #44922520805 had reached the Android instrumentation stage before the corrected commits superseded it. The run was cancelled by subsequent commits; no instrumentation result from that earlier run is accepted as proof. Fresh workflow must compile C/Java and pass Java↔CPython flock contention instrumentation. Verify no JNI symbol/ABI errors and that provider cancel operations can load libepic_python before Python runtime initialization.
+- Prior Epic runtime workflow #44922520805 had reached the Android instrumentation stage before the corrected commits superseded it. The run was cancelled by subsequent commits; no instrumentation result from that earlier run is accepted as proof. This implementation subsequently compiled and passed Java↔CPython flock contention instrumentation on the managed Android emulator in workflow 44924071336. The release and remaining physical-device acceptance scope are recorded below.
 
 
 ## 2026-11-21 — Validate JNI/Python flock cancellation arbitration and publish Epic build
