@@ -1531,3 +1531,5 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - These changes supersede the previously listed final-source runs. Current authoritative CI is Epic run #44846229536 and standard APK run #44846229545, both targeting `7bb3db5229cfaa7b0c70ebf406cbc2a0fbcd1aec`.
 
 - Static concurrency review found that the host's single-thread IO executor is occupied by the long-running `waitForJob` poll loop. Cancellation IPC is now dispatched on a separate short-lived `EpicJobCancel` thread so the request cannot queue behind the poller. Commit `ff97d26`. This supersedes CI target `7bb3db5`; wait for the newest run pair before treating the implementation as build-validated.
+
+- Final source tip for this implementation pass is `ff97d26b5f19901f5858f2330465f296a4e5b0d8`. Current validation pair: Epic run #44846313318 (https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44846313318) and baseline run #44846313298 (https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44846313298). Both were still running at the latest poll; do not treat older cancelled runs as evidence.
