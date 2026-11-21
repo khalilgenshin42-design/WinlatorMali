@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 
+import java.io.File;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
