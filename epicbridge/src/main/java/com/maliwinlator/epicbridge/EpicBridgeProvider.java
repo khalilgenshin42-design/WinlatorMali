@@ -76,6 +76,16 @@ public final class EpicBridgeProvider extends ContentProvider {
         }
     }
 
+    static String readProgressPhase(String snapshot) {
+        if (snapshot == null) return null;
+        try {
+            String phase = new org.json.JSONObject(snapshot).optString("phase", "");
+            return phase.isEmpty() ? null : phase;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     /** Read a bounded progress snapshot without trusting the file's initial length. */
     static String readProgressSnapshot(File statusFile) {
         if (statusFile == null || !statusFile.isFile()) return null;
@@ -186,12 +196,16 @@ public final class EpicBridgeProvider extends ContentProvider {
             String jobId = arg == null ? "" : arg;
             android.content.SharedPreferences prefs = getContext().getSharedPreferences(
                     EpicRuntimeService.PREFS, android.content.Context.MODE_PRIVATE);
+            String statusPath = prefs.getString(jobId + ".status_path", "");
+            String progressSnapshot = statusPath.isEmpty()
+                    ? null : readProgressSnapshot(new File(statusPath));
+            String phase = readProgressPhase(progressSnapshot);
             if (!EpicRuntimeService.isJobCancellable(jobId,
                     prefs.getString(jobId + ".state", "unknown"),
-                    prefs.getString(jobId + ".command", ""))) {
+                    prefs.getString(jobId + ".command", ""), phase)) {
                 result.putBoolean("ok", false);
                 result.putString("error", "JOB_NOT_CANCELLABLE");
-                result.putString("message", "The Epic job is no longer running");
+                result.putString("message", "The Epic job is no longer in a cancellable download phase");
                 return result;
             }
             String controlPath = prefs.getString(jobId + ".control_path", "");
@@ -227,14 +241,14 @@ public final class EpicBridgeProvider extends ContentProvider {
             result.putBoolean("ok", true);
             result.putString("job_id", jobId);
             result.putString("state", jobState);
-            result.putBoolean("can_cancel", EpicRuntimeService.isJobCancellable(jobId,
-                    jobState, prefs.getString(jobId + ".command", "")));
             result.putString("result_json", prefs.getString(jobId + ".result", ""));
             String statusPath = prefs.getString(jobId + ".status_path", "");
-            if (!statusPath.isEmpty()) {
-                String progress = readProgressSnapshot(new File(statusPath));
-                if (progress != null) result.putString("progress_json", progress);
-            }
+            String progress = statusPath.isEmpty()
+                    ? null : readProgressSnapshot(new File(statusPath));
+            if (progress != null) result.putString("progress_json", progress);
+            result.putBoolean("can_cancel", EpicRuntimeService.isJobCancellable(jobId,
+                    jobState, prefs.getString(jobId + ".command", ""),
+                    readProgressPhase(progress)));
             return result;
         }
 
