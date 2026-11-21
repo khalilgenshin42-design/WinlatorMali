@@ -4,6 +4,10 @@
 #include <Python.h>
 #include <android/log.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -133,6 +137,43 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
                                                  "([B[B[B[B)[B");
     if (!g_decrypt_method) return JNI_ERR;
     return JNI_VERSION_1_6;
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeAcquireJobLock(
+        JNIEnv *env, jclass clazz, jstring path) {
+    (void) clazz;
+    if (!path) return (jlong) -1;
+    const char *path_utf8 = (*env)->GetStringUTFChars(env, path, NULL);
+    if (!path_utf8) return (jlong) -1;
+    int fd = open(path_utf8, O_CREAT | O_RDWR | O_CLOEXEC, 0600);
+    int saved_errno = errno;
+    (*env)->ReleaseStringUTFChars(env, path, path_utf8);
+    if (fd < 0) {
+        LOGE("Unable to open Epic job lock (errno=%d)", saved_errno);
+        return (jlong) -1;
+    }
+    int rc;
+    do { rc = flock(fd, LOCK_EX); } while (rc < 0 && errno == EINTR);
+    if (rc < 0) {
+        saved_errno = errno;
+        close(fd);
+        LOGE("Unable to acquire Epic job lock (errno=%d)", saved_errno);
+        return (jlong) -1;
+    }
+    return (jlong) fd;
+}
+
+JNIEXPORT void JNICALL
+Java_com_maliwinlator_epicbridge_EpicPythonRuntime_nativeReleaseJobLock(
+        JNIEnv *env, jclass clazz, jlong descriptor) {
+    (void) env;
+    (void) clazz;
+    int fd = (int) descriptor;
+    if (fd < 0) return;
+    int rc;
+    do { rc = flock(fd, LOCK_UN); } while (rc < 0 && errno == EINTR);
+    if (close(fd) < 0) LOGE("Unable to close Epic job lock descriptor (errno=%d)", errno);
 }
 
 JNIEXPORT jboolean JNICALL
