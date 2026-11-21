@@ -1560,3 +1560,10 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 
 - Follow-up source review found the new Android instrumentation test used `File` without importing `java.io.File`. Added the missing import in commit `61a9033868bab26f397c0d66e830bf123c5732b1`. This was caught by static inspection before relying on the pending CI result; it supersedes the just-started CI pair at `b6a6cb9`. Fresh Epic and standard workflows for the latest branch head must pass. Provider/service end-to-end cancellation IPC coverage remains a gap; current Android test only validates atomic control-file replacement, not the actual authorized provider call path.
+
+
+## 2026-11-21 — Wire actual Legendary progress updates into Epic jobs
+- Inspection of the exact pinned Legendary 0.21.1 source (`42f6bdeadde3a9526dc8eb713763476999ac217b`) found that `DLManager.status_queue` is only populated when `LegendaryCore.prepare_download(status_q=...)` receives a queue. Epic's runner had not supplied one, so its new progress UI could only show phase changes; download percentage and throughput would never arrive. The pinned `UIUpdate` fields are confirmed as `progress`, `download_speed`, `write_speed`, `read_speed`, and `memory_usage`.
+- Fixed by passing a thread-safe `queue.Queue()` as `status_q` to `prepare_download`. The Android patch already changes Legendary core's Queue import from `multiprocessing.Queue` to `queue.Queue`, matching the thread-based manager. Commit: `5e9eca3aca8e3071e9c7c5ceb16d47a3704a0f04`.
+- Added a regression test that asserts a queue is injected, fake Legendary `UIUpdate` metrics are drained, and the progress snapshot includes the percentage and download speed. Commit: `fad0cd61037a9019dbf75818801e7d3bce1138be`.
+- This supersedes the CI runs for earlier commits. Fresh Epic runtime and standard APK workflows must pass on the latest source. Progress is now wired in source but not yet CI-validated or device-validated. Provider/service cancellation IPC authorization and service restart behavior remain test gaps; no Xiaomi 15T acceptance test has been performed.
