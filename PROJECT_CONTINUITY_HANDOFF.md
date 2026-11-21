@@ -24,7 +24,7 @@ This is separate from the user's PanVK-G720 driver research. Never replace Andro
 - Exact upstream release commit: `dfcdd4aaeff6def126ad8173619790806a5830db`.
 - Fork: `khalilgenshin42-design/WinlatorMali`.
 - Active branch: `development/maliwinlator-1.2.1-bootstrap`.
-- Last known branch HEAD before this handoff update: `0f7cab56d115a7c3053f17b11bec4a0cd7b3e4b4`.
+- Last validated application source commit: `3390b95a717121d41bc79903c524120d75c3717d`. Latest handoff/documentation commit before this update: `abb0b00eba5ebabe648da15af6894fc10f5e4db7`.
 - Older `development/maliwinlator-bootstrap` based on 1.2 is incorrect; do not continue work there.
 - Preserve upstream 1.2.1 history and fixes. Do not force-push or rewrite history.
 
@@ -1693,7 +1693,7 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The Epic job's companion instrumentation passed, but the newly added host-UID test did **not** pass: signedHostUidCanCallExportedEpicProvider failed with IllegalArgumentException: Unknown authority com.maliwinlator.epicbridge.provider. The script nevertheless printed its success banner because adb shell am instrument returned a successful shell status despite JUnit's FAILURES!!! result. Therefore this run is **not** evidence of cross-package Binder success.
 - Root cause candidate identified from the log: after Gradle's :epicbridge:connectedDebugAndroidTest stage, the companion package was not available to the separately installed host fixture at the point of the provider call. The test script had built the companion APK but did not explicitly reinstall it before invoking the host fixture.
 - Corrected tools/ci/run-epic-android-instrumentation.sh in commit **085dd2a9934d8cd6ac372e56fa6f0c343949af14**: explicitly install the companion APK before host fixture/test APK installation; assert both companion and host packages resolve through pm path; capture instrumentation output and require the JUnit success marker OK (1 test), rejecting FAILURES!!! and failed instrumentation status codes. CI can no longer report this integration test as passed solely because adb's process exit status is zero.
-- This fix is **not yet CI-validated**. Fresh Epic runtime CI must show the host UID test passing 1/1 before cross-package Binder integration is considered validated. The prior Epic artifact is not proof of this test.
+- Later validation: workflow **44924071336** passed the signed host-to-companion Binder instrumentation test (`signedHostUidCanCallExportedEpicProvider`, 1/1). See the CI validation entry below.
 - Xiaomi 15T Epic acceptance remains outstanding; no authenticated login, owned library, download/cancel/retry, update/uninstall, or selected-container launch has been demonstrated.
 
 
@@ -1707,13 +1707,13 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Next engineering focus: inspect and test provider-to-service job lifecycle/cancellation through the now-validated cross-package boundary, strengthen real downloader cancellation/restart coverage, and continue device acceptance. Required device gates remain Epic login/signout, owned library, install progress/cancel/retry, update, uninstall, selected-container game launch, shortcut persistence, and independent official-launcher fallback validation.
 
 
-## 2026-11-21 — Make Epic cancellation phase-aware (CI pending)
+## 2026-11-21 — Make Epic cancellation phase-aware (validated by subsequent CI)
 
 - Code review found that the provider considered every active `running` install cancellable, including the final `installing` phase after Legendary's downloader thread had exited. A late cancel could therefore be accepted even though the worker was no longer in the cooperative downloader stop loop.
 - Changed `EpicRuntimeService.isJobCancellable` to require an active running install plus progress phase `preparing` or `downloading`. The provider now parses the bounded progress snapshot for both `cancel_job` and `job_status.can_cancel`; missing/malformed snapshots and phases `stopping`/`installing` fail closed. Python publishes `installing` before its final cancellation-file check and returns cancelled if a request was already present.
 - Added instrumentation coverage for allowed and rejected phase boundaries, and for progress phase parsing (valid, missing, and malformed snapshots).
 - Commits: service helper `5fd117ba58156fd8f0da0495b2f6035a7bda2dbd`; provider gating `25a1da1d298b3f1ee0308d20bc2e41e425ca035e`; phase boundary tests `b02298167c3d07a74a8a9ced124b81a7836adf22`; Python final-phase check `503226338b1fb06d590fec1c73a9a45799613bab`; progress phase parser tests `de53a8c5cd0c63ee0b5ef3ca15a5e8f1815992be`.
-- **Validation pending:** fresh Epic runtime/Android instrumentation and standard APK CI must run on the latest branch tip. This narrows the late-cancel window and makes the UI/API accurately disable cancellation once installation finalization begins; it is not a proof of an atomic cross-file cancellation handshake or real device download cancellation.
+- Subsequent validation: Epic runtime workflow **44924071336** passed host regressions and Android instrumentation on source commit `3390b95a717121d41bc79903c524120d75c3717d`; standard APK workflow **44924071347** also passed. The later JNI `flock(2)` arbitration section below supersedes the earlier non-atomic phase-aware implementation.
 - Next: inspect CI results, then add deterministic tests for cancellation during metadata preparation and downloader shutdown; retain device validation for actual network transfer, cancellation, retry/resume, and service lifecycle.
 
 
@@ -1770,19 +1770,19 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - ARM64 CPython 3.15.2 POC artifact ID **14711289492**, archive SHA-256 **e9240e9fcb6fc339b15670685a9afbbafeae86fb62263837d2b5c9e8ce7fef85**.
 - CI published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-8f95bd006b14
 - These are CI/debug artifacts only. Real Xiaomi 15T validation remains outstanding: install both APKs with matching signatures, companion runtime initialization, Epic login/sign-out, library sync, install progress/cancel/retry, update, uninstall, and launch through the selected Wine container. Do not call Epic integration complete before those tests pass.
-- Cancellation phase-transition TOCTOU remains open. The exact race is between provider phase read/control-file publication and Python's final cancel check/transition to `installing`. The follow-on implementation uses JNI Linux `flock(2)` for Java and Python `fcntl.flock()` on the same per-job lock inode. This protocol has now passed the managed Android emulator contention test in workflow 44924071336 (see the validation entry below).
+- The cancellation phase-transition TOCTOU was subsequently addressed with JNI Linux `flock(2)` for Java and Python `fcntl.flock()` on the same per-job lock inode. The interoperability test passed on the managed Android emulator in workflow **44924071336**; the physical-device download/cancel lifecycle remains unverified.
 
 - The published release's individual APK SHA-256 values were independently confirmed from the release asset metadata and generated `PROJECT_EPIC_CI_STATUS.md`: host `app-standard-debug.apk` **57d55b77c331b054dea5f9ed4d25cc955f18a290723a99113faa84b6bc7860e8**; companion `epicbridge-debug.apk` **e0e70155e59679dda2954252d49cdd5effa09d227593270ab469782beecde700**. These differ from the Actions ZIP artifact digest above (which hashes the artifact archive, not either APK).
 
 
-## 2026-11-21 — Implement shared-lock arbitration for Epic install cancellation (CI pending)
+## 2026-11-21 — Implement shared-lock arbitration for Epic install cancellation (CI validated; device acceptance pending)
 
 - Closed the previously documented provider/Python cancellation TOCTOU design gap in source: added package-private EpicJobLock, which opens a per-job lock inode and takes Linux flock(LOCK_EX) through JNI in libepic_python. Android's Java Os API does not expose flock(). The service creates the lock file in its private epic_jobs directory, passes its absolute path to the install runtime, and persists that path with the job metadata.
 - EpicBridgeProvider.cancel_job now acquires the same lock before re-reading the progress phase, active job state, command, and control path. It publishes the atomic cancellation control snapshot while still holding the lock.
 - Python _install() now requires control/status/lock paths as a complete absolute-path set for managed installs. After downloader shutdown and worker-error checks, it takes fcntl.flock(LOCK_EX) on the same inode, checks the cancellation control, and publishes phase=installing before releasing the lock. Therefore the two outcomes are serialized: provider wins and cancellation is visible before installation, or Python wins and the provider observes installing and rejects cancellation.
 - Added a Python thread-exclusion regression test and an Android instrumentation test that holds the Java lock while the embedded CPython runtime attempts to acquire it, using a marker file to prove Python reached the blocked acquisition before Java unlocks. Added a narrow internal job_lock_probe command for that instrumentation test; it does not initialize Legendary or access Epic credentials.
 - Commits currently on the branch: lock helper cebf5267d5ae35913915e22842d84e9b4f903643; service path plumbing e53acf34535649974ad23849cc09e6735d40fbf1 and lock-file creation correction a1ab3152ea49e402272c15dd1b9f1ec7721e5dd1; provider arbitration d98c85c4505e4327133b46c9795466a70502ceac; Python lock protocol 0820b2849bc557d4a4dafba20e67aa88e48947f8 and test probe b79a973540cb106e8dff9ae46586147cae9a7cb1 / 8e68a4fffd2970787be5a946f48c015437534c0b; Python regression tests ba9acd51c527921078f9b8714f0595b2604af087 and fixture completion 8db41f4d00f3cc5c1b365c4ddb3074c2cfc7052f; Android interoperability test af494bf7b4f57aa58b102b7f2b1fd383064141ee.
-- Validation is pending. Do not treat flock interoperation as proven until the Android instrumentation test passes on the managed emulator, and do not call cancellation race fixed until the complete Epic workflow passes. Check for Python fixture failures, Android API/compiler compatibility, and lock contention timeout/deadlock before accepting the change.
+- Validation completed in Epic runtime workflow **44924071336**: host Python regression tests passed; Android instrumentation passed all 11 tests, including `javaAndEmbeddedPythonFlockInteroperate`; ARM64 packaging and static audits passed. Standard APK workflow **44924071347** passed 13/13 steps. This proves the shared lock primitive interoperates and the tested phase arbitration works in the managed emulator; it does not prove live Xiaomi 15T download cancellation or service process-death behavior.
 - Real Xiaomi 15T acceptance is still required for actual download cancellation, transition to installation, retry, update/uninstall, and game launch. No vendor/system Vulkan driver replacement is involved.
 
 
