@@ -230,7 +230,12 @@ def _install(core, payload):
     worker_error = getattr(dlm, "error", None)
     if worker_error:
         raise RuntimeError(f"Legendary download failed: {worker_error}")
+    # Publish the non-cancellable phase before the final control-file check.
+    # The provider uses this phase to reject late cancellation requests.
     _write_job_status(status_path, "running", phase="installing", progress=100)
+    if _cancel_requested(control_path):
+        _write_job_status(status_path, "cancelled", phase="cancelled")
+        return {"cancelled": True, "app_name": app_name}
     prerequisites = core.install_game(installed_game) or {}
     return {
         "app_name": installed_game.app_name,
