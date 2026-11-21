@@ -17,6 +17,7 @@ on:
       - 'app/src/main/AndroidManifest.xml'
       - 'app/build.gradle'
       - 'settings.gradle'
+      - 'build.gradle'
   workflow_dispatch:
 
 permissions:
