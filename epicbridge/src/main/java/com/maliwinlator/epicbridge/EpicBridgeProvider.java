@@ -66,6 +66,23 @@ public final class EpicBridgeProvider extends ContentProvider {
         }
     }
 
+    /** Read a bounded progress snapshot without trusting the file's initial length. */
+    static String readProgressSnapshot(File statusFile) {
+        if (statusFile == null || !statusFile.isFile()) return null;
+        try (FileInputStream input = new FileInputStream(statusFile);
+             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] chunk = new byte[1024];
+            int count;
+            while ((count = input.read(chunk)) != -1) {
+                if (buffer.size() + count > 8192) return null;
+                buffer.write(chunk, 0, count);
+            }
+            return buffer.toString("UTF-8");
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     private static boolean cryptoSelfTest() {
         Boolean cached = cryptoSelfTest;
         if (cached != null) return cached;
@@ -208,18 +225,8 @@ public final class EpicBridgeProvider extends ContentProvider {
             result.putString("result_json", prefs.getString(jobId + ".result", ""));
             String statusPath = prefs.getString(jobId + ".status_path", "");
             if (!statusPath.isEmpty()) {
-                File statusFile = new File(statusPath);
-                if (statusFile.isFile() && statusFile.length() <= 8192) {
-                    try (FileInputStream input = new FileInputStream(statusFile);
-                         ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-                        byte[] chunk = new byte[1024];
-                        int count;
-                        while ((count = input.read(chunk)) != -1) buffer.write(chunk, 0, count);
-                        result.putString("progress_json", buffer.toString("UTF-8"));
-                    } catch (Exception ignored) {
-                        // Progress is best-effort; terminal job state remains authoritative.
-                    }
-                }
+                String progress = readProgressSnapshot(new File(statusPath));
+                if (progress != null) result.putString("progress_json", progress);
             }
             return result;
         }
