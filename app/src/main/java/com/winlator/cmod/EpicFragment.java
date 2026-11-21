@@ -48,6 +48,7 @@ import java.util.concurrent.Executors;
 public final class EpicFragment extends Fragment {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private TextView statusText;
+    private Button cancelJobButton;
     private EditText authorizationCode;
     private Button installBridgeButton;
     private Button signInButton;
@@ -87,6 +88,12 @@ public final class EpicFragment extends Fragment {
         statusText.setTextSize(14);
         statusText.setPadding(0, pad, 0, pad);
         root.addView(statusText);
+
+        cancelJobButton = new Button(requireContext());
+        cancelJobButton.setText("Cancel Epic operation");
+        cancelJobButton.setVisibility(View.GONE);
+        cancelJobButton.setOnClickListener(v -> cancelActiveJob());
+        root.addView(cancelJobButton);
 
         installBridgeButton = new Button(requireContext());
         installBridgeButton.setText("Install Epic Bridge");
@@ -267,8 +274,10 @@ public final class EpicFragment extends Fragment {
                                 String jobId = started.getString("job_id", "");
                                 jobPrefs.edit().putString(JOB_ID_KEY, jobId).commit();
                                 jobPolling = true;
+                                setCancelButtonVisible(true);
                                 json = waitForJob(appContext, jobId);
                                 jobPolling = false;
+                                setCancelButtonVisible(false);
                             }
                         }
                     } else {
@@ -283,8 +292,10 @@ public final class EpicFragment extends Fragment {
                             String jobId = started.getString("job_id", "");
                             jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
                             jobPolling = true;
+                            setCancelButtonVisible(true);
                             json = waitForJob(appContext, jobId);
                             jobPolling = false;
+                            setCancelButtonVisible(false);
                         }
                     }
                 } else {
@@ -336,6 +347,20 @@ public final class EpicFragment extends Fragment {
                     return result;
                 }
                 String jobState = state.getString("state", "unknown");
+                String progressJson = state.getString("progress_json", "");
+                if (!progressJson.isEmpty()) {
+                    try {
+                        JSONObject progress = new JSONObject(progressJson);
+                        String phase = progress.optString("phase", "working");
+                        double percent = progress.optDouble("progress", -1);
+                        String label = "Epic " + phase;
+                        if (percent >= 0) label += String.format(java.util.Locale.US, " (%.1f%%)", percent);
+                        final String progressLabel = label;
+                        if (getActivity() != null) getActivity().runOnUiThread(() -> {
+                            if (statusText != null && jobPolling) statusText.setText(progressLabel);
+                        });
+                    } catch (Exception ignored) {}
+                }
                 if ("unknown".equals(jobState)) {
                     if (unknownSince == 0L) unknownSince = System.currentTimeMillis();
                     if (System.currentTimeMillis() - unknownSince > 30_000L) {
@@ -353,7 +378,7 @@ public final class EpicFragment extends Fragment {
                     unknownSince = 0L;
                 }
                 if ("complete".equals(jobState) || "failed".equals(jobState)
-                        || "interrupted".equals(jobState)) {
+                        || "cancelled".equals(jobState) || "interrupted".equals(jobState)) {
                     String body = state.getString("result_json", "");
                     result = body.isEmpty() ? new JSONObject() : new JSONObject(body);
                     if ("interrupted".equals(jobState)) {
@@ -385,6 +410,31 @@ public final class EpicFragment extends Fragment {
             result.put("message", "Epic operation is still running in the foreground service. Reopen the Epic tab to resume status tracking.");
         } catch (Exception ignored) {}
         return result;
+    }
+
+    private void setCancelButtonVisible(boolean visible) {
+        if (getActivity() != null) getActivity().runOnUiThread(() -> {
+            if (cancelJobButton != null) cancelJobButton.setVisibility(
+                    visible ? View.VISIBLE : View.GONE);
+        });
+    }
+
+    private void cancelActiveJob() {
+        if (getContext() == null) return;
+        android.content.Context appContext = requireContext().getApplicationContext();
+        io.execute(() -> {
+            android.content.SharedPreferences prefs = appContext.getSharedPreferences(
+                    JOB_PREFS, android.content.Context.MODE_PRIVATE);
+            String jobId = prefs.getString(JOB_ID_KEY, "");
+            if (jobId.isEmpty()) return;
+            Bundle response = EpicBridgeClient.call(appContext, "cancel_job", jobId, "{}");
+            String message = response.getBoolean("ok", false)
+                    ? "Cancellation requested. Waiting for download workers to stop safely..."
+                    : response.getString("message", "Unable to cancel the Epic operation");
+            if (getActivity() != null) getActivity().runOnUiThread(() -> {
+                if (statusText != null) statusText.setText(message);
+            });
+        });
     }
 
     private void resumePendingJob() {
