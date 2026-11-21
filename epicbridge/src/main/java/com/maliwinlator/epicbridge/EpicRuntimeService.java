@@ -14,6 +14,10 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,6 +85,30 @@ public final class EpicRuntimeService extends Service {
             return START_NOT_STICKY;
         }
 
+        final String jobPayload;
+        final File controlFile;
+        final File statusFile;
+        try {
+            File jobsDirectory = new File(getFilesDir(), "epic_jobs");
+            if (!jobsDirectory.isDirectory() && !jobsDirectory.mkdirs()) {
+                throw new IllegalStateException("Unable to create private job directory");
+            }
+            controlFile = new File(jobsDirectory, jobId + ".control.json");
+            statusFile = new File(jobsDirectory, jobId + ".status.json");
+            writePrivateFile(controlFile, "{\\"cancel\\":false}");
+            writePrivateFile(statusFile, "{\\"state\\":\\"queued\\",\\"phase\\":\\"preparing\\"}");
+            JSONObject payloadObject = new JSONObject(payload == null ? "{}" : payload);
+            if ("install".equals(command)) {
+                payloadObject.put("job_control_path", controlFile.getAbsolutePath());
+                payloadObject.put("job_status_path", statusFile.getAbsolutePath());
+            }
+            jobPayload = payloadObject.toString();
+        } catch (Exception invalidPayload) {
+            EpicRuntimeService.releaseJobReservation(jobId);
+            stopSelf(startId);
+            return START_NOT_STICKY;
+        }
+
         if (activeJobs.getAndIncrement() == 0) {
             startForeground(FOREGROUND_NOTIFICATION_ID, buildNotification("install".equals(command) ? "Installing Epic game" : "Uninstalling Epic game", true));
             if (!wakeLock.isHeld()) wakeLock.acquire(6L * 60L * 60L * 1000L);
@@ -89,13 +117,15 @@ public final class EpicRuntimeService extends Service {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString(jobId + ".state", "running")
                 .putString(jobId + ".result", "")
+                .putString(jobId + ".control_path", controlFile.getAbsolutePath())
+                .putString(jobId + ".status_path", statusFile.getAbsolutePath())
                 .putLong(jobId + ".started_at", System.currentTimeMillis())
                 .commit();
 
         executor.execute(() -> {
             String response;
             try {
-                response = EpicPythonRuntime.call(this, command, payload == null ? "{}" : payload);
+                response = EpicPythonRuntime.call(this, command, jobPayload);
             } catch (Throwable error) {
                 // Throwable messages and stack traces may contain private paths
                 // or sensitive request details; persist only a stable public error.
@@ -120,9 +150,10 @@ public final class EpicRuntimeService extends Service {
                 } catch (Exception ignored) {}
                 response = responseObject.toString();
             }
+            boolean cancelled = responseObject.optBoolean("cancelled", false);
             boolean success = responseObject.optBoolean("ok", false);
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                    .putString(jobId + ".state", success ? "complete" : "failed")
+                    .putString(jobId + ".state", cancelled ? "cancelled" : (success ? "complete" : "failed"))
                     .putString(jobId + ".result", response)
                     .putLong(jobId + ".finished_at", System.currentTimeMillis())
                     .commit();
@@ -148,6 +179,13 @@ public final class EpicRuntimeService extends Service {
             }
         });
         return START_NOT_STICKY;
+    }
+
+    private static void writePrivateFile(File file, String contents) throws Exception {
+        try (FileOutputStream output = new FileOutputStream(file, false)) {
+            output.write(contents.getBytes(StandardCharsets.UTF_8));
+            output.getFD().sync();
+        }
     }
 
     private int notificationId(String jobId) {
