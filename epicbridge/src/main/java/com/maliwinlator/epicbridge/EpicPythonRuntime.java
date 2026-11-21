@@ -325,6 +325,21 @@ public final class EpicPythonRuntime {
         }
     }
 
+    static long acquireJobLock(String path) {
+        if (!ensureNativeLibraryLoaded()) {
+            throw new IllegalStateException("Epic native lock support is unavailable");
+        }
+        long descriptor = nativeAcquireJobLock(path);
+        if (descriptor < 0) throw new IllegalStateException("Unable to acquire Epic job lock");
+        return descriptor;
+    }
+
+    static void releaseJobLock(long descriptor) {
+        nativeReleaseJobLock(descriptor);
+    }
+
+    private static native long nativeAcquireJobLock(String path);
+    private static native void nativeReleaseJobLock(long descriptor);
     private static native boolean nativeInitialize(String pythonHome, String tempDir);
     private static native String nativeCall(String command, String payloadJson);
 }
