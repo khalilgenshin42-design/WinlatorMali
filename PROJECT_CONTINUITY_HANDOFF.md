@@ -2248,3 +2248,18 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
   - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/SHA256SUMS
 - Release notes identify these as debug-signed test APKs. If the debug signing certificate differs from the currently installed build, Android may require uninstalling the old debug package first; back up any important app/container data before doing so.
 - Device acceptance remains pending: verify actual Epic catalog artwork, scrolling/cache/offline fallback, and core Epic account/library/install/update/uninstall/launch flows on Xiaomi 15T. Previously accepted active download/install Epic-page re-entry responsiveness fix remains a regression guard.
+
+
+## Epic library re-entry cache fix (2026-11-22)
+
+- User device acceptance of artwork build: actual Epic cover art renders; Library scrolling and navigation away/back during an active download remain smooth. New issue reported: every return to Epic triggers a full library reload.
+- Root cause confirmed in source: `MainActivity.onNavigationItemSelected()` constructs `new EpicFragment()` on every Epic selection, and `show()` uses FragmentTransaction.replace(). The Fragment-local `cachedGames` / `libraryLoaded` fields are therefore discarded when navigating to Containers; the next Epic Fragment sees an empty cache and calls `library` again.
+- Fix implementation:
+  - `5936ed418063f646b80242c9f42267aa297a7c7e` updates `EpicFragment` to hydrate and publish library data through an Activity-scoped ViewModel, and render cached cards immediately when a replacement Fragment is created.
+  - `b5e0e84632e2be443e105a748f9bf35c73ccf1ac` adds `EpicLibraryViewModel`, retaining game catalog JSON plus installed app IDs and install paths for the lifetime of MainActivity.
+  - Explicit Refresh and successful install/update/uninstall/login flows still call the existing refresh path; this change does not alter Legendary, authentication, downloader workers, or foreground-job IPC.
+- CI for exact combined source head `b5e0e84632e2be443e105a748f9bf35c73ccf1ac` has started:
+  - Standard APK workflow **45053802111**: pending at handoff update.
+  - Epic runtime / Android instrumentation / ARM64 workflow **45053802067**: pending at handoff update.
+  - The first standard run on intermediate Fragment-only commit **5936ed4** was cancelled when the ViewModel commit landed; it is superseded by the two exact-head workflows above.
+- Do not distribute a new APK until both workflows for `b5e0e846` succeed. Device acceptance remains pending for immediate cached re-entry, explicit Refresh, and cache updates after install/update/uninstall.
