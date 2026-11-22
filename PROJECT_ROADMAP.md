@@ -148,3 +148,13 @@ Next engineering focus: broaden functional acceptance and harden recovery paths 
 - [x] Kept explicit Refresh and mutation-triggered refreshes intact; downloader, job service, and IPC behavior unchanged.
 - [ ] Validate exact combined source head `b5e0e84632e2be443e105a748f9bf35c73ccf1ac` in standard APK workflow **45053802111** and Epic runtime workflow **45053802067**.
 - [ ] Device-test immediate Epic re-entry, explicit Refresh, and updated installed state after install/update/uninstall.
+
+
+## Epic Library navigation cache — CI complete (2026-11-22)
+
+- [x] Activity-scoped ViewModel cache implemented for library JSON and installed-game metadata.
+- [x] Standard APK workflow **45053802111** passed for exact source head `b5e0e84632e2be443e105a748f9bf35c73ccf1ac`.
+- [x] Epic runtime / Android instrumentation / ARM64 packaging workflow **45053802067** passed.
+- [x] Published test build: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-b5e0e84632e2
+- [x] Main APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b5e0e84632e2/app-standard-debug.apk
+- [ ] Device-test instant cached re-entry, manual refresh, and installed-state updates after install/update/uninstall.
