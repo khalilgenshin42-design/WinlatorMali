@@ -607,9 +607,13 @@ public final class EpicFragment extends Fragment {
                         // queue with identical TextView updates during slow phases.
                         if (!progressLabel.equals(lastPostedProgressLabel)) {
                             lastPostedProgressLabel = progressLabel;
+                            lastProgressLabel = progressLabel;
                             mainHandler.post(() -> {
                                 if (statusText != null && jobPolling) {
                                     statusText.setText(progressLabel);
+                                }
+                                if (downloadsStatusText != null) {
+                                    downloadsStatusText.setText(progressLabel);
                                 }
                             });
                         }
@@ -635,6 +639,10 @@ public final class EpicFragment extends Fragment {
                         || "cancelled".equals(jobState) || "interrupted".equals(jobState)) {
                     String body = state.getString("result_json", "");
                     result = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+                    lastProgressLabel = "Epic operation " + jobState + ".";
+                    mainHandler.post(() -> {
+                        if (downloadsStatusText != null) downloadsStatusText.setText(lastProgressLabel);
+                    });
                     if ("interrupted".equals(jobState)) {
                         try {
                             result.put("ok", false);
