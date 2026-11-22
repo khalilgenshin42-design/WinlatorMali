@@ -76,4 +76,4 @@ if grep -Fq 'FAILURES!!!' <<<"$HOST_TEST_OUTPUT" ||
   adb logcat -d -s EpicPythonRuntime:E EpicBridgePython:E python:E AndroidRuntime:E || true
   exit 1
 fi
-echo "Embedded Epic provider/JNI runtime integration passed (1/1)."
+echo "Embedded Epic provider/JNI runtime and same-package storage-scope integration passed (1/1)."
