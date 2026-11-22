@@ -2263,3 +2263,18 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
   - Epic runtime / Android instrumentation / ARM64 workflow **45053802067**: pending at handoff update.
   - The first standard run on intermediate Fragment-only commit **5936ed4** was cancelled when the ViewModel commit landed; it is superseded by the two exact-head workflows above.
 - Do not distribute a new APK until both workflows for `b5e0e846` succeed. Device acceptance remains pending for immediate cached re-entry, explicit Refresh, and cache updates after install/update/uninstall.
+
+
+## Epic library cache fix CI complete and published (2026-11-22)
+
+- User confirmed on-device acceptance of previous artwork build: real cover artwork displays; scrolling and leaving/re-entering Epic while downloads run remain smooth. User then reported library reloaded every time they returned to Epic.
+- Root cause was confirmed and fixed with Activity-scoped ViewModel cache; see commits `5936ed4` and `b5e0e84` above.
+- Exact combined source head `b5e0e84632e2be443e105a748f9bf35c73ccf1ac` passed both required workflows:
+  - Standard APK workflow **45053802111** — success.
+  - Epic runtime / Android instrumentation / ARM64 packaging workflow **45053802067** — success, including managed x86_64 runtime smoke, Legendary aggregation regression tests, Android JNI instrumentation, ARM64 packaging, APK audits and prerelease publication.
+- Published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-b5e0e84632e2
+- Direct main APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b5e0e84632e2/app-standard-debug.apk
+- Direct companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b5e0e84632e2/epicbridge-debug.apk
+- SHA-256: main APK `259002ec0ac0230901974ec42b6d636e4f02c41f46c52d233cf443b6058ba980`; companion `256d1926b443066cb934e1591b968dc3c3665cab8eb3fea371bdc7c6c66ae43a`.
+- Device test now required: while MainActivity remains alive, visit Epic, switch to Containers, return to Epic and confirm cards appear immediately without library loading request/spinner. Also confirm manual Refresh still refreshes and installed state updates after install/update/uninstall. Process death/relaunch is expected to reload.
+- Debug signing caveat: these are debug-signed APKs; a certificate mismatch may require uninstalling the prior package. Back up container data before any uninstall.
