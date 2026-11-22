@@ -2076,3 +2076,20 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - The UI worker polls job status every **1.5 seconds**. Progress text is now posted to the main thread only when the displayed phase/percentage label changes, and cancel-button visibility updates are deduplicated. This is a low-rate status channel; source inspection alone does not prove IPC is or is not responsible for the observed device lag.
 - No further polling-rate reduction or downloader concurrency/mmap change is justified without device measurements. The next useful evidence is a same-condition test of the new embedded build, followed by timestamped UI/frame, CPU, memory and storage observations if jank persists.
 
+## Engineering step log — 2026-11-22: foreground notification deduplication
+
+- Reviewed `EpicRuntimeService.updateProgressNotification()`. The service's one-second foreground polling task read and parsed the status JSON, rebuilt a Notification, and called `NotificationManager.notify()` on every tick even if the user-visible phase and integer percentage were unchanged. It also included a changing download-speed string, which could force needless notification updates.
+- In commit **e067cb7f04dbb1d2505c3516ac241995ffdd97f5**, added a cached notification key based on the displayed phase and integer percentage. The service now skips `NotificationManager.notify()` when that key is unchanged, resets the cache when a new job begins, and removes the volatile speed string from the notification so updates are driven by meaningful visible progress changes. The notification still shows the phase and percentage.
+- This reduces repeated Android notification publication; the service still samples the progress file once per second. It is a targeted optimization, not proof of a device-level performance improvement or a diagnosis of the original lag.
+- CI triggered on the new source commit:
+  - Epic runtime workflow **44979607565**.
+  - Standard APK workflow **44979607640**.
+  Both were queued when this entry was written. Do not call the change build-verified until both complete successfully.
+- Device profiling remains necessary if Winlator still becomes unresponsive: compare frame jank, CPU/decompression, memory pressure, storage writes, notification update count and provider call timing during the same download workload.
+
+### Next actions
+
+1. Verify both workflows for commit `e067cb7`; fix any actual compile or packaging failure.
+2. If successful, update `PROJECT_EPIC_CI_STATUS.md` and publish/record the new experimental artifact and SHA-256.
+3. Have the user test the new build on the Xiaomi 15T only after the CI gate passes; retain companion fallback and preserve all existing app/container data.
+
