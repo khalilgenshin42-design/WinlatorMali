@@ -70,6 +70,15 @@ public final class EpicRuntimeInstrumentedTest {
     }
 
     @Test
+    public void progressNotificationIsPublishedOnlyForChangedVisibleState() {
+        assertTrue(EpicRuntimeService.shouldPostProgressNotification(null, "downloading|0"));
+        assertFalse(EpicRuntimeService.shouldPostProgressNotification("downloading|0", "downloading|0"));
+        assertTrue(EpicRuntimeService.shouldPostProgressNotification("downloading|0", "downloading|1"));
+        assertTrue(EpicRuntimeService.shouldPostProgressNotification("downloading|50", "installing|50"));
+        assertFalse(EpicRuntimeService.shouldPostProgressNotification("complete|100", null));
+    }
+
+    @Test
     public void cancellationEligibilityRequiresAnActiveRunningInstall() {
         String jobId = java.util.UUID.randomUUID().toString();
         assertFalse(EpicRuntimeService.isJobCancellable(jobId, "running", "install", null));
