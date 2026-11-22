@@ -299,12 +299,12 @@ jobs:
           jar tf "$RUNNER_TEMP/epicruntime-classes.jar" | grep -Fx 'com/maliwinlator/epicbridge/EpicBridgeProvider.class'
           BRIDGE_APK="$PWD/epicbridge/build/outputs/apk/debug/epicbridge-debug.apk"
           HOST_APK="$PWD/app/build/outputs/apk/standard/debug/app-standard-debug.apk"
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
           test -s "$BRIDGE_APK" && test -s "$HOST_APK"
           # Confirm the host application actually merges the runtime AAR, not just builds beside it.
           unzip -Z1 "$HOST_APK" | grep -Fx 'lib/arm64-v8a/libepic_python.so'
           unzip -Z1 "$HOST_APK" | grep -Fx 'assets/python/lib/python3.15/os.py'
           "$BUILD_TOOLS/aapt" dump xmltree "$HOST_APK" AndroidManifest.xml | grep -F 'com.maliwinlator.app.epicprovider'
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
           "$BUILD_TOOLS/apksigner" verify --verbose "$BRIDGE_APK"
           "$BUILD_TOOLS/apksigner" verify --verbose "$HOST_APK"
           "$BUILD_TOOLS/aapt" dump badging "$BRIDGE_APK" | grep -F "package: name='com.maliwinlator.epicbridge'"
