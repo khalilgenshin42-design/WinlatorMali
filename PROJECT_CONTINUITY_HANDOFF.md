@@ -2003,3 +2003,16 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 3. Review stale UI text that says storage access is required in “both apps”; tailor messaging to embedded vs companion mode without breaking fallback.
 4. After the all-flavor audit passes, provide the current release build for Xiaomi 15T testing, with explicit instructions to preserve existing game/container data and not replace the system Vulkan driver.
 5. Profile download-time jank on-device (UI thread traces, CPU utilization, storage throughput, memory pressure and notification update frequency). Do not claim IPC is the root cause without measurement.
+
+
+## Follow-up — flavor audit and same-package storage messaging (2026-11-22)
+
+- Extended Epic workflow in commit `4742809f49c7af9167354316452d3ff9fa2360c2` to assemble all three production host flavors and audit the application ID, merged `.epicprovider` authority, ARM64 `libepic_python.so`, and Python stdlib asset for each:
+  - Standard: `com.maliwinlator.app`
+  - Ludashi: `com.ludashi.benchmark`
+  - AnTuTu: `com.antutu.ABenchMark`
+- Added status field `host_embedded` in provider commit `fec273d3b5d4c4c68e4540c06b3bb6ca72666434`. It identifies whether the runtime is inside the host package (same Android app storage permission) or in the standalone companion package (separate permission grant).
+- Updated `EpicFragment` in commit `61c6213cf0c7ddda95a82408849db8854b0a2c1a` so embedded mode no longer tells users to grant shared-storage permission in “both apps”; companion fallback still retains the two-package guidance.
+- Strengthened the host-only integration test in commit `1d8f8650b71b078bb11ca8009595761154e8629b` to assert `host_embedded=true`.
+- Run `44974595003` tests the first all-flavor audit on commit `4742809`; later commits `61c6213` and `1d8f865` supersede it and trigger the current build/test runs `44974633713` (Epic) and `44974633711` (Standard). Results are pending at this point.
+- Do not use the older release build as proof of these latest UI/storage-scope changes. The previous successful host-only instrumentation passed before this follow-up change; the new assertion must pass before publishing another device build.
