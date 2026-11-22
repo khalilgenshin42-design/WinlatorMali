@@ -129,3 +129,13 @@ Next engineering focus: broaden functional acceptance and harden recovery paths 
 - [x] Load cover art on game cards using existing Glide dependency, disk/memory cache, and gradient fallback; accept only Epic Games / Unreal Engine HTTPS hosts.
 - [ ] Validate artwork implementation on exact branch tip `25664d0` with standard APK and Epic runtime/instrumentation workflows.
 - [ ] Device-test image loading, cache reuse, offline fallback, scrolling, and existing Epic game actions on Xiaomi 15T.
+
+
+## Epic cover artwork validation and release (2026-11-22)
+
+- [x] Exact source commit `25664d0cadacb0844fb333526cc218f4d2ecfb39` passed standard APK workflow **45042169506**.
+- [x] Exact source commit passed Epic runtime / Android instrumentation / ARM64 packaging workflow **45042169424**; all steps succeeded and prerelease publication completed.
+- [x] Published test release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-25664d0cadac
+- [x] Direct main APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/app-standard-debug.apk
+- [x] Direct companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/epicbridge-debug.apk
+- [ ] Device-test artwork rendering, image caching/offline fallback, scroll performance, and Epic account/library/install/update/uninstall/launch flows on Xiaomi 15T.
