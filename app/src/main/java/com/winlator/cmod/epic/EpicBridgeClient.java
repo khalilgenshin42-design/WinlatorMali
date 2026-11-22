@@ -20,9 +20,50 @@ public final class EpicBridgeClient {
     private static final String ASSET_NAME = "epicbridge.apk";
     private static final int PROTOCOL_VERSION = 2;
 
+    // The runtime is packaged in the host APK and exposed only to the same UID.
+    // Keep the separately installed companion authority as a migration fallback.
+    private static String embeddedAuthority(Context context) {
+        return context.getPackageName() + ".epicprovider";
+    }
+
+    private static Bundle callAuthority(Context context, String authority,
+            String method, String arg, Bundle extras) {
+        return context.getContentResolver().call(
+                Uri.parse("content://" + authority), method, arg, extras);
+    }
+
+    private static Bundle callEmbedded(Context context, String method,
+            String arg, Bundle extras) {
+        try {
+            Bundle result = callAuthority(context, embeddedAuthority(context), method, arg, extras);
+            if (result != null && result.getInt("protocol_version", -1) == PROTOCOL_VERSION) {
+                return result;
+            }
+        } catch (Exception ignored) {
+            // An older host build may not include the in-package provider yet.
+        }
+        return null;
+    }
+
     private EpicBridgeClient() {}
 
     public static boolean isInstalled(Context context) {
+        Bundle embedded = callEmbedded(context, "status", null, null);
+        if (embedded != null && embedded.getBoolean("installed", false)) return true;
+        try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                context.getPackageManager().getPackageInfo(
+                        PACKAGE_NAME, PackageManager.PackageInfoFlags.of(0));
+            } else {
+                context.getPackageManager().getPackageInfo(PACKAGE_NAME, 0);
+            }
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static boolean isCompanionInstalled(Context context) {
         try {
             if (Build.VERSION.SDK_INT >= 33) {
                 context.getPackageManager().getPackageInfo(
@@ -38,8 +79,10 @@ public final class EpicBridgeClient {
 
     public static Bundle getStatus(Context context) {
         try {
-            Bundle result = context.getContentResolver().call(
-                    Uri.parse("content://" + AUTHORITY), "status", null, null);
+            Bundle result = callEmbedded(context, "status", null, null);
+            if (result == null && isCompanionInstalled(context)) {
+                result = callAuthority(context, AUTHORITY, "status", null, null);
+            }
             if (result != null) {
                 if (result.getInt("protocol_version", -1) != PROTOCOL_VERSION) {
                     Bundle mismatch = new Bundle();
@@ -82,8 +125,10 @@ public final class EpicBridgeClient {
         Bundle extras = new Bundle();
         extras.putString("payload_json", payloadJson == null ? "{}" : payloadJson);
         try {
-            Bundle result = context.getContentResolver().call(
-                    Uri.parse("content://" + AUTHORITY), method, arg, extras);
+            Bundle result = callEmbedded(context, method, arg, extras);
+            if (result == null && isCompanionInstalled(context)) {
+                result = callAuthority(context, AUTHORITY, method, arg, extras);
+            }
             if (result == null) {
                 Bundle unavailable = new Bundle();
                 unavailable.putBoolean("ok", false);
