@@ -2216,3 +2216,7 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - This is a first presentation implementation, not yet a verified APK or device-tested UI. GitHub Actions Epic runtime and Android packaging validation must pass before publishing a build. Review compiler output and fix any issues before asking the user to install.
 - Known follow-up: selected navigation styling and true game artwork should be added only after a trustworthy metadata/artwork source and cache strategy are established. Validate the search/card layout, downloads status refresh on tab re-entry, storage/setup controls, and all existing game actions on the Xiaomi 15T.
 
+
+
+- Follow-up UI polish commit `f2a920f270404ea7cd714f275f0b8b0c3372534f`: active section now receives a distinct selected-tab treatment. This is included in the current branch tip.
+- Validation runs launched for the immediately preceding source commit `5573bcb624002e1a26605bf0433fe1860a39e942` (standard APK run **45039925553**, Epic runtime run **45039925583**). Because the active-tab polish landed after those runs started, their results do not validate commit `f2a920f`; rerun or otherwise validate the exact branch tip before publishing.
