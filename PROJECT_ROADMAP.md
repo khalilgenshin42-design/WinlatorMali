@@ -38,15 +38,16 @@ Preserve the 1.2.1 Winlator Mali runtime and user features while adding an Epic 
 - [x] Create a separate GPL-3.0 Epic Bridge companion package with signature-protected ContentProvider IPC and a host Epic Games navigation screen.
 - [x] Build CPython 3.15.2 for Android x86_64 and run it on the managed emulator.
 - [x] Validate Android TLS/CA trust through Requests + certifi, plus ctypes, SQLite, zlib, SHA-256, fcntl locks and subprocess execution (run 44649787558).
-- [ ] Apply and validate the pinned Legendary 0.21.1 Android thread/anonymous-mmap backend; source patching currently has a cleanup-anchor mismatch being corrected.
-- [ ] Build and validate Legendary's pure-Python Android dependencies and the JNI/JCA AES-GCM shim; do not bundle host Linux native wheels.
-- [ ] Integrate the runtime into the companion and prove safe command output, cancellation, token handling, account status and owned-game metadata.
+- [x] Apply and validate the pinned Legendary 0.21.1 Android thread/anonymous-mmap backend in the embedded runtime; CI runtime smoke and instrumentation cover the adapted downloader and cancellation paths.
+- [x] Build and validate Android-compatible dependencies and the JNI/JCA AES-GCM shim; no desktop Linux native wheels are used.
+- [x] Integrate the runtime into the host APK's isolated runtime process and validate safe command output, cancellation, token handling, account status and owned-game metadata.
 
 ### M3 — Game library and lifecycle
-- Model Epic catalog entries separately from existing Wine shortcuts.
-- Implement install location, disk-space preflight, resumable/retryable downloads, update state, and uninstall.
-- Create a launch shortcut only after install metadata and executable mapping are verified.
-- Keep long-running work in a foreground service with visible progress and cancellation.
+- [x] Model Epic catalog entries separately from existing Wine shortcuts.
+- [x] Implement per-container install locations, update, uninstall, foreground download progress, and cancellation plumbing. Device acceptance is still required for every edge case.
+- [x] Implement guarded launch-parameter handoff into the selected Winlator container; broader real-game compatibility remains title-dependent.
+- [x] Keep long-running work in a foreground service with visible progress and cancellation.
+- [ ] Complete the full device regression matrix for authentication/session persistence, library refresh, cancel/retry, update, uninstall, restart recovery, and representative game launch.
 
 ### M4 — Official launcher fallback
 - Install the official Epic Games Launcher into a dedicated container/prefix.
@@ -101,3 +102,10 @@ Continuity log: [PROJECT_CONTINUITY_HANDOFF.md](PROJECT_CONTINUITY_HANDOFF.md).
 ## Current Epic implementation status (2026-11-20)
 
 The Epic UI entry point, companion APK packaging, signature-protected IPC bootstrap, and Android CPython runtime probe are in place. The emulator has successfully validated the APIs needed for the Legendary control plane and HTTPS. Legendary itself is not yet running in the Android companion: its downloader uses POSIX shared memory and multiprocessing, which are unavailable in the selected Bionic build, so an Android-specific thread backend is being validated. PyCryptodomex native ARM64 compatibility and the embedded JNI runtime are also outstanding. Epic login, owned-game listing, installation, updates, uninstall and Wine-container launch are not yet implemented or claimed.
+
+
+## Epic integration status update (2026-11-22)
+
+The previous M2/M3 checklist above is updated to reflect implementation now present in the development branch. The Xiaomi 15T user has confirmed that returning to the Epic page remains smooth with no freeze or lag during both active download and active installation on build commit `4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28`. Both Epic runtime/instrumentation and standard APK workflows passed for that commit. This closes the specific Epic-page re-entry responsiveness regression; it does not replace the remaining full feature/device regression matrix.
+
+Next engineering focus: broaden functional acceptance and harden recovery paths (process death/restart, stale job state, cancellation races, retry after partial downloads, update/uninstall consistency, and launch payload/path validation). Do not modify downloader concurrency or IPC architecture without a new measured regression. Deliver future APKs using direct GitHub release-asset URLs because the user reports release-page links do not work reliably on their device.
