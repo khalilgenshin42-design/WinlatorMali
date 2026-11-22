@@ -287,7 +287,7 @@ jobs:
         working-directory: maliwinlator
         run: |
           set -euo pipefail
-          ./gradlew --no-daemon --stacktrace :epicruntime:assembleDebug :app:assembleStandardDebug -PepicRuntimeAbi=arm64-v8a -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
+          ./gradlew --no-daemon --stacktrace :epicruntime:assembleDebug :app:assembleStandardDebug :app:assembleLudashiDebug :app:assembleAntutuDebug -PepicRuntimeAbi=arm64-v8a -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/aarch64-linux-android/prefix"
           RUNTIME_AAR="$PWD/epicruntime/build/outputs/aar/epicruntime-debug.aar"
           test -s "$RUNTIME_AAR"
           unzip -l "$RUNTIME_AAR" | grep -F 'assets/python/lib/python3.15/os.py'
@@ -329,6 +329,484 @@ jobs:
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/os.py'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/site-packages/legendary/__init__.py'
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/site-packages/epicbridge_runner.py'
+          # The host APK must contain the in-package runtime while retaining the
+          # temporary companion fallback. Check classes, native code, and Python assets.
+          unzip -Z1 "$HOST_APK" | grep -E '^lib/arm64-v8a/libepic_python\.so
+          mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
+          unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cmp "$BRIDGE_APK" "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cp "$BRIDGE_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          cp "$HOST_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          (cd "$GITHUB_WORKSPACE/epic-apk-output" && sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS)
+
+      - name: Upload installable MaliWinlator Epic APKs
+        id: epic_apks
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-epic-arm64-debug
+          path: epic-apk-output/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish installable Epic APK GitHub prerelease
+        id: epic_release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="maliwinlator-1.2.1-epic-${GITHUB_SHA:0:12}"
+          TITLE="MaliWinlator 1.2.1 Epic test build (${GITHUB_SHA:0:12})"
+          APK_FILES=("$GITHUB_WORKSPACE/epic-apk-output/"*.apk)
+          test "${#APK_FILES[@]}" -eq 2
+          NOTES_FILE="$RUNNER_TEMP/epic-release-notes.md"
+          cat > "$NOTES_FILE" <<EOF
+          Experimental ARM64 debug build of the independent Winlator Mali 1.2.1 fork with Legendary-powered Epic account, library, install, update, uninstall, and launch integration.
+
+          Source commit: $GITHUB_SHA
+          Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          Verification completed before publication:
+          - CPython 3.15.2 Android x86_64 managed-emulator runtime smoke
+          - Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative, worker-thread, mmap and downloader lifecycle)
+          - ARM64 APK build and embedded companion byte comparison
+          - Package/signature/ABI/assets/ELF dependency-closure audits
+
+          These are debug-signed test APKs, not production release builds. A different debug certificate may require uninstalling a previous debug package before installation.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+          else
+            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
+          fi
+          echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish successful Epic build status to repository
+        if: success()
+        continue-on-error: true
+        working-directory: maliwinlator
+        env:
+          EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
+          EPIC_RELEASE_URL: ${{ steps.epic_release.outputs.url }}
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI status publication; APK build itself passed."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI status publication; APK build itself passed."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **SUCCESS**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - GitHub prerelease: $EPIC_RELEASE_URL
+          - Actions artifact: $EPIC_APK_ARTIFACT_URL
+          - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
+          - Built host package: com.maliwinlator.app (versionCode 24)
+          - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
+          - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
+          EOF
+          { echo; echo "## APK SHA-256"; awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"; } >> PROJECT_EPIC_CI_STATUS.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then echo "Unable to commit CI status report; APK build itself passed."; exit 0; fi
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI status commit could not be pushed; inspect this workflow run directly."
+
+      - name: Publish failed Epic build status to repository
+        if: failure()
+        working-directory: maliwinlator
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI failure report."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI failure report."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **FAILURE**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - APK artifact: not verified; do not install.
+          - Failure details: inspect the failed steps in the workflow run above.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          git commit -m "ci: record Epic APK validation failure [skip ci]" || echo "Unable to commit CI failure report."
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
+
+          unzip -Z1 "$HOST_APK" | grep -E '^assets/python/lib/python3\.15/os\.py
+          mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
+          unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cmp "$BRIDGE_APK" "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cp "$BRIDGE_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          cp "$HOST_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          (cd "$GITHUB_WORKSPACE/epic-apk-output" && sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS)
+
+      - name: Upload installable MaliWinlator Epic APKs
+        id: epic_apks
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-epic-arm64-debug
+          path: epic-apk-output/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish installable Epic APK GitHub prerelease
+        id: epic_release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="maliwinlator-1.2.1-epic-${GITHUB_SHA:0:12}"
+          TITLE="MaliWinlator 1.2.1 Epic test build (${GITHUB_SHA:0:12})"
+          APK_FILES=("$GITHUB_WORKSPACE/epic-apk-output/"*.apk)
+          test "${#APK_FILES[@]}" -eq 2
+          NOTES_FILE="$RUNNER_TEMP/epic-release-notes.md"
+          cat > "$NOTES_FILE" <<EOF
+          Experimental ARM64 debug build of the independent Winlator Mali 1.2.1 fork with Legendary-powered Epic account, library, install, update, uninstall, and launch integration.
+
+          Source commit: $GITHUB_SHA
+          Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          Verification completed before publication:
+          - CPython 3.15.2 Android x86_64 managed-emulator runtime smoke
+          - Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative, worker-thread, mmap and downloader lifecycle)
+          - ARM64 APK build and embedded companion byte comparison
+          - Package/signature/ABI/assets/ELF dependency-closure audits
+
+          These are debug-signed test APKs, not production release builds. A different debug certificate may require uninstalling a previous debug package before installation.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+          else
+            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
+          fi
+          echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish successful Epic build status to repository
+        if: success()
+        continue-on-error: true
+        working-directory: maliwinlator
+        env:
+          EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
+          EPIC_RELEASE_URL: ${{ steps.epic_release.outputs.url }}
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI status publication; APK build itself passed."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI status publication; APK build itself passed."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **SUCCESS**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - GitHub prerelease: $EPIC_RELEASE_URL
+          - Actions artifact: $EPIC_APK_ARTIFACT_URL
+          - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
+          - Built host package: com.maliwinlator.app (versionCode 24)
+          - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
+          - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
+          EOF
+          { echo; echo "## APK SHA-256"; awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"; } >> PROJECT_EPIC_CI_STATUS.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then echo "Unable to commit CI status report; APK build itself passed."; exit 0; fi
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI status commit could not be pushed; inspect this workflow run directly."
+
+      - name: Publish failed Epic build status to repository
+        if: failure()
+        working-directory: maliwinlator
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI failure report."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI failure report."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **FAILURE**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - APK artifact: not verified; do not install.
+          - Failure details: inspect the failed steps in the workflow run above.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          git commit -m "ci: record Epic APK validation failure [skip ci]" || echo "Unable to commit CI failure report."
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
+
+          "$BUILD_TOOLS/aapt" dump xmltree "$HOST_APK" AndroidManifest.xml | grep -F 'com.maliwinlator.app.epicprovider'
+          for FLAVOR in ludashi antutu; do
+            FLAVOR_APK="$PWD/app/build/outputs/apk/$FLAVOR/debug/app-$FLAVOR-debug.apk"
+            test -s "$FLAVOR_APK"
+            "$BUILD_TOOLS/apksigner" verify --verbose "$FLAVOR_APK"
+            case "$FLAVOR" in
+              ludashi) EXPECTED_PACKAGE='com.ludashi.benchmark' ;;
+              antutu) EXPECTED_PACKAGE='com.antutu.ABenchMark' ;;
+            esac
+            "$BUILD_TOOLS/aapt" dump badging "$FLAVOR_APK" | grep -F "package: name='$EXPECTED_PACKAGE'"
+            "$BUILD_TOOLS/aapt" dump xmltree "$FLAVOR_APK" AndroidManifest.xml | grep -F "$EXPECTED_PACKAGE.epicprovider"
+            unzip -Z1 "$FLAVOR_APK" | grep -E '^lib/arm64-v8a/libepic_python\.so
+          mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
+          unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cmp "$BRIDGE_APK" "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cp "$BRIDGE_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          cp "$HOST_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          (cd "$GITHUB_WORKSPACE/epic-apk-output" && sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS)
+
+      - name: Upload installable MaliWinlator Epic APKs
+        id: epic_apks
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-epic-arm64-debug
+          path: epic-apk-output/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish installable Epic APK GitHub prerelease
+        id: epic_release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="maliwinlator-1.2.1-epic-${GITHUB_SHA:0:12}"
+          TITLE="MaliWinlator 1.2.1 Epic test build (${GITHUB_SHA:0:12})"
+          APK_FILES=("$GITHUB_WORKSPACE/epic-apk-output/"*.apk)
+          test "${#APK_FILES[@]}" -eq 2
+          NOTES_FILE="$RUNNER_TEMP/epic-release-notes.md"
+          cat > "$NOTES_FILE" <<EOF
+          Experimental ARM64 debug build of the independent Winlator Mali 1.2.1 fork with Legendary-powered Epic account, library, install, update, uninstall, and launch integration.
+
+          Source commit: $GITHUB_SHA
+          Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          Verification completed before publication:
+          - CPython 3.15.2 Android x86_64 managed-emulator runtime smoke
+          - Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative, worker-thread, mmap and downloader lifecycle)
+          - ARM64 APK build and embedded companion byte comparison
+          - Package/signature/ABI/assets/ELF dependency-closure audits
+
+          These are debug-signed test APKs, not production release builds. A different debug certificate may require uninstalling a previous debug package before installation.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+          else
+            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
+          fi
+          echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish successful Epic build status to repository
+        if: success()
+        continue-on-error: true
+        working-directory: maliwinlator
+        env:
+          EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
+          EPIC_RELEASE_URL: ${{ steps.epic_release.outputs.url }}
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI status publication; APK build itself passed."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI status publication; APK build itself passed."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **SUCCESS**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - GitHub prerelease: $EPIC_RELEASE_URL
+          - Actions artifact: $EPIC_APK_ARTIFACT_URL
+          - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
+          - Built host package: com.maliwinlator.app (versionCode 24)
+          - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
+          - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
+          EOF
+          { echo; echo "## APK SHA-256"; awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"; } >> PROJECT_EPIC_CI_STATUS.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then echo "Unable to commit CI status report; APK build itself passed."; exit 0; fi
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI status commit could not be pushed; inspect this workflow run directly."
+
+      - name: Publish failed Epic build status to repository
+        if: failure()
+        working-directory: maliwinlator
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI failure report."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI failure report."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **FAILURE**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - APK artifact: not verified; do not install.
+          - Failure details: inspect the failed steps in the workflow run above.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          git commit -m "ci: record Epic APK validation failure [skip ci]" || echo "Unable to commit CI failure report."
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
+
+            unzip -Z1 "$FLAVOR_APK" | grep -E '^assets/python/lib/python3\.15/os\.py
+          mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
+          unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cmp "$BRIDGE_APK" "$RUNNER_TEMP/embedded-epicbridge.apk"
+          cp "$BRIDGE_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          cp "$HOST_APK" "$GITHUB_WORKSPACE/epic-apk-output/"
+          (cd "$GITHUB_WORKSPACE/epic-apk-output" && sha256sum ./*.apk | sed 's#  ./#  #' > SHA256SUMS)
+
+      - name: Upload installable MaliWinlator Epic APKs
+        id: epic_apks
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-1.2.1-epic-arm64-debug
+          path: epic-apk-output/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload CPython Android runtime POC
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliwinlator-cpython-3.15.2-android-arm64-poc
+          path: |
+            cpython/cross-build/x86_64-linux-android/dist/*.tar.gz
+            cpython/cross-build/aarch64-linux-android/dist/*.tar.gz
+            cpython/runtime-build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish installable Epic APK GitHub prerelease
+        id: epic_release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="maliwinlator-1.2.1-epic-${GITHUB_SHA:0:12}"
+          TITLE="MaliWinlator 1.2.1 Epic test build (${GITHUB_SHA:0:12})"
+          APK_FILES=("$GITHUB_WORKSPACE/epic-apk-output/"*.apk)
+          test "${#APK_FILES[@]}" -eq 2
+          NOTES_FILE="$RUNNER_TEMP/epic-release-notes.md"
+          cat > "$NOTES_FILE" <<EOF
+          Experimental ARM64 debug build of the independent Winlator Mali 1.2.1 fork with Legendary-powered Epic account, library, install, update, uninstall, and launch integration.
+
+          Source commit: $GITHUB_SHA
+          Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          Verification completed before publication:
+          - CPython 3.15.2 Android x86_64 managed-emulator runtime smoke
+          - Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative, worker-thread, mmap and downloader lifecycle)
+          - ARM64 APK build and embedded companion byte comparison
+          - Package/signature/ABI/assets/ELF dependency-closure audits
+
+          These are debug-signed test APKs, not production release builds. A different debug certificate may require uninstalling a previous debug package before installation.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+          else
+            gh release create "$TAG" "${APK_FILES[@]}" "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS" --prerelease --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
+          fi
+          echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish successful Epic build status to repository
+        if: success()
+        continue-on-error: true
+        working-directory: maliwinlator
+        env:
+          EPIC_APK_ARTIFACT_URL: ${{ steps.epic_apks.outputs.artifact-url }}
+          EPIC_RELEASE_URL: ${{ steps.epic_release.outputs.url }}
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI status publication; APK build itself passed."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI status publication; APK build itself passed."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **SUCCESS**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - GitHub prerelease: $EPIC_RELEASE_URL
+          - Actions artifact: $EPIC_APK_ARTIFACT_URL
+          - Artifact name: maliwinlator-1.2.1-epic-arm64-debug
+          - Built host package: com.maliwinlator.app (versionCode 24)
+          - Built companion package: com.maliwinlator.epicbridge (versionCode 2)
+          - Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
+          EOF
+          { echo; echo "## APK SHA-256"; awk '{print "- " $1 "  " $2}' "$GITHUB_WORKSPACE/epic-apk-output/SHA256SUMS"; } >> PROJECT_EPIC_CI_STATUS.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          if ! git commit -m "ci: publish verified Epic APK artifact [skip ci]"; then echo "Unable to commit CI status report; APK build itself passed."; exit 0; fi
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI status commit could not be pushed; inspect this workflow run directly."
+
+      - name: Publish failed Epic build status to repository
+        if: failure()
+        working-directory: maliwinlator
+        run: |
+          set -euo pipefail
+          if ! git fetch origin "$GITHUB_REF_NAME"; then echo "Unable to fetch branch for CI failure report."; exit 0; fi
+          if ! git reset --hard FETCH_HEAD; then echo "Unable to synchronize branch for CI failure report."; exit 0; fi
+          cat > PROJECT_EPIC_CI_STATUS.md <<EOF
+          # Epic APK CI status
+          - Result: **FAILURE**
+          - Run attempt: $GITHUB_RUN_ATTEMPT
+          - Source commit: $GITHUB_SHA
+          - Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - APK artifact: not verified; do not install.
+          - Failure details: inspect the failed steps in the workflow run above.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT_EPIC_CI_STATUS.md
+          git commit -m "ci: record Epic APK validation failure [skip ci]" || echo "Unable to commit CI failure report."
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "CI failure report could not be pushed; inspect this workflow run directly."
+
+          done
           unzip -Z1 "$HOST_APK" | grep -Fx 'assets/epicbridge.apk'
           mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
           unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
