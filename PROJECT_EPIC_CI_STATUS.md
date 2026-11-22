@@ -1,9 +1,15 @@
 # Epic APK CI status
-- Latest completed validation: **FAILURE (infrastructure / dependency resolution)**
-- Failed run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44974686442
-- Source commit tested: `b0ae58aaf8b6efca96b9f74ece5775b5952ee54d`
-- Failure stage: upstream CPython Android managed-emulator smoke Gradle setup; Maven Central returned HTTP 429 for Android build dependencies.
-- Embedded-provider smoke, Android instrumentation, all-flavor APK assembly and APK audits did **not** execute in that run.
-- Retry policy: commit `e4a758b9481c5d0c143dd11539343c7b7b9d2da3` adds up to three bounded retries for explicit Maven HTTP 429 responses only.
-- Current artifact status: **not verified; do not install an artifact from failed run 44974686442**.
-- Next gate: workflow run triggered by `e4a758b`; require host-only `host_embedded=true` test and Standard/Ludashi/AnTuTu ARM64 APK audits to pass.
+- Result: **SUCCESS**
+- Run attempt: 1
+- Source commit: e4a758b9481c5d0c143dd11539343c7b7b9d2da3
+- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44975450275
+- GitHub prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-e4a758b9481c
+- Actions artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44975450275/artifacts/14736042580
+- Artifact name: maliwinlator-1.2.1-epic-arm64-debug
+- Built host package: com.maliwinlator.app (versionCode 24)
+- Built companion package: com.maliwinlator.epicbridge (versionCode 2)
+- Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
+
+## APK SHA-256
+- 25d84e8ceecfd2fb9f2e66398d94344fb04b0ebd6ed1b9376079d7339eb64c76  app-standard-debug.apk
+- 57fec58ac6cdbb6659d03a9178428316b5dd903e34be5ec9931afa5e200b0c63  epicbridge-debug.apk
