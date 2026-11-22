@@ -2099,3 +2099,24 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Test/source commits: `c4abadb87c1573a27593faa5e38eebbc1a4b2128` and `3e9c2172246a7ba3f9b611656107718ed29ad64c`. The latter is the authoritative latest source SHA.
 - Latest validation runs on `3e9c217`: Epic runtime workflow **44979673157** and Standard APK workflow **44979673164**. Both were pending at this update. Earlier `e067cb7` runs **44979607565** and **44979607640** were still running but are superseded by the latest commit and must not be used as final validation.
 
+
+
+## Notification deduplication — CI verified and device build published (2026-11-22)
+
+- Authoritative source commit: **3e9c2172246a7ba3f9b611656107718ed29ad64c**.
+- Epic runtime/instrumentation workflow **44979673157** completed successfully; all 31 steps passed, including managed x86_64 runtime smoke, Legendary regression tests, ARM64 CPython packaging, Android instrumentation, ARM64 host/runtime assembly, APK audits, and prerelease publication.
+- Standard APK workflow **44979673164** completed successfully; all 12 steps passed, including standard debug APK assembly and embedded Epic Bridge/shared-signer verification.
+- Notification regression coverage in the Epic workflow validates initial notification publication, suppression when visible phase/percentage is unchanged, publication on percentage or phase change, and null next-state handling.
+- Published experimental prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-3e9c2172246a
+- Standard host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-3e9c2172246a/app-standard-debug.apk
+- Companion fallback APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-3e9c2172246a/epicbridge-debug.apk
+- Release SHA-256: host APK `31710ef65262fec687585587399c5790bd5d323885a5924d27e0064010fbca4f`; companion APK `5c75aae3024d87cf0111488c198921dc5ddfbdff820326113e3fe3a70f48ea95`.
+- Actions artifacts: Epic package artifact ID **14737623195**; standalone standard APK artifact ID **14737401181**. The latter was independently built and verified by workflow 44979673164.
+- These are experimental debug-signed artifacts. CI proves build/package and instrumentation behavior, not real Epic login/download acceptance or reduced jank on the Xiaomi 15T.
+
+### Next acceptance gate
+
+1. Install the new Standard APK as an in-place update, preserving app data and Wine containers. Keep the companion APK installed as fallback; do not remove it yet.
+2. Repeat one small game download under comparable network/storage conditions. Record whether the Winlator UI remains responsive, notification percentage advances, and cancellation remains available.
+3. If lag remains, collect timestamped logcat and frame-jank data during that exact download before changing downloader worker count, mmap sizing, or IPC design. Include CPU/memory pressure and storage activity where available.
+4. Continue functional acceptance for login, library, install/cancel/retry, update, uninstall, and launch in the selected Wine container. Do not treat CI as device acceptance.
