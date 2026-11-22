@@ -233,12 +233,26 @@ public final class EpicFragment extends Fragment {
                     return;
                 }
 
+                // The embedded CPython runtime serializes calls while Legendary is
+                // downloading/installing. Do not enqueue account_status on every
+                // return to this page while a persisted foreground job is active.
+                // The job monitor owns the status line until it reaches a terminal state.
+                android.content.SharedPreferences jobPrefs = appContext.getSharedPreferences(
+                        JOB_PREFS, android.content.Context.MODE_PRIVATE);
+                String activeJobId = jobPrefs.getString(JOB_ID_KEY, "");
+                setRuntimeControls(true);
+                if (!activeJobId.isEmpty()) {
+                    statusText.setText(storageReady
+                            ? "Epic installation is continuing in the foreground. Progress is shown below."
+                            : "Epic installation is continuing. Grant shared-storage access before starting another operation.");
+                    return;
+                }
+
                 statusText.setText(storageReady
                         ? "Epic Bridge runtime ready. Checking Epic account..."
                         : (embeddedRuntime
                                 ? "Epic runtime ready. Grant shared-storage access to MaliWinlator before installing or launching games."
                                 : "Epic runtime ready. Grant shared-storage access in both apps before installing or launching games."));
-                setRuntimeControls(true);
                 runCommand("account_status", "{}", response -> {
                     if (statusText == null || getView() == null) return;
                     if (!response.optBoolean("ok", false)) {
@@ -265,6 +279,12 @@ public final class EpicFragment extends Fragment {
     @Override
     public void onDestroy() {
         statusRequestSerial.incrementAndGet();
+        // The foreground service owns the actual download/install operation.
+        // Stop this Fragment's observers when the Fragment is permanently
+        // destroyed so a replacement Epic screen cannot leave duplicate pollers.
+        // waitForJob() treats interruption as a detach and leaves the persisted
+        // job ID intact for the next Fragment instance to resume monitoring.
+        io.shutdownNow();
         statusIo.shutdownNow();
         super.onDestroy();
     }
@@ -498,7 +518,8 @@ public final class EpicFragment extends Fragment {
     private void resumePendingJob() {
         if (jobPolling || statusText == null || getContext() == null) return;
         android.content.Context appContext = requireContext().getApplicationContext();
-        if (!EpicBridgeClient.isInstalled(appContext)) return;
+        // Do not synchronously call the provider from onResume/UI thread.
+        // The first job_status request below validates the provider asynchronously.
         android.content.SharedPreferences prefs =
                 appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
         String jobId = prefs.getString(JOB_ID_KEY, "");
