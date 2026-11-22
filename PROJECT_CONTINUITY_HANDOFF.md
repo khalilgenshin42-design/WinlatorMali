@@ -2157,3 +2157,29 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. If both pass, publish a new experimental build and ask for a controlled repeat: start download, navigate away, return to Epic, repeat several times while install continues.
 3. If it still crashes, collect adb logcat -b crash -d, relevant AndroidRuntime/ActivityManager lines, and dumpsys activity exit-info com.maliwinlator.app after the failure. Capture an ANR trace if Android reports an ANR. These distinguish main-thread ANR, Java exception, native crash, and process kill/OOM.
 4. Do not change downloader worker counts, mmap capacity, or remove companion fallback until the failure mode is measured.
+
+
+## Epic re-entry mitigation — CI and published test build (2026-11-22)
+
+- Source commit: `4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28`.
+- Epic runtime workflow **45017702452**: SUCCESS — https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45017702452
+- Standard APK workflow **45017702441**: SUCCESS — https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45017702441
+- Epic runtime verification included managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signature/package/ABI/assets audits, ELF dependency closure, and embedded companion comparison.
+- Standard APK artifact: `maliwinlator-1.2.1-standard-debug-4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28` (artifact ID **14752427077**).
+- Epic ARM64 package artifact ID **14752258938**; runtime artifact ID **14752368485**.
+- Published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-4c5ea1d1ced8
+- Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4c5ea1d1ced8/app-standard-debug.apk
+- Companion fallback APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4c5ea1d1ced8/epicbridge-debug.apk
+- Release SHA-256: host APK `75c03a420e5fb7fd8c59f899fc5299d045c65d8f7d55b8cfe828d172ebd4a04c`; companion APK `27bbc15fb5b3cb897a717983ba72655d3d6ac49a6ed9a7bba61a0b27d6af0de4`.
+- These are debug-signed experimental builds. CI success is not proof that the Xiaomi 15T re-entry crash is fixed. Device acceptance is still pending.
+
+### Device retest instructions
+
+1. Keep the existing app data, Wine containers, installed games, and companion fallback. Attempt to install the new host APK as an in-place update. If Android reports a signature/package conflict, stop and report the exact message; do not uninstall or clear data.
+2. Start a small download, navigate away from Epic, then return while the download is active. Repeat once during installation if possible.
+3. Report whether the page opens, progress remains current, Winlator remains responsive, and the notification continues updating.
+4. If it still freezes/crashes, capture `adb logcat -b crash -d`, relevant `AndroidRuntime` / `ActivityManager` lines, and `adb shell dumpsys activity exit-info com.maliwinlator.app`. Include ANR traces if Android reports an ANR.
+
+### Follow-up engineering gate
+
+If the failure persists, inspect whether the Epic fragment is retained on the navigation back stack (so `onDestroy()` does not run on tab changes), and whether multiple job observers are active. Then inspect synchronous `loadContainers()` work in `onResume()`. Do not change worker counts, mmap sizing, or IPC architecture without crash/jank evidence.
