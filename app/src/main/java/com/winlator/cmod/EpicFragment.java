@@ -70,6 +70,7 @@ public final class EpicFragment extends Fragment {
     private boolean storageReady;
     private boolean hostStorageReady;
     private boolean bridgeStorageReady;
+    private boolean embeddedRuntime;
     private volatile boolean jobPolling;
     private static final String JOB_PREFS = "epic_bridge_jobs";
     private static final String JOB_ID_KEY = "active_job_id";
@@ -207,6 +208,7 @@ public final class EpicFragment extends Fragment {
                 }
 
                 boolean ready = bridge != null && bridge.getBoolean("runtime_ready", false);
+                embeddedRuntime = bridge != null && bridge.getBoolean("host_embedded", false);
                 bridgeStorageReady = bridge != null && bridge.getBoolean("storage_access", false);
                 hostStorageReady = localStorageReady;
                 storageReady = bridgeStorageReady && hostStorageReady;
@@ -230,7 +232,9 @@ public final class EpicFragment extends Fragment {
 
                 statusText.setText(storageReady
                         ? "Epic Bridge runtime ready. Checking Epic account..."
-                        : "Epic runtime ready. Grant shared-storage access in both apps before installing or launching games.");
+                        : (embeddedRuntime
+                                ? "Epic runtime ready. Grant shared-storage access to MaliWinlator before installing or launching games."
+                                : "Epic runtime ready. Grant shared-storage access in both apps before installing or launching games."));
                 setRuntimeControls(true);
                 runCommand("account_status", "{}", response -> {
                     if (statusText == null || getView() == null) return;
@@ -243,7 +247,9 @@ public final class EpicFragment extends Fragment {
                         String displayName = account == null ? "" : account.optString("display_name", "");
                         statusText.setText("Signed in to Epic Games" +
                                 (displayName.isEmpty() ? "" : " as " + displayName) + "." +
-                                (storageReady ? "" : " Grant shared-storage access in both apps to install and launch games."));
+                                (storageReady ? "" : (embeddedRuntime
+                                        ? " Grant shared-storage access to MaliWinlator to install and launch games."
+                                        : " Grant shared-storage access in both apps to install and launch games.")));
                     } else {
                         statusText.setText("Epic runtime ready. Sign in to your Epic Games account to load your library." +
                                 (storageReady ? "" : " Shared-storage access is also required for installs and launches."));
@@ -655,7 +661,9 @@ public final class EpicFragment extends Fragment {
 
     private void installGame(String appName, String title, boolean update) {
         if (!storageReady) {
-            statusText.setText("Grant shared-storage access to both MaliWinlator and Epic Bridge before installing games.");
+            statusText.setText(embeddedRuntime
+                    ? "Grant MaliWinlator shared-storage access before installing games."
+                    : "Grant shared-storage access to both MaliWinlator and Epic Bridge before installing games.");
             return;
         }
         if (containers.isEmpty()) {
