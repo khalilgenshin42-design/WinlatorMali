@@ -2093,3 +2093,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. If successful, update `PROJECT_EPIC_CI_STATUS.md` and publish/record the new experimental artifact and SHA-256.
 3. Have the user test the new build on the Xiaomi 15T only after the CI gate passes; retain companion fallback and preserve all existing app/container data.
 
+### Notification deduplication regression coverage
+
+- Added a pure decision helper `EpicRuntimeService.shouldPostProgressNotification(previousKey, nextKey)` and an Android instrumentation regression test covering initial publication, unchanged progress suppression, percentage changes, phase changes, and null next-state handling.
+- Test/source commits: `c4abadb87c1573a27593faa5e38eebbc1a4b2128` and `3e9c2172246a7ba3f9b611656107718ed29ad64c`. The latter is the authoritative latest source SHA.
+- Latest validation runs on `3e9c217`: Epic runtime workflow **44979673157** and Standard APK workflow **44979673164**. Both were pending at this update. Earlier `e067cb7` runs **44979607565** and **44979607640** were still running but are superseded by the latest commit and must not be used as final validation.
+
