@@ -70,6 +70,7 @@ public final class EpicFragment extends Fragment {
     private Spinner containerSpinner;
     private LinearLayout gamesContainer;
     private LinearLayout pageContainer;
+    private LinearLayout navigationBar;
     private LinearLayout accountPanel;
     private LinearLayout libraryPanel;
     private EditText searchField;
@@ -119,6 +120,7 @@ public final class EpicFragment extends Fragment {
         addMargin(root, statusText, 14);
 
         LinearLayout nav = new LinearLayout(requireContext());
+        navigationBar = nav;
         nav.setPadding(dp(3), dp(3), dp(3), dp(3));
         nav.setBackground(shape(0xff151a25, 0xff293247, 14));
         String[][] tabs = {{"discover","Discover"},{"library","Library"},{"downloads","Downloads"},{"account","Account"}};
@@ -127,6 +129,7 @@ public final class EpicFragment extends Fragment {
             b.setTextSize(11);
             b.setMinHeight(dp(40));
             b.setPadding(dp(2), 0, dp(2), 0);
+            b.setTag(tab[0]);
             b.setOnClickListener(v -> showSection(tab[0]));
             nav.addView(b, new LinearLayout.LayoutParams(0, dp(42), 1));
         }
@@ -268,6 +271,18 @@ public final class EpicFragment extends Fragment {
 
     private void showSection(String section) {
         activeSection = section;
+        if (navigationBar != null) {
+            for (int i = 0; i < navigationBar.getChildCount(); i++) {
+                View child = navigationBar.getChildAt(i);
+                if (child instanceof Button) {
+                    Button tab = (Button) child;
+                    boolean selected = section.equals(tab.getTag());
+                    tab.setBackground(shape(selected ? 0xff5b55d9 : 0xff151a25,
+                            selected ? 0xff5b55d9 : 0xff151a25, 10));
+                    tab.setTextColor(selected ? 0xffffffff : 0xffaab3c5);
+                }
+            }
+        }
         if (pageContainer == null) return;
         pageContainer.removeAllViews();
         if ("library".equals(section)) {
