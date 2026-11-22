@@ -331,7 +331,23 @@ jobs:
           unzip -Z1 "$BRIDGE_APK" | grep -Fx 'assets/python/lib/python3.15/site-packages/epicbridge_runner.py'
           # The host APK must contain the in-package runtime while retaining the
           # temporary companion fallback. Check classes, native code, and Python assets.
-          unzip -Z1 "$HOST_APK" | grep -E '^lib/arm64-v8a/libepic_python\.so
+          unzip -Z1 "$HOST_APK" | grep -E "^lib/arm64-v8a/libepic_python[.]so$"
+          unzip -Z1 "$HOST_APK" | grep -E "^assets/python/lib/python3[.]15/os[.]py$"
+          "$BUILD_TOOLS/aapt" dump xmltree "$HOST_APK" AndroidManifest.xml | grep -F 'com.maliwinlator.app.epicprovider'
+          for FLAVOR in ludashi antutu; do
+            FLAVOR_APK="$PWD/app/build/outputs/apk/$FLAVOR/debug/app-$FLAVOR-debug.apk"
+            test -s "$FLAVOR_APK"
+            "$BUILD_TOOLS/apksigner" verify --verbose "$FLAVOR_APK"
+            case "$FLAVOR" in
+              ludashi) EXPECTED_PACKAGE='com.ludashi.benchmark' ;;
+              antutu) EXPECTED_PACKAGE='com.antutu.ABenchMark' ;;
+            esac
+            "$BUILD_TOOLS/aapt" dump badging "$FLAVOR_APK" | grep -F "package: name='$EXPECTED_PACKAGE'"
+            "$BUILD_TOOLS/aapt" dump xmltree "$FLAVOR_APK" AndroidManifest.xml | grep -F "$EXPECTED_PACKAGE.epicprovider"
+            unzip -Z1 "$FLAVOR_APK" | grep -E "^lib/arm64-v8a/libepic_python[.]so$"
+            unzip -Z1 "$FLAVOR_APK" | grep -E "^assets/python/lib/python3[.]15/os[.]py$"
+          done
+          unzip -Z1 "$HOST_APK" | grep -Fx 'assets/epicbridge.apk'
           mkdir -p "$GITHUB_WORKSPACE/epic-apk-output"
           unzip -p "$HOST_APK" assets/epicbridge.apk > "$RUNNER_TEMP/embedded-epicbridge.apk"
           cmp "$BRIDGE_APK" "$RUNNER_TEMP/embedded-epicbridge.apk"
