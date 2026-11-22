@@ -404,8 +404,7 @@ public final class EpicFragment extends Fragment {
                         if (!progressLabel.equals(lastPostedProgressLabel)) {
                             lastPostedProgressLabel = progressLabel;
                             mainHandler.post(() -> {
-                                if (statusText != null && jobPolling
-                                        && progressLabel.equals(lastPostedProgressLabel)) {
+                                if (statusText != null && jobPolling) {
                                     statusText.setText(progressLabel);
                                 }
                             });
