@@ -135,6 +135,10 @@ public final class EpicBridgeProvider extends ContentProvider {
             boolean cryptoReady = cryptoSelfTest();
             boolean runtimePackaged = EpicPythonRuntime.isPackaged(getContext());
             result.putBoolean("installed", true);
+            // The embedded provider shares Android's all-files permission with
+            // Winlator; the standalone companion has its own package grant.
+            result.putBoolean("host_embedded",
+                    !"com.maliwinlator.epicbridge".equals(getContext().getPackageName()));
             result.putBoolean("crypto_supported", cryptoReady);
             result.putBoolean("runtime_ready", runtimePackaged && cryptoReady);
             result.putBoolean("storage_access",
