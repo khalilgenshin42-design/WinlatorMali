@@ -2022,3 +2022,17 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 
 - The flavor-audit workflow initially started on commit `61c6213`, before the final `host_embedded` assertion in the host instrumentation test was included. To ensure the full latest source is exercised, updated the instrumentation script's success marker in commit `b0ae58aaf8b6efca96b9f74ece5775b5952ee54d`; this deliberately retriggers the Epic workflow on the latest branch head and includes the test assertion plus all-flavor audit.
 - Latest authoritative run: **44974686442**, queued on `b0ae58a`. Earlier run **44974633713** and baseline run **44974633711** are from `61c6213` and should not be treated as final validation for the newest test assertion.
+
+
+## Engineering step log — 2026-11-22: CI retry for Maven Central rate limiting
+
+- Inspected failed authoritative all-flavor run **44974686442** (source `b0ae58aaf8b6efca96b9f74ece5775b5952ee54d`). The only job failed in the upstream CPython Android managed-emulator smoke step before instrumentation or MaliWinlator APK assembly. Gradle could not resolve multiple Android build dependencies because Maven Central returned HTTP **429 Too Many Requests** (including protobuf, Gson and Tink artifacts).
+- This is an external dependency-repository rate limit, not evidence of an embedded-provider test failure. The smoke test did not run, so the all-flavor package audit remains unverified and no APK from this run is installable.
+- Updated `.github/workflows/epic-python-runtime-poc.yml` in commit **e4a758b9481c5d0c143dd11539343c7b7b9d2da3**. The managed Android smoke step now retries up to three times after the initial attempt **only when its captured Gradle output explicitly contains HTTP 429 / Too Many Requests**, with bounded delays of 20, 40 and 60 seconds. Other failures remain fail-fast and preserve their original exit status.
+- The workflow change should automatically trigger a new run because the workflow file is in its own push path filter. Track the new run before claiming success. The prior successful embedded-provider test (run **44970863361**) still proves the host-only provider/JNI/CPython path, but it does not cover the newer `host_embedded=true` assertion or the three-flavor packaging audit.
+
+### Next actions
+1. Poll the workflow triggered by commit `e4a758b`; verify the retry step, host-only assertion, all three flavors, ARM64 packaging and APK audits.
+2. If Maven returns 429 again after the bounded retries, reduce redundant Gradle invocations / use an approved mirror or dependency cache; do not weaken tests or mark the run successful.
+3. Keep the existing companion fallback and embedded companion asset until the all-flavor build and Xiaomi 15T device acceptance pass.
+4. Once a verified artifact exists, test on the Xiaomi 15T with existing Wine containers and game data preserved. Measure download-time UI jank separately; embedded IPC alone is not proof that the lag is fixed.
