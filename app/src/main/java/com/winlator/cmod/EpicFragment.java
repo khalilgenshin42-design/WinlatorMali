@@ -21,6 +21,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -29,6 +30,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -885,10 +889,24 @@ public final class EpicFragment extends Fragment {
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{artColor(appName, 0), artColor(appName, 1), 0xff111827});
         art.setCornerRadius(dp(9));
-        artwork.setBackground(art);
-        TextView initials = label(gameMonogram(title), 28, 0xfff5f6fa, true);
-        initials.setGravity(Gravity.CENTER);
-        artwork.addView(initials, new FrameLayout.LayoutParams(-1, -1));
+        ImageView cover = new ImageView(requireContext());
+        cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        cover.setBackground(art);
+        artwork.addView(cover, new FrameLayout.LayoutParams(-1, -1));
+        String coverUrl = game.optString("cover_url", "");
+        if (isTrustedEpicArtworkUrl(coverUrl)) {
+            Glide.with(this)
+                    .load(coverUrl)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(art)
+                    .error(art)
+                    .centerCrop()
+                    .into(cover);
+        } else {
+            TextView initials = label(gameMonogram(title), 28, 0xfff5f6fa, true);
+            initials.setGravity(Gravity.CENTER);
+            artwork.addView(initials, new FrameLayout.LayoutParams(-1, -1));
+        }
         TextView tag = label(installed ? "INSTALLED" : "EPIC LIBRARY", 8,
                 installed ? 0xffb9f3d1 : 0xffd3d0ff, true);
         tag.setPadding(dp(6), dp(4), dp(6), dp(4));
@@ -935,6 +953,21 @@ public final class EpicFragment extends Fragment {
                     if (which == 0) installGame(appName, title, true);
                     else if (which == 1) uninstallGame(appName, title);
                 }).show();
+    }
+
+    private boolean isTrustedEpicArtworkUrl(String value) {
+        if (value == null || value.length() > 2048) return false;
+        try {
+            Uri uri = Uri.parse(value);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (!"https".equalsIgnoreCase(scheme) || host == null) return false;
+            host = host.toLowerCase(java.util.Locale.ROOT);
+            return host.equals("epicgames.com") || host.endsWith(".epicgames.com")
+                    || host.equals("unrealengine.com") || host.endsWith(".unrealengine.com");
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
     private int artColor(String seed, int offset) {
