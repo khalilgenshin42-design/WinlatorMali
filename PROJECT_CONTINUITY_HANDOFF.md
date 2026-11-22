@@ -2070,3 +2070,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 3. If lag persists, collect a short timestamped logcat and `dumpsys gfxinfo`/frame stats during the download, plus available CPU/memory/storage observations. Then isolate whether the bottleneck is UI-thread work, downloader CPU/decompression, storage I/O, memory pressure, notification updates or provider IPC before changing architecture or worker limits.
 4. After the device check, continue with cancellation/retry/update/uninstall and selected-container launch acceptance. Keep the current CI success separate from those device-level acceptance criteria.
 
+### Static IPC review — 2026-11-22
+
+- Reviewed the current `EpicFragment.waitForJob()` and `EpicBridgeClient` call path after the embedded-runtime migration. The host first calls its own `<applicationId>.epicprovider` through `ContentResolver.call()`; that provider runs in the same app package's dedicated `:epic_runtime` process. Normal embedded operation therefore uses same-UID, cross-process Binder IPC, **not companion-app IPC**. Companion IPC is only a fallback when the embedded provider/runtime is unavailable.
+- The UI worker polls job status every **1.5 seconds**. Progress text is now posted to the main thread only when the displayed phase/percentage label changes, and cancel-button visibility updates are deduplicated. This is a low-rate status channel; source inspection alone does not prove IPC is or is not responsible for the observed device lag.
+- No further polling-rate reduction or downloader concurrency/mmap change is justified without device measurements. The next useful evidence is a same-condition test of the new embedded build, followed by timestamped UI/frame, CPU, memory and storage observations if jank persists.
+
