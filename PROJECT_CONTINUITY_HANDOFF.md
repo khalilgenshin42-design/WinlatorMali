@@ -2203,3 +2203,16 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - Confirmed the existing UI actions call the current Legendary bridge operations and rely on established storage/container path validation, install/update/uninstall behavior, and foreground job monitoring. Any redesign must preserve these methods and state transitions; avoid replacing the backend or changing worker/IPC concurrency while addressing presentation.
 - No source code was changed and no APK was built for this visual audit. The exact GameHub target styling remains unverified until the reference images are reachable through an image URL the inspection environment can retrieve.
 - Next: obtain viewable direct image URLs (a public image host such as Postimages/ImgBB, or images embedded in a publicly accessible webpage), then compare the GameHub and MaliWinlator screens. In parallel, inspect app theme/resource conventions and split the Epic UI into testable view-building components before modifying the screen.
+
+
+## Epic storefront redesign — first implementation pass (2026-11-22)
+
+- User approved a GameHub-inspired Epic page direction: premium dark presentation, artwork-led game library, clear install/play actions, and dedicated Discover, Library, Downloads, and Account sections.
+- Source changes on `development/maliwinlator-1.2.1-bootstrap`:
+  - `4bf7c5d0414fb3c01e9c33923d906c064b0a60f5` — replace the plain Epic list screen with a dark storefront shell, Discover hero, section navigation, Account setup panel, searchable two-column library cards, and per-game Play/Install/Update/Remove actions.
+  - `5573bcb624002e1a26605bf0433fe1860a39e942` — surface the existing foreground job monitor's progress label in the Downloads section; terminal job states are reflected there as well.
+- Existing Legendary commands, container ownership checks, storage validation, foreground service, saved job ID, and IPC flow were intentionally retained. No downloader worker counts, runtime IPC protocol, or install-path policy was changed.
+- The current Legendary library response contains `app_name`, `title`, `version`, `is_dlc`, `third_party_store`, and DLC metadata; it does not currently expose verified cover-art URLs. The first UI pass therefore uses deterministic abstract gradient/monogram cover tiles rather than inventing remote artwork sources.
+- This is a first presentation implementation, not yet a verified APK or device-tested UI. GitHub Actions Epic runtime and Android packaging validation must pass before publishing a build. Review compiler output and fix any issues before asking the user to install.
+- Known follow-up: selected navigation styling and true game artwork should be added only after a trustworthy metadata/artwork source and cache strategy are established. Validate the search/card layout, downloads status refresh on tab re-entry, storage/setup controls, and all existing game actions on the Xiaomi 15T.
+
