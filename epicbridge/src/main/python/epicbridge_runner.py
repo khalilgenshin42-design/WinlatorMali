@@ -35,6 +35,45 @@ def _require_login(core):
         raise RuntimeError("Epic authentication is required or the saved session expired")
 
 
+def _cover_image(game):
+    """Return one HTTPS Epic catalog cover URL without exposing full catalog metadata."""
+    metadata = getattr(game, "metadata", None)
+    if not isinstance(metadata, dict):
+        return ""
+    images = metadata.get("keyImages", [])
+    if not isinstance(images, list):
+        return ""
+
+    by_type = {}
+    for image in images:
+        if isinstance(image, dict):
+            image_type = image.get("type")
+            if isinstance(image_type, str) and image_type not in by_type:
+                by_type[image_type] = image
+
+    # Prefer portrait box art, then wide offer art, then smaller catalog previews.
+    for image_type in (
+        "DieselGameBoxTall",
+        "OfferImageTall",
+        "OfferImageWide",
+        "DieselGameBox",
+        "Thumbnail",
+        "Featured",
+    ):
+        image = by_type.get(image_type, {})
+        url = image.get("url", "")
+        if isinstance(url, str) and url.startswith("https://") and len(url) <= 2048:
+            return url
+
+    # Catalog variants can introduce new image types; use the first safe HTTPS image.
+    for image in images:
+        if isinstance(image, dict):
+            url = image.get("url", "")
+            if isinstance(url, str) and url.startswith("https://") and len(url) <= 2048:
+                return url
+    return ""
+
+
 def _library(core):
     _require_login(core)
     games, dlc_by_catalog = core.get_game_and_dlc_list(platform="Windows")
@@ -64,6 +103,7 @@ def _library(core):
             "version": game.app_version("Windows") or "",
             "is_dlc": bool(game.is_dlc),
             "third_party_store": game.third_party_store or "",
+            "cover_url": _cover_image(game),
             "dlcs": dlcs,
         })
     return result
@@ -397,6 +437,20 @@ def _runtime_self_test():
         with open(status_path, "r", encoding="utf-8") as status:
             if json.load(status).get("state") != "cancelled":
                 raise RuntimeError("metadata-stage cancellation status was not published")
+
+    # Catalog artwork selection must prefer a useful portrait and reject
+    # non-HTTPS or malformed metadata without requiring an Epic network session.
+    artwork_game = SimpleNamespace(metadata={
+        "keyImages": [
+            {"type": "OfferImageWide", "url": "https://cdn1.epicgames.com/wide.jpg"},
+            {"type": "DieselGameBoxTall", "url": "https://cdn1.epicgames.com/box.jpg"},
+            {"type": "Thumbnail", "url": "http://insecure.example/thumb.jpg"},
+        ]
+    })
+    if _cover_image(artwork_game) != "https://cdn1.epicgames.com/box.jpg":
+        raise RuntimeError("Epic catalog portrait artwork selection failed")
+    if _cover_image(SimpleNamespace(metadata={"keyImages": [{"url": "file:///private/path"}]})):
+        raise RuntimeError("Epic catalog artwork accepted a non-HTTPS URL")
 
     core = _core()
     if not isinstance(core, LegendaryCore):
