@@ -2120,3 +2120,40 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. Repeat one small game download under comparable network/storage conditions. Record whether the Winlator UI remains responsive, notification percentage advances, and cancellation remains available.
 3. If lag remains, collect timestamped logcat and frame-jank data during that exact download before changing downloader worker count, mmap sizing, or IPC design. Include CPU/memory pressure and storage activity where available.
 4. Continue functional acceptance for login, library, install/cancel/retry, update, uninstall, and launch in the selected Wine container. Do not treat CI as device acceptance.
+
+
+## Xiaomi 15T Epic-page re-entry crash — investigation and first fix (2026-11-22)
+
+### Reproduction reported by user
+
+- On the new build, foreground download notification and percentage are visible.
+- Winlator is responsive while navigating away from Epic to container/settings screens.
+- Returning to the Epic page while a game is downloading or installing causes the Epic page to freeze and then Winlator crashes.
+- The failure is specifically correlated with Epic-page re-entry during an active job. The exact Android crash/ANR stack trace has not yet been collected; do not claim a confirmed root cause.
+
+### Source review findings
+
+- EpicFragment.onResume() called resumePendingJob(), whose EpicBridgeClient.isInstalled() synchronously executes ContentResolver.call() against the embedded provider. This was an avoidable Binder/provider call on the UI thread.
+- refreshStatus() could submit account_status through EpicPythonRuntime.call() even while Legendary's install/download operation was occupying the serialized embedded Python runtime. That status query is unnecessary during an active job and can queue behind the long-running runtime call.
+- EpicFragment.onDestroy() shut down statusIo but did not shut down the fragment-owned io executor. A permanently destroyed fragment could therefore leave its waitForJob() polling worker alive while a newly created Epic fragment starts another monitor for the same persisted job.
+
+### First targeted fix
+
+- Commit 4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28 (fix: isolate Epic page resume from active runtime jobs):
+  1. Skip the account_status JNI/Python command when a persisted Epic job ID is present; let the job monitor own the progress/status UI until terminal state.
+  2. Remove the synchronous EpicBridgeClient.isInstalled() provider call from resumePendingJob() on the UI thread. The first job_status call validates provider access from the IO worker.
+  3. Shut down the fragment-owned IO executor on permanent fragment destruction, interrupting only the UI monitor. The foreground service remains the owner of the actual download/install and its persisted job ID is retained for a replacement fragment to resume monitoring.
+- This is a source-level mitigation based on the observed lifecycle and runtime serialization paths, not yet a proven crash fix. The exact crash root cause remains unconfirmed pending device logcat/ANR evidence.
+
+### CI validation in progress
+
+- Epic runtime workflow 45017702452: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45017702452
+- Standard APK workflow 45017702441: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45017702441
+- Both target source commit 4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28; do not publish or call it verified until both pass.
+
+### Next steps
+
+1. Poll both workflows and fix any concrete compile/instrumentation/package failure.
+2. If both pass, publish a new experimental build and ask for a controlled repeat: start download, navigate away, return to Epic, repeat several times while install continues.
+3. If it still crashes, collect adb logcat -b crash -d, relevant AndroidRuntime/ActivityManager lines, and dumpsys activity exit-info com.maliwinlator.app after the failure. Capture an ANR trace if Android reports an ANR. These distinguish main-thread ANR, Java exception, native crash, and process kill/OOM.
+4. Do not change downloader worker counts, mmap capacity, or remove companion fallback until the failure mode is measured.
