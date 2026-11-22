@@ -39,6 +39,10 @@ public final class EpicRuntimeService extends Service {
         return jobId != null && ACTIVE_JOB_IDS.contains(jobId);
     }
 
+    static boolean shouldPostProgressNotification(String previousKey, String nextKey) {
+        return nextKey != null && !nextKey.equals(previousKey);
+    }
+
     /** Keep cancellation eligibility identical for the cancel and status APIs. */
     static boolean isJobCancellable(String jobId, String state, String command, String phase) {
         // Once Legendary enters its final metadata/install phase, downloader
@@ -241,7 +245,7 @@ public final class EpicRuntimeService extends Service {
         }
         String contentText = percent >= 0 ? phase + " · " + percent + "%" : phase;
         String notificationKey = phase + "|" + percent;
-        if (notificationKey.equals(lastProgressNotificationKey)) return;
+        if (!shouldPostProgressNotification(lastProgressNotificationKey, notificationKey)) return;
         lastProgressNotificationKey = notificationKey;
 
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
