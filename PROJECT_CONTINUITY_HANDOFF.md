@@ -1950,3 +1950,20 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Standard APK workflow **44969054012** and Epic runtime/host audit workflow **44969054077** were running against source commit **297bccbf** at the time this entry was written. Wait for both results before device testing.
 - The prior Epic run **44967487180** failed only because of the undefined `BUILD_TOOLS` shell variable. The same log confirms the Android ARM64 runtime build, emulator prerequisites, instrumentation, AAR assembly, host Gradle build, and initial merged-host asset/class checks all succeeded; the failure occurred exactly at the first `aapt` invocation. It did not upload artifacts because the audit stopped before artifact staging.
 - The Standard APK workflow **44967487255** passed on commit **8ba1fe25**, validating the off-main-thread readiness probe.
+
+
+## Engineering step log — 2026-11-22: embedded Epic runtime CI verification and failover hardening
+
+- Verified Standard APK workflow **44969054012** completed successfully on source commit `297bccbfde4a0a713d13a66b66dda1462d52e1b6`. Artifact: `maliwinlator-1.2.1-standard-debug-297bccbfde4a0a713d13a66b66dda1462d52e1b6` (Actions artifact ID `14732703614`).
+- Verified Epic runtime workflow **44969054077** completed successfully on the same source commit. Its steps passed: managed x86_64 runtime smoke, Android JNI instrumentation, ARM64 runtime packaging, ARM64 library build, host APK build, artifact upload and prerelease publication. Epic APK artifact ID `14733705814`; prerelease tag `maliwinlator-1.2.1-epic-297bccbfde4a`.
+- CI's published APK SHA-256 values: host `a0356eb28332e3b65ef90d9ea07793d4bb8e3f90939c8612d765d7149a80eace`; companion `5282fac96a65561e1ce0b08fb54a494b97ab1befa421551897b6205586e396d1`.
+- These results prove build/package/runtime smoke gates, **not** end-to-end host-provider execution on the Xiaomi 15T. Existing Android JNI instrumentation runs against the Epic Bridge test target; a host-side instrumentation test is still needed to prove the app's merged provider starts in `:epic_runtime` and that the host can complete status/account/job operations with no companion installed.
+- Source review confirmed the host's merged library manifest declares a non-exported provider at `${applicationId}.epicprovider` and a non-exported `:epic_runtime` service; all three flavor application IDs are substituted by the manifest merger. Standard flavor is `com.maliwinlator.app`.
+- Found and fixed a migration failover gap in `EpicBridgeClient`: previously, any protocol-valid embedded-provider response prevented fallback even when the embedded runtime explicitly reported `runtime_not_installed` / `RUNTIME_NOT_READY`. Commit `fc824e9ff68e37a4a475e6ac71b7d0bd3cdde363` now falls back to the separately installed companion only for explicit runtime-unavailable states/errors; legitimate Epic/account/job errors remain with the embedded provider and are not silently retried elsewhere.
+- No claim that download-time UI lag is fixed. The provider routing and fallback change has not yet completed CI at the time of this entry. No new phone-test request until the next build passes and the host-side provider test gap is addressed.
+
+### Next actions
+1. Verify CI for `fc824e9`; inspect any failure logs.
+2. Add a host-app integration test that calls the merged private provider through `ContentResolver`, verifies protocol/runtime status and confirms the provider/service process identity; exercise account status and job status without installing the companion.
+3. Extend package/manifest audit across Standard, Ludashi and AnTuTu variants before removing companion fallback or embedded companion APK asset.
+4. Only then issue a new device test build. Preserve the current companion fallback until on-device acceptance succeeds.
