@@ -77,10 +77,26 @@ public final class EpicBridgeClient {
         }
     }
 
+    private static boolean shouldFallbackToCompanion(Bundle embedded, boolean statusCall) {
+        if (embedded == null) return true;
+        if (statusCall) {
+            // A host APK may contain the provider class but lack a usable runtime
+            // payload after an interrupted/partial migration. Do not let that
+            // dead-end hide a healthy separately installed companion.
+            String state = embedded.getString("state", "");
+            return !embedded.getBoolean("runtime_ready", false)
+                    && ("runtime_not_installed".equals(state)
+                    || "provider_unavailable".equals(state));
+        }
+        String error = embedded.getString("error", "");
+        return "RUNTIME_NOT_READY".equals(error)
+                || "PROVIDER_UNAVAILABLE".equals(error);
+    }
+
     public static Bundle getStatus(Context context) {
         try {
             Bundle result = callEmbedded(context, "status", null, null);
-            if (result == null && isCompanionInstalled(context)) {
+            if (shouldFallbackToCompanion(result, true) && isCompanionInstalled(context)) {
                 result = callAuthority(context, AUTHORITY, "status", null, null);
             }
             if (result != null) {
@@ -126,7 +142,7 @@ public final class EpicBridgeClient {
         extras.putString("payload_json", payloadJson == null ? "{}" : payloadJson);
         try {
             Bundle result = callEmbedded(context, method, arg, extras);
-            if (result == null && isCompanionInstalled(context)) {
+            if (shouldFallbackToCompanion(result, false) && isCompanionInstalled(context)) {
                 result = callAuthority(context, AUTHORITY, method, arg, extras);
             }
             if (result == null) {
