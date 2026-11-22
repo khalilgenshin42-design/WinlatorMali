@@ -44,9 +44,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class EpicFragment extends Fragment {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
+    // Keep provider readiness/asset probes off the UI thread and independent of
+    // the long-lived install worker, which may be polling a multi-minute job.
+    private final ExecutorService statusIo = Executors.newSingleThreadExecutor();
+    private final AtomicInteger statusRequestSerial = new AtomicInteger();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private TextView statusText;
     private Button cancelJobButton;
     private EditText authorizationCode;
@@ -179,55 +185,79 @@ public final class EpicFragment extends Fragment {
 
     private void refreshStatus() {
         if (statusText == null || getContext() == null) return;
-        boolean installed = EpicBridgeClient.isInstalled(requireContext());
-        if (!installed) {
-            statusText.setText("Epic Bridge is not installed. Install the companion package to continue.");
-            installBridgeButton.setVisibility(View.VISIBLE);
-            storageButton.setVisibility(View.GONE);
-            setRuntimeControls(false);
-            return;
-        }
+        final android.content.Context appContext = requireContext().getApplicationContext();
+        final int requestSerial = statusRequestSerial.incrementAndGet();
+        statusText.setText("Checking Epic Bridge runtime...");
+        statusIo.execute(() -> {
+            boolean installed = EpicBridgeClient.isInstalled(appContext);
+            Bundle bridge = installed ? EpicBridgeClient.getStatus(appContext) : null;
+            boolean localStorageReady = Build.VERSION.SDK_INT < 30
+                    || Environment.isExternalStorageManager();
 
-        Bundle bridge = EpicBridgeClient.getStatus(requireContext());
-        boolean ready = bridge.getBoolean("runtime_ready", false);
-        bridgeStorageReady = bridge.getBoolean("storage_access", false);
-        hostStorageReady = Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager();
-        storageReady = bridgeStorageReady && hostStorageReady;
-        storageButton.setText(!hostStorageReady
-                ? "Grant MaliWinlator storage access"
-                : "Open Epic Bridge storage settings");
-        String state = bridge.getString("state", "");
-        replaceCompanion = "signature_mismatch".equals(state) || "protocol_mismatch".equals(state) || "runtime_not_installed".equals(state);
-        installBridgeButton.setVisibility(replaceCompanion ? View.VISIBLE : View.GONE);
-        installBridgeButton.setText(replaceCompanion ? "Replace Epic Bridge" : "Install Epic Bridge");
-        storageButton.setVisibility(storageReady || replaceCompanion ? View.GONE : View.VISIBLE);
-        if (!ready) {
-            statusText.setText("Epic Bridge is installed, but its CPython/Legendary runtime is not ready. " +
-                    bridge.getString("message", "Install the runtime-enabled companion build."));
-            setRuntimeControls(false);
-            return;
-        }
+            mainHandler.post(() -> {
+                // Ignore stale results and callbacks delivered after the view was removed.
+                if (requestSerial != statusRequestSerial.get()
+                        || !isAdded() || getView() == null || statusText == null) return;
+                if (!installed) {
+                    statusText.setText("Epic Bridge is not installed. Install the companion package to continue.");
+                    installBridgeButton.setVisibility(View.VISIBLE);
+                    storageButton.setVisibility(View.GONE);
+                    setRuntimeControls(false);
+                    return;
+                }
 
-        statusText.setText(storageReady
-                ? "Epic Bridge runtime ready. Checking Epic account..."
-                : "Epic runtime ready. Grant shared-storage access in both apps before installing or launching games.");
-        setRuntimeControls(true);
-        runCommand("account_status", "{}", response -> {
-            if (!response.optBoolean("ok", false)) {
-                statusText.setText("Runtime ready. " + response.optString("message", "Epic account status unavailable"));
-                return;
-            }
-            if (response.optBoolean("logged_in", false)) {
-                JSONObject account = response.optJSONObject("account");
-                String displayName = account == null ? "" : account.optString("display_name", "");
-                statusText.setText("Signed in to Epic Games" +
-                        (displayName.isEmpty() ? "" : " as " + displayName) + "." +
-                        (storageReady ? "" : " Grant shared-storage access in both apps to install and launch games."));
-            } else {
-                statusText.setText("Epic runtime ready. Sign in to your Epic Games account to load your library." +
-                        (storageReady ? "" : " Shared-storage access is also required for installs and launches."));
-            }
+                boolean ready = bridge != null && bridge.getBoolean("runtime_ready", false);
+                bridgeStorageReady = bridge != null && bridge.getBoolean("storage_access", false);
+                hostStorageReady = localStorageReady;
+                storageReady = bridgeStorageReady && hostStorageReady;
+                storageButton.setText(!hostStorageReady
+                        ? "Grant MaliWinlator storage access"
+                        : "Open Epic Bridge storage settings");
+                String state = bridge == null ? "provider_unavailable" : bridge.getString("state", "");
+                replaceCompanion = "signature_mismatch".equals(state)
+                        || "protocol_mismatch".equals(state)
+                        || "runtime_not_installed".equals(state);
+                installBridgeButton.setVisibility(replaceCompanion ? View.VISIBLE : View.GONE);
+                installBridgeButton.setText(replaceCompanion ? "Replace Epic Bridge" : "Install Epic Bridge");
+                storageButton.setVisibility(storageReady || replaceCompanion ? View.GONE : View.VISIBLE);
+                if (!ready) {
+                    String message = bridge == null ? "Epic Bridge provider is unavailable."
+                            : bridge.getString("message", "Install the runtime-enabled companion build.");
+                    statusText.setText("Epic Bridge is installed, but its CPython/Legendary runtime is not ready. " + message);
+                    setRuntimeControls(false);
+                    return;
+                }
+
+                statusText.setText(storageReady
+                        ? "Epic Bridge runtime ready. Checking Epic account..."
+                        : "Epic runtime ready. Grant shared-storage access in both apps before installing or launching games.");
+                setRuntimeControls(true);
+                runCommand("account_status", "{}", response -> {
+                    if (statusText == null || getView() == null) return;
+                    if (!response.optBoolean("ok", false)) {
+                        statusText.setText("Runtime ready. " + response.optString("message", "Epic account status unavailable"));
+                        return;
+                    }
+                    if (response.optBoolean("logged_in", false)) {
+                        JSONObject account = response.optJSONObject("account");
+                        String displayName = account == null ? "" : account.optString("display_name", "");
+                        statusText.setText("Signed in to Epic Games" +
+                                (displayName.isEmpty() ? "" : " as " + displayName) + "." +
+                                (storageReady ? "" : " Grant shared-storage access in both apps to install and launch games."));
+                    } else {
+                        statusText.setText("Epic runtime ready. Sign in to your Epic Games account to load your library." +
+                                (storageReady ? "" : " Shared-storage access is also required for installs and launches."));
+                    }
+                });
+            });
         });
+    }
+
+    @Override
+    public void onDestroy() {
+        statusRequestSerial.incrementAndGet();
+        statusIo.shutdownNow();
+        super.onDestroy();
     }
 
     private void setRuntimeControls(boolean ready) {
