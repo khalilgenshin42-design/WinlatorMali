@@ -1967,3 +1967,18 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. Add a host-app integration test that calls the merged private provider through `ContentResolver`, verifies protocol/runtime status and confirms the provider/service process identity; exercise account status and job status without installing the companion.
 3. Extend package/manifest audit across Standard, Ludashi and AnTuTu variants before removing companion fallback or embedded companion APK asset.
 4. Only then issue a new device test build. Preserve the current companion fallback until on-device acceptance succeeds.
+
+
+## Engineering step log — 2026-11-22: convert host fixture to test the embedded runtime
+
+- Inspected the existing `epicbridge-host-test` fixture and found it still tested the old exported companion authority `com.maliwinlator.epicbridge.provider`. That test did not validate the new embedded provider at `${applicationId}.epicprovider`.
+- Converted the fixture to depend on `:epicruntime`, retaining the production host application ID `com.maliwinlator.app`. The test now calls the merged private embedded provider, asserts protocol 2 and `runtime_ready`, invokes `account_status` (forcing the JNI/CPython path), parses the returned JSON, and checks that the provider is running in `:epic_runtime`.
+- Reworked `tools/ci/run-epic-android-instrumentation.sh`: it builds the host fixture with the x86_64 CPython prefix, installs only the host fixture and its test APK (not the companion), and requires exactly one passing embedded-runtime test. The previous companion Binder test is superseded by this stronger in-package test.
+- Commits: `30a9f2f8a54db3e748572014d1213eceadbc5d90` (fixture dependency), `84f9e3ea8a281127af07a57ebd9a3ef50c2c187a` (embedded-provider/JNI/process test), `3382c0fd531f23fd0bb0d8d459c5ca1f70300127` (CI script).
+- This is a source-level test improvement only. The new instrumentation has not run yet. The next Epic CI result is the gate; if it fails, fix the actual build/test issue before issuing a device APK.
+
+### Next actions
+1. Run the updated Epic workflow and diagnose the first failing stage, if any.
+2. Confirm host instrumentation passes with the companion APK absent.
+3. Expand merged manifest/package audits to all production flavors.
+4. Keep companion fallback and its installable asset until host instrumentation and Xiaomi 15T acceptance pass.
