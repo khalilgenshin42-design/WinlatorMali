@@ -120,3 +120,12 @@ Next engineering focus: broaden functional acceptance and harden recovery paths 
 - [ ] Device-test layout, search, account/storage setup, active download/install progress, and every game action on Xiaomi 15T.
 - [ ] Add real cover artwork only after confirming an authoritative metadata source and implementing safe image caching; current cards intentionally use generated gradients and monograms.
 
+
+
+## Epic cover artwork — second implementation pass (2026-11-22)
+
+- [x] Confirmed first storefront build `f2a920f` passed standard APK and full Epic runtime/instrumentation/ARM64 packaging pipelines; published prerelease `maliwinlator-1.2.1-epic-f2a920f27040`.
+- [x] Extract preferred cover image URL from Epic catalog `keyImages` in Legendary metadata, with safe HTTPS-only filtering and deterministic self-test.
+- [x] Load cover art on game cards using existing Glide dependency, disk/memory cache, and gradient fallback; accept only Epic Games / Unreal Engine HTTPS hosts.
+- [ ] Validate artwork implementation on exact branch tip `25664d0` with standard APK and Epic runtime/instrumentation workflows.
+- [ ] Device-test image loading, cache reuse, offline fallback, scrolling, and existing Epic game actions on Xiaomi 15T.
