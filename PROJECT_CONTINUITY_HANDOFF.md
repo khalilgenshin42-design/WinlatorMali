@@ -2220,3 +2220,16 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 
 - Follow-up UI polish commit `f2a920f270404ea7cd714f275f0b8b0c3372534f`: active section now receives a distinct selected-tab treatment. This is included in the current branch tip.
 - Validation runs launched for the immediately preceding source commit `5573bcb624002e1a26605bf0433fe1860a39e942` (standard APK run **45039925553**, Epic runtime run **45039925583**). Because the active-tab polish landed after those runs started, their results do not validate commit `f2a920f`; rerun or otherwise validate the exact branch tip before publishing.
+
+
+## Epic artwork integration — second implementation pass (2026-11-22)
+
+- The first GameHub-inspired storefront commit `f2a920f270404ea7cd714f275f0b8b0c3372534f` passed both pipelines:
+  - Standard APK: run **45040046995**, success.
+  - Epic runtime/instrumentation + ARM64 packaging: run **45040047012**, success. All steps passed, including Android runtime prerequisite smoke, Epic library aggregation regression tests, Android instrumentation tests, ARM64 runtime packaging/audit, and GitHub prerelease publication.
+- Published test build: `maliwinlator-1.2.1-epic-f2a920f27040`. Direct main APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-f2a920f27040/app-standard-debug.apk. Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-f2a920f27040/epicbridge-debug.apk.
+- Follow-up artwork commits:
+  - `1a4706f2812b7f1e71449efd026a3aa924e6ac47` — Epic Bridge now extracts one preferred HTTPS cover image from Legendary catalog `metadata.keyImages` (portrait box art first, then wide/thumbnail fallbacks); adds deterministic self-test coverage for priority and rejection of non-HTTPS image URLs.
+  - `25664d0cadacb0844fb333526cc218f4d2ecfb39` — game cards load catalog artwork with the existing Glide dependency, automatic memory/disk caching, crop-to-card, and gradient/monogram fallback. URL host validation is restricted to HTTPS Epic Games / Unreal Engine domains.
+- Latest validation runs are associated with the artwork commits: standard APK run **45042169506** (in progress at handoff update), Epic runtime run **45042169424** (pending), plus the earlier Epic runtime run **45042166515** for Python artwork extraction commit **1a4706f** (in progress). Do not publish the artwork version until the exact latest commit `25664d0` passes both workflows.
+- Device verification is still required for real artwork visibility, cache reuse/offline fallback, library scroll performance, and all existing install/play/update/uninstall flows.
