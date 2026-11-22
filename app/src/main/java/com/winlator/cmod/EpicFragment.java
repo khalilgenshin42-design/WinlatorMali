@@ -35,6 +35,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.winlator.cmod.container.Container;
 import com.winlator.cmod.container.ContainerManager;
@@ -80,6 +81,7 @@ public final class EpicFragment extends Fragment {
     private EditText searchField;
     private TextView libraryCountText;
     private TextView downloadsStatusText;
+    private EpicLibraryViewModel libraryState;
     private JSONArray cachedGames = new JSONArray();
     private boolean libraryLoaded;
     private String activeSection = "discover";
@@ -100,6 +102,15 @@ public final class EpicFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup parent,
                              @Nullable Bundle savedInstanceState) {
+        // MainActivity replaces EpicFragment whenever the user changes drawer sections.
+        // Keep library data in the Activity-scoped ViewModel so a fresh Fragment can
+        // render immediately without repeating the Epic library IPC request.
+        libraryState = new ViewModelProvider(requireActivity()).get(EpicLibraryViewModel.class);
+        cachedGames = libraryState.getGames();
+        libraryLoaded = libraryState.isLoaded();
+        installedApps.addAll(libraryState.getInstalledApps());
+        installedPaths.putAll(libraryState.getInstalledPaths());
+
         ScrollView scroll = new ScrollView(requireContext());
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(0xff0a0c12);
@@ -211,6 +222,10 @@ public final class EpicFragment extends Fragment {
             }
             @Override public void afterTextChanged(Editable s) {}
         });
+        // The new Fragment may be replacing an older one that already loaded the
+        // library. Populate its detached card container now; showSection() will then
+        // attach a complete, ready-to-use Library without a network/provider reload.
+        if (libraryLoaded) renderGameCards("");
 
         downloadsStatusText = label(lastProgressLabel, 14, 0xfff1f4fb, true);
         cancelButtonVisibility.set(-1);
@@ -837,6 +852,9 @@ public final class EpicFragment extends Fragment {
             }
             cachedGames = games;
             libraryLoaded = true;
+            if (libraryState != null) {
+                libraryState.setLibrary(games, installedApps, installedPaths);
+            }
             renderGameCards(searchField == null ? "" : searchField.getText().toString());
         });
     }
