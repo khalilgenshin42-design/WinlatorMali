@@ -2036,3 +2036,19 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. If Maven returns 429 again after the bounded retries, reduce redundant Gradle invocations / use an approved mirror or dependency cache; do not weaken tests or mark the run successful.
 3. Keep the existing companion fallback and embedded companion asset until the all-flavor build and Xiaomi 15T device acceptance pass.
 4. Once a verified artifact exists, test on the Xiaomi 15T with existing Wine containers and game data preserved. Measure download-time UI jank separately; embedded IPC alone is not proof that the lag is fixed.
+
+
+## Engineering step log — 2026-11-22: embedded runtime CI passed; progress UI deduplication
+
+- Authoritative Epic runtime workflow **44975450275** completed successfully on source `e4a758b9481c5d0c143dd11539343c7b7b9d2da3` after the bounded Maven Central 429 retry was added. All 31 executed steps passed, including CPython x86_64 managed Android smoke, Legendary Android-thread backend regression/smoke tests, ARM64 CPython packaging, 11 Epic Bridge Android instrumentation tests, ARM64 Gradle build, APK signature/package/ABI/assets/ELF dependency-closure audits, and prerelease publication.
+- The host build command assembled `:app:assembleStandardDebug`, `:app:assembleLudashiDebug`, and `:app:assembleAntutuDebug`; the workflow audited each flavor's package ID, `<applicationId>.epicprovider` authority, `libepic_python.so`, and Python assets. The downloadable release currently includes the Standard host APK plus the companion fallback APK; Ludashi and AnTuTu were build-audited but not attached to that release.
+- Release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-e4a758b9481c. Actions artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/44975450275/artifacts/14736042580. Artifact ID `14736042580`; artifact ZIP SHA-256 `991db6571f323cef085c76ed8840277fcbdda39b7551f4a72faa24fd119cc3f3`. The build is debug-signed and experimental.
+- This CI success verifies emulator/runtime/package integration, not actual Epic account login/downloads or Xiaomi 15T frame responsiveness. Do not state the download-lag issue is fixed without on-device profiling.
+- Started UI queue reduction in `EpicFragment.java`: commit `652b0b7235a4a23f523381ddb4dca48dd24c2d99` suppresses duplicate progress-label posts and repeated cancel-button visibility posts while preserving the 1.5-second background status poll. A follow-up Java lambda compile-safety correction is commit `211f4aa896b8073b6b374dcb18b2bfd646b50f37`.
+- Validation for the UI change is running: Epic runtime workflow **44976916865** and baseline APK workflow **44976916817** target `211f4aa`. An earlier superseded Epic workflow on `652b0b7` is also visible as **44976908929**; use the `211f4aa` runs as authoritative because they include the compile-safety correction.
+
+### Next actions
+1. Require both current `211f4aa` workflows to pass before treating the progress-update optimization as build-verified.
+2. Publish/offer the verified Standard host APK and retain companion fallback until Xiaomi 15T device acceptance. Back up existing containers and game data before installation; never replace the Android system Vulkan driver.
+3. Device test login/library/install/update/cancel/retry/uninstall/launch and measure UI jank during downloads. Collect `dumpsys gfxinfo`, logcat timestamps, CPU/memory pressure and storage throughput; compare same game and network conditions with the previous two-app build.
+4. If jank persists, instrument downloader CPU/decompression and storage writes, notification cadence, and provider calls. Do not tune thread count/mmap based on guesswork.
