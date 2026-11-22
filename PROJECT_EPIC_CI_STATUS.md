@@ -13,3 +13,13 @@
 ## APK SHA-256
 - 259002ec0ac0230901974ec42b6d636e4f02c41f46c52d233cf443b6058ba980  app-standard-debug.apk
 - 256d1926b443066cb934e1591b968dc3c3665cab8eb3fea371bdc7c6c66ae43a  epicbridge-debug.apk
+
+
+## Epic library navigation cache build — SUCCESS
+- Exact source head: `b5e0e84632e2be443e105a748f9bf35c73ccf1ac`
+- Standard APK workflow **45053802111**: success — https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45053802111
+- Epic runtime / Android instrumentation / ARM64 workflow **45053802067**: success — https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45053802067
+- Published release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-b5e0e84632e2
+- Main APK SHA-256: `259002ec0ac0230901974ec42b6d636e4f02c41f46c52d233cf443b6058ba980`
+- Companion APK SHA-256: `256d1926b443066cb934e1591b968dc3c3665cab8eb3fea371bdc7c6c66ae43a`
+- Remaining: device acceptance of instant cached navigation, manual refresh, and cache invalidation after library mutations.
