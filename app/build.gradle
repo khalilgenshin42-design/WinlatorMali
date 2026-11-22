@@ -187,6 +187,9 @@ android {
 }
 
 dependencies {
+    // Embed the Epic runtime in host variants while retaining the companion fallback.
+    implementation project(':epicruntime')
+
     // Winlator’s dependencies
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'androidx.preference:preference:1.2.1'
