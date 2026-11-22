@@ -2183,3 +2183,14 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 ### Follow-up engineering gate
 
 If the failure persists, inspect whether the Epic fragment is retained on the navigation back stack (so `onDestroy()` does not run on tab changes), and whether multiple job observers are active. Then inspect synchronous `loadContainers()` work in `onResume()`. Do not change worker counts, mmap sizing, or IPC architecture without crash/jank evidence.
+
+
+## Epic page re-entry regression — device acceptance closed (2026-11-22)
+
+- Tested build: source commit `4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28`, published tag `maliwinlator-1.2.1-epic-4c5ea1d1ced8`.
+- Device: user's Xiaomi 15T / Android 16.
+- User confirmed the page remains smooth with no freeze or lag when returning to Epic while a game is actively downloading and while it is actively installing.
+- Mark the Epic-page re-entry freeze/lag regression **device-accepted and closed** for this build. Do not continue changing the downloader, IPC, worker count, or memory mapping to chase this resolved symptom absent a new reproducible report.
+- CI workflows for this commit both passed: Epic runtime/instrumentation `45017702452` and standard APK `45017702441`.
+- Direct APK asset URL (preferred for this user's device): https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4c5ea1d1ced8/app-standard-debug.apk
+- Remaining acceptance work is broader Epic feature coverage: authentication/session persistence, library refresh, install/cancel/retry, update, uninstall, and launching an installed game in the selected container. These are separate from the now-closed page re-entry issue.
