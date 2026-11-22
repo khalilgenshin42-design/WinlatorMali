@@ -2233,3 +2233,18 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
   - `25664d0cadacb0844fb333526cc218f4d2ecfb39` — game cards load catalog artwork with the existing Glide dependency, automatic memory/disk caching, crop-to-card, and gradient/monogram fallback. URL host validation is restricted to HTTPS Epic Games / Unreal Engine domains.
 - Latest validation runs are associated with the artwork commits: standard APK run **45042169506** (in progress at handoff update), Epic runtime run **45042169424** (pending), plus the earlier Epic runtime run **45042166515** for Python artwork extraction commit **1a4706f** (in progress). Do not publish the artwork version until the exact latest commit `25664d0` passes both workflows.
 - Device verification is still required for real artwork visibility, cache reuse/offline fallback, library scroll performance, and all existing install/play/update/uninstall flows.
+
+
+## Epic artwork build published and CI-verified (2026-11-22)
+
+- Exact artwork source commit `25664d0cadacb0844fb333526cc218f4d2ecfb39` passed both required pipelines:
+  - Standard APK workflow **45042169506** — success.
+  - Epic runtime / Android instrumentation / ARM64 packaging workflow **45042169424** — success. Managed x86_64 runtime smoke, JNI instrumentation, ARM64 build, package/signature/ABI/assets/ELF dependency-closure audits, and prerelease publication all passed.
+- The separate earlier runtime run **45042166515** for extraction commit `1a4706f` was cancelled; it is superseded by the successful exact-artwork-commit pipeline above.
+- Published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-25664d0cadac
+- Direct APK assets:
+  - Main: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/app-standard-debug.apk
+  - Companion: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/SHA256SUMS
+- Release notes identify these as debug-signed test APKs. If the debug signing certificate differs from the currently installed build, Android may require uninstalling the old debug package first; back up any important app/container data before doing so.
+- Device acceptance remains pending: verify actual Epic catalog artwork, scrolling/cache/offline fallback, and core Epic account/library/install/update/uninstall/launch flows on Xiaomi 15T. Previously accepted active download/install Epic-page re-entry responsiveness fix remains a regression guard.
