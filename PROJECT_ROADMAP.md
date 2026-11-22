@@ -139,3 +139,12 @@ Next engineering focus: broaden functional acceptance and harden recovery paths 
 - [x] Direct main APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/app-standard-debug.apk
 - [x] Direct companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-25664d0cadac/epicbridge-debug.apk
 - [ ] Device-test artwork rendering, image caching/offline fallback, scroll performance, and Epic account/library/install/update/uninstall/launch flows on Xiaomi 15T.
+
+
+## Epic Library navigation cache (2026-11-22)
+
+- [x] Confirmed reload root cause: MainActivity creates a new EpicFragment and replaces the old Fragment on every drawer navigation; library cache was Fragment-local.
+- [x] Added Activity-scoped `EpicLibraryViewModel` for the loaded catalog and installed-game metadata; replacement EpicFragment hydrates and renders cached cards without an automatic library IPC request.
+- [x] Kept explicit Refresh and mutation-triggered refreshes intact; downloader, job service, and IPC behavior unchanged.
+- [ ] Validate exact combined source head `b5e0e84632e2be443e105a748f9bf35c73ccf1ac` in standard APK workflow **45053802111** and Epic runtime workflow **45053802067**.
+- [ ] Device-test immediate Epic re-entry, explicit Refresh, and updated installed state after install/update/uninstall.
