@@ -44,29 +44,24 @@ else
   exit "$test_status"
 fi
 
-# Exercise the real cross-package Binder boundary under the production host
-# package ID and a separate Android UID. Both debug APKs are signed by the
-# same CI debug keystore; the host fixture requests the bridge signature
-# permission and calls the exported provider through ContentResolver.
+# Exercise the actual in-package provider/runtime merged into the host test APK.
+# The test APK uses the production host application ID and embeds :epicruntime;
+# no companion APK is installed, so this validates the single-package route.
 ./gradlew --no-daemon --stacktrace \
   :epicbridge-host-test:assembleDebug \
-  :epicbridge-host-test:assembleDebugAndroidTest
+  :epicbridge-host-test:assembleDebugAndroidTest \
+  -PepicRuntimeAbi=x86_64 \
+  -PepicRuntimePrefix="$GITHUB_WORKSPACE/cpython/cross-build/x86_64-linux-android/prefix"
 
 HOST_APK="epicbridge-host-test/build/outputs/apk/debug/epicbridge-host-test-debug.apk"
 HOST_TEST_APK="epicbridge-host-test/build/outputs/apk/androidTest/debug/epicbridge-host-test-debug-androidTest.apk"
 test -s "$HOST_APK"
 test -s "$HOST_TEST_APK"
 
-# connectedDebugAndroidTest may leave its target package absent after teardown.
-# Explicitly install the companion APK before probing its provider authority.
-adb install -r "$BRIDGE_APK"
 adb install -r "$HOST_APK"
 adb install -r "$HOST_TEST_APK"
-adb shell pm path com.maliwinlator.epicbridge | grep -q '^package:'
 adb shell pm path com.maliwinlator.app | grep -q '^package:'
 
-# adb shell am instrument can return a successful shell exit status even when
-# JUnit reports a failed test. Gate CI on the instrumentation/JUnit result too.
 HOST_TEST_OUTPUT="$(adb shell am instrument -w -r \
   -e class com.maliwinlator.epicbridge.hosttest.EpicBridgeCrossPackageTest \
   com.maliwinlator.app.test/androidx.test.runner.AndroidJUnitRunner 2>&1)" || {
@@ -77,7 +72,8 @@ printf '%s\\n' "$HOST_TEST_OUTPUT"
 if grep -Fq 'FAILURES!!!' <<<"$HOST_TEST_OUTPUT" ||
    grep -Fq 'INSTRUMENTATION_STATUS_CODE: -2' <<<"$HOST_TEST_OUTPUT" ||
    ! grep -Fq 'OK (1 test)' <<<"$HOST_TEST_OUTPUT"; then
-  echo "ERROR: cross-package Binder instrumentation did not report one passing test." >&2
+  echo "ERROR: embedded host runtime instrumentation did not report one passing test." >&2
+  adb logcat -d -s EpicPythonRuntime:E EpicBridgePython:E python:E AndroidRuntime:E || true
   exit 1
 fi
-echo "Epic Bridge cross-package Binder integration passed (1/1)."
+echo "Embedded Epic provider/JNI runtime integration passed (1/1)."
