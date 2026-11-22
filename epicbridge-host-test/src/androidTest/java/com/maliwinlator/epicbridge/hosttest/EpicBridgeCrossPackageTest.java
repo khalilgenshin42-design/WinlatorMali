@@ -30,6 +30,8 @@ public final class EpicBridgeCrossPackageTest {
         assertEquals(2, status.getInt("protocol_version", -1));
         assertTrue("Embedded provider did not report a packaged runtime",
                 status.getBoolean("runtime_ready", false));
+        assertTrue("Host provider did not identify same-package storage scope",
+                status.getBoolean("host_embedded", false));
 
         Bundle account = hostContext.getContentResolver().call(
                 provider, "account_status", null, new Bundle());
