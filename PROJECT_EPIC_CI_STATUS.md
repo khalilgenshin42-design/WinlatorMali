@@ -29,3 +29,11 @@
 - Host APK SHA-256: `75c03a420e5fb7fd8c59f899fc5299d045c65d8f7d55b8cfe828d172ebd4a04c`
 - Companion APK SHA-256: `27bbc15fb5b3cb897a717983ba72655d3d6ac49a6ed9a7bba61a0b27d6af0de4`
 - Device retest must preserve app data and containers. If Android rejects the in-place update due to signature mismatch, stop; do not uninstall or clear data.
+
+
+## Xiaomi 15T device acceptance — PASS (2026-11-22)
+- User installed the host APK from the direct GitHub release asset for commit `4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28`.
+- User explicitly confirmed the Epic page remains smooth when returning during both an active game download and an active installation; no freezing or lag was observed.
+- This closes the previously reported Epic-page re-entry responsiveness regression for this device/build.
+- Scope: user-observed UI responsiveness only. This does not by itself certify every Epic workflow (authentication, install cancellation/retry, updates, uninstall, or guest launch), nor prove a specific low-level root cause. The source changes addressed avoidable UI-thread provider work, serialized Python runtime contention, and fragment monitor cleanup.
+- Continue using direct GitHub release-asset URLs for device APK delivery; release-page links have not worked reliably on the user's device.
