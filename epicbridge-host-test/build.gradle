@@ -24,6 +24,8 @@ android {
 }
 
 dependencies {
+    // Exercise the exact embedded runtime/provider manifest used by MaliWinlator.
+    implementation project(':epicruntime')
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test:runner:1.5.2'
 }
