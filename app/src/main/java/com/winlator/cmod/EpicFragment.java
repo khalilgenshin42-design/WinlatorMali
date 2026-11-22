@@ -96,6 +96,9 @@ public final class EpicFragment extends Fragment {
         statusText.setPadding(0, pad, 0, pad);
         root.addView(statusText);
 
+        // A newly created view must receive the current visibility state even
+        // when a retained Fragment previously displayed the same value.
+        cancelButtonVisibility.set(-1);
         cancelJobButton = new Button(requireContext());
         cancelJobButton.setText("Cancel Epic operation");
         cancelJobButton.setVisibility(View.GONE);
@@ -371,6 +374,7 @@ public final class EpicFragment extends Fragment {
         long deadline = System.currentTimeMillis() + 5L * 60L * 60L * 1000L;
         JSONObject result = new JSONObject();
         long unknownSince = 0L;
+        String lastPostedProgressLabel = null;
         while (!jobId.isEmpty() && System.currentTimeMillis() < deadline
                 && !Thread.currentThread().isInterrupted()) {
             try {
@@ -394,9 +398,18 @@ public final class EpicFragment extends Fragment {
                         String label = "Epic " + phase;
                         if (percent >= 0) label += String.format(java.util.Locale.US, " (%.1f%%)", percent);
                         final String progressLabel = label;
-                        if (getActivity() != null) getActivity().runOnUiThread(() -> {
-                            if (statusText != null && jobPolling) statusText.setText(progressLabel);
-                        });
+                        // Job status is polled every 1.5 seconds, but progress can
+                        // remain unchanged for many polls. Avoid flooding the main
+                        // queue with identical TextView updates during slow phases.
+                        if (!progressLabel.equals(lastPostedProgressLabel)) {
+                            lastPostedProgressLabel = progressLabel;
+                            mainHandler.post(() -> {
+                                if (statusText != null && jobPolling
+                                        && progressLabel.equals(lastPostedProgressLabel)) {
+                                    statusText.setText(progressLabel);
+                                }
+                            });
+                        }
                     } catch (Exception ignored) {}
                 }
                 if ("unknown".equals(jobState)) {
@@ -450,10 +463,16 @@ public final class EpicFragment extends Fragment {
         return result;
     }
 
+    private final AtomicInteger cancelButtonVisibility = new AtomicInteger(-1);
+
     private void setCancelButtonVisible(boolean visible) {
-        if (getActivity() != null) getActivity().runOnUiThread(() -> {
-            if (cancelJobButton != null) cancelJobButton.setVisibility(
-                    visible ? View.VISIBLE : View.GONE);
+        final int visibility = visible ? View.VISIBLE : View.GONE;
+        if (cancelButtonVisibility.getAndSet(visibility) == visibility) return;
+        mainHandler.post(() -> {
+            if (cancelJobButton != null
+                    && cancelJobButton.getVisibility() != visibility) {
+                cancelJobButton.setVisibility(visibility);
+            }
         });
     }
 
