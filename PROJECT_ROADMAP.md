@@ -109,3 +109,14 @@ The Epic UI entry point, companion APK packaging, signature-protected IPC bootst
 The previous M2/M3 checklist above is updated to reflect implementation now present in the development branch. The Xiaomi 15T user has confirmed that returning to the Epic page remains smooth with no freeze or lag during both active download and active installation on build commit `4c5ea1d1ced8db0c69251a9fbf0bf444ddda9c28`. Both Epic runtime/instrumentation and standard APK workflows passed for that commit. This closes the specific Epic-page re-entry responsiveness regression; it does not replace the remaining full feature/device regression matrix.
 
 Next engineering focus: broaden functional acceptance and harden recovery paths (process death/restart, stale job state, cancellation races, retry after partial downloads, update/uninstall consistency, and launch payload/path validation). Do not modify downloader concurrency or IPC architecture without a new measured regression. Deliver future APKs using direct GitHub release-asset URLs because the user reports release-page links do not work reliably on their device.
+
+
+## Epic storefront UI redesign — first implementation pass (2026-11-22)
+
+- [x] Add a premium dark Discover landing page and section navigation for Discover, Library, Downloads, and Account.
+- [x] Add searchable two-column game cards with explicit installed/unsupported states and Play, Install, Update, and Uninstall actions.
+- [x] Reuse existing foreground job progress in the Downloads section without changing downloader concurrency or IPC.
+- [ ] Validate Epic runtime/instrumentation and standard APK workflows for the UI commits.
+- [ ] Device-test layout, search, account/storage setup, active download/install progress, and every game action on Xiaomi 15T.
+- [ ] Add real cover artwork only after confirming an authoritative metadata source and implementing safe image caching; current cards intentionally use generated gradients and monograms.
+
