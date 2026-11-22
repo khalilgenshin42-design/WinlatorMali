@@ -196,7 +196,28 @@ jobs:
           set -euo pipefail
           SITE_PACKAGES="$PWD/cross-build/x86_64-linux-android/prefix/lib/python3.15/site-packages"
           cp "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages/epic_runtime_smoke.py" "$SITE_PACKAGES/"
-          python3 Platforms/Android test --managed maxVersion --site-packages "$SITE_PACKAGES" -- -m epic_runtime_smoke
+          # Maven Central occasionally rate-limits the upstream CPython Android
+          # testbed's Gradle dependency resolution. Retry only explicit HTTP 429
+          # failures; real test/build failures remain fail-fast.
+          SMOKE_LOG="$RUNNER_TEMP/epic-android-runtime-smoke.log"
+          for attempt in 1 2 3 4; do
+            if python3 Platforms/Android test --managed maxVersion --site-packages "$SITE_PACKAGES" -- -m epic_runtime_smoke >"$SMOKE_LOG" 2>&1; then
+              cat "$SMOKE_LOG"
+              exit 0
+            else
+              smoke_status=$?
+            fi
+            cat "$SMOKE_LOG"
+            if grep -Eqi 'status code 429|HTTP 429|Too Many Requests' "$SMOKE_LOG" && [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 20))
+              echo "Maven Central returned HTTP 429; retrying Android runtime smoke in ${delay}s (attempt $((attempt + 1))/4)."
+              sleep "$delay"
+              continue
+            fi
+            exit "$smoke_status"
+          done
+          echo "Android runtime smoke exhausted its bounded HTTP 429 retries."
+          exit 1
 
       - name: Build the production Android ARM64 runtime
         working-directory: cpython
