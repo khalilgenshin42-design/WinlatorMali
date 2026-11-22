@@ -1,6 +1,6 @@
 # MaliWinlator — Project Continuity Handoff
 
-Last updated: 2026-11-21
+Last updated: 2026-11-22
 Active branch: `development/maliwinlator-1.2.1-bootstrap`
 Repository: https://github.com/khalilgenshin42-design/WinlatorMali
 
@@ -2052,3 +2052,21 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 2. Publish/offer the verified Standard host APK and retain companion fallback until Xiaomi 15T device acceptance. Back up existing containers and game data before installation; never replace the Android system Vulkan driver.
 3. Device test login/library/install/update/cancel/retry/uninstall/launch and measure UI jank during downloads. Collect `dumpsys gfxinfo`, logcat timestamps, CPU/memory pressure and storage throughput; compare same game and network conditions with the previous two-app build.
 4. If jank persists, instrument downloader CPU/decompression and storage writes, notification cadence, and provider calls. Do not tune thread count/mmap based on guesswork.
+
+## Engineering step log — 2026-11-22: verify progress UI deduplication
+
+- Verified the corrected UI-update source commit **211f4aa896b8073b6b374dcb18b2bfd646b50f37** in both authoritative workflows:
+  - Epic runtime/integration workflow **44976916865**: success, all 31 steps completed. This includes managed x86_64 CPython/Android smoke, Legendary regression/smoke tests, ARM64 CPython packaging, Android instrumentation, ARM64 Gradle host/runtime build, APK audits and prerelease publication.
+  - Standard APK workflow **44976916817**: success, all 12 steps completed, including the standard debug APK build and embedded Epic Bridge/shared-signer audit.
+- Epic workflow published prerelease **maliwinlator-1.2.1-epic-211f4aa896b8** and Actions artifact **14736417170**. The generated `PROJECT_EPIC_CI_STATUS.md` records host APK SHA-256 `1b021898009471e3c99dbc7878665b020a6f78be0ff6b4cecef3affee9ba138e` and companion APK SHA-256 `f0ac8832a2aed5ac483a3b6d87d82804eacf08ed3f803e675b52981b56f0405c`.
+- This validates Java compilation, Android packaging, embedded runtime instrumentation and CI audits for the source containing progress-label and cancel-button update deduplication. It does **not** demonstrate reduced frame jank during an actual download on the Xiaomi 15T, nor does it validate real Epic account/download flows.
+- The previously published `e4a758b` prerelease predates the UI deduplication commits; use the newer `211f4aa` prerelease for device testing.
+- Retain companion fallback and existing app/game data. Do not uninstall the companion until embedded mode has passed device acceptance. Do not modify or replace the Android vendor Vulkan driver.
+
+### Next actions
+
+1. Install the `211f4aa` Standard experimental APK as an in-place update, preserving app data and existing Wine containers; keep the companion fallback installed for now.
+2. Reproduce one lightweight game download under the same conditions as the previous two-app test. Check whether Winlator remains responsive and whether progress/cancel UI behaves correctly.
+3. If lag persists, collect a short timestamped logcat and `dumpsys gfxinfo`/frame stats during the download, plus available CPU/memory/storage observations. Then isolate whether the bottleneck is UI-thread work, downloader CPU/decompression, storage I/O, memory pressure, notification updates or provider IPC before changing architecture or worker limits.
+4. After the device check, continue with cancellation/retry/update/uninstall and selected-container launch acceptance. Keep the current CI success separate from those device-level acceptance criteria.
+
