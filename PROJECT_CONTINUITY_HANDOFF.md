@@ -2016,3 +2016,9 @@ Immediate next engineering task: inspect Android NDK/toolchain and app packaging
 - Strengthened the host-only integration test in commit `1d8f8650b71b078bb11ca8009595761154e8629b` to assert `host_embedded=true`.
 - Run `44974595003` tests the first all-flavor audit on commit `4742809`; later commits `61c6213` and `1d8f865` supersede it and trigger the current build/test runs `44974633713` (Epic) and `44974633711` (Standard). Results are pending at this point.
 - Do not use the older release build as proof of these latest UI/storage-scope changes. The previous successful host-only instrumentation passed before this follow-up change; the new assertion must pass before publishing another device build.
+
+
+### CI trigger correction
+
+- The flavor-audit workflow initially started on commit `61c6213`, before the final `host_embedded` assertion in the host instrumentation test was included. To ensure the full latest source is exercised, updated the instrumentation script's success marker in commit `b0ae58aaf8b6efca96b9f74ece5775b5952ee54d`; this deliberately retriggers the Epic workflow on the latest branch head and includes the test assertion plus all-flavor audit.
+- Latest authoritative run: **44974686442**, queued on `b0ae58a`. Earlier run **44974633713** and baseline run **44974633711** are from `61c6213` and should not be treated as final validation for the newest test assertion.
