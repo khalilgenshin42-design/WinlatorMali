@@ -68,6 +68,9 @@ public final class EpicRuntimeService extends Service {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private PowerManager.WakeLock wakeLock;
     private NotificationManager notificationManager;
+    // NotificationManager updates are relatively expensive; publish only when
+    // the user-visible phase or integer percentage actually changes.
+    private String lastProgressNotificationKey;
 
     @Override
     public void onCreate() {
@@ -124,6 +127,7 @@ public final class EpicRuntimeService extends Service {
         }
 
         if (activeJobs.getAndIncrement() == 0) {
+            lastProgressNotificationKey = null;
             startForeground(FOREGROUND_NOTIFICATION_ID, buildNotification("install".equals(command) ? "Installing Epic game" : "Uninstalling Epic game", true));
             if (!wakeLock.isHeld()) wakeLock.acquire(6L * 60L * 60L * 1000L);
         }
@@ -231,20 +235,21 @@ public final class EpicRuntimeService extends Service {
                 if (Double.isFinite(value) && value >= 0.0) {
                     percent = Math.max(0, Math.min(100, (int) Math.round(value)));
                 }
-                double speed = status.optDouble("download_speed", -1.0);
-                if (speed > 0.0 && Double.isFinite(speed)) {
-                    phase += String.format(java.util.Locale.US, " · %.1f MB/s", speed / (1024.0 * 1024.0));
-                }
             }
         } catch (Exception error) {
             Log.w(TAG, "Unable to read Epic progress snapshot (" + error.getClass().getSimpleName() + ")");
         }
+        String contentText = percent >= 0 ? phase + " · " + percent + "%" : phase;
+        String notificationKey = phase + "|" + percent;
+        if (notificationKey.equals(lastProgressNotificationKey)) return;
+        lastProgressNotificationKey = notificationKey;
+
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
         builder.setSmallIcon(android.R.drawable.stat_sys_download)
                 .setContentTitle("MaliWinlator Epic Games")
-                .setContentText(percent >= 0 ? phase + " · " + percent + "%" : phase)
+                .setContentText(contentText)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setCategory(Notification.CATEGORY_PROGRESS);
