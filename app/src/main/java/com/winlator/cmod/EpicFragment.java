@@ -1156,7 +1156,9 @@ public final class EpicFragment extends Fragment {
                 int total = achievements.optInt("total_achievements", 0);
                 int unlocked = achievements.optInt("user_unlocked", 0);
                 int xp = achievements.optInt("user_xp", 0);
-                achievementsValue.setText("Unlocked " + unlocked + " / " + total + " • " + xp + " XP");
+                int totalXp = achievements.optInt("total_product_xp", 0);
+                achievementsValue.setText("Unlocked " + unlocked + " / " + total + " • "
+                        + xp + " / " + totalXp + " XP");
                 org.json.JSONArray items = achievements.optJSONArray("items");
                 if (items != null) {
                     int shown = Math.min(items.length(), 30);
@@ -1176,6 +1178,23 @@ public final class EpicFragment extends Fragment {
                             TextView achievementDescription = label(description, 10, 0xffaeb8c9, false);
                             addMargin(achievementCard, achievementDescription, 3);
                         }
+                        StringBuilder reward = new StringBuilder();
+                        int achievementXp = item.optInt("xp", 0);
+                        if (achievementXp > 0) reward.append(achievementXp).append(" XP");
+                        String tier = item.optString("tier", "");
+                        String rarity = item.optString("rarity", "");
+                        if (!tier.isEmpty()) {
+                            if (reward.length() > 0) reward.append(" • ");
+                            reward.append(tier);
+                        }
+                        if (!rarity.isEmpty()) {
+                            if (reward.length() > 0) reward.append(" • ");
+                            reward.append(rarity);
+                        }
+                        if (reward.length() > 0) {
+                            TextView rewardLabel = label(reward.toString(), 9, 0xff929db1, false);
+                            addMargin(achievementCard, rewardLabel, 3);
+                        }
                         boolean isUnlocked = item.optBoolean("unlocked", false);
                         boolean isHidden = item.optBoolean("hidden", false);
                         double progress = item.optDouble("progress", 0.0);
@@ -1186,6 +1205,11 @@ public final class EpicFragment extends Fragment {
                         TextView achievementState = label(state, 10,
                                 isUnlocked ? 0xff8ed6a7 : 0xffaeb8c9, true);
                         addMargin(achievementCard, achievementState, 5);
+                        String unlockDate = item.optString("unlock_date", "");
+                        if (isUnlocked && !unlockDate.isEmpty() && !"null".equals(unlockDate)) {
+                            TextView unlockedAt = label("Unlocked: " + unlockDate, 9, 0xff929db1, false);
+                            addMargin(achievementCard, unlockedAt, 2);
+                        }
                         if (!isUnlocked && !isHidden && progress > 0.0) {
                             ProgressBar achievementProgress = new ProgressBar(requireContext(), null,
                                     android.R.attr.progressBarStyleHorizontal);
