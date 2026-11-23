@@ -1,6 +1,6 @@
 # MaliWinlator — Project Continuity Handoff
 
-Last updated: 2026-11-22
+Last updated: 2026-11-23
 Active branch: `development/maliwinlator-1.2.1-bootstrap`
 Repository: https://github.com/khalilgenshin42-design/WinlatorMali
 
@@ -2278,3 +2278,15 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - SHA-256: main APK `259002ec0ac0230901974ec42b6d636e4f02c41f46c52d233cf443b6058ba980`; companion `256d1926b443066cb934e1591b968dc3c3665cab8eb3fea371bdc7c6c66ae43a`.
 - Device test now required: while MainActivity remains alive, visit Epic, switch to Containers, return to Epic and confirm cards appear immediately without library loading request/spinner. Also confirm manual Refresh still refreshes and installed state updates after install/update/uninstall. Process death/relaunch is expected to reload.
 - Debug signing caveat: these are debug-signed APKs; a certificate mismatch may require uninstalling the prior package. Back up container data before any uninstall.
+
+
+## Epic active-job recovery hardening (2026-11-23)
+
+- Active branch: `development/maliwinlator-1.2.1-bootstrap`.
+- Source fix commit: `ce08bb6ff1eb65572762123857603addf3f31b35` — `fix: retain Epic job IDs across transient status gaps`.
+- Source audit found that `EpicFragment.waitForJob()` removed the persisted `active_job_id` after 30 seconds of provider state `unknown`. That could make the Downloads UI report no active operation even while the foreground service/notification remained active.
+- The fix no longer treats `unknown` as proof of completion and retains the saved job ID. It marks the result as pending rather than failed, and does not tell the user to retry an install while the original operation may still be running.
+- Entering Downloads now reattaches a job-status observer when a saved job ID exists. Reconnect and provider-error states are also published to the Downloads status label.
+- No downloader worker counts, Python runtime concurrency, foreground-service behavior, notification behavior, IPC protocol, or install paths were changed.
+- CI/device validation: not yet recorded for this commit. The available combined commit-status query returned no status entries; do not distribute this source as a verified APK until the exact commit has passed the standard APK and Epic runtime/instrumentation/ARM64 workflows.
+- Next: verify both workflows for `ce08bb6`; then device-test a small download while navigating away and back, open Downloads after reconnect, and confirm the progress UI remains aligned with the notification. If the provider continues returning `unknown`, inspect the service's persisted job preferences and service lifecycle before changing more code.
