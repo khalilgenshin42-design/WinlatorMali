@@ -317,6 +317,13 @@ public final class EpicFragment extends Fragment {
             panel.setBackground(shape(0xff171d29, 0xff303b50, 15));
             panel.addView(label("CURRENT ACTIVITY", 10, 0xffaaa6ff, true));
             downloadsStatusText.setText(lastProgressLabel);
+            // pageContainer.removeAllViews() detaches the old panel, not its
+            // children. Reparent the reusable status view before adding it to
+            // this newly-created Downloads panel, otherwise Android throws
+            // "The specified child already has a parent" on every re-entry.
+            if (downloadsStatusText.getParent() instanceof ViewGroup) {
+                ((ViewGroup) downloadsStatusText.getParent()).removeView(downloadsStatusText);
+            }
             addMargin(panel, downloadsStatusText, 10);
             TextView note = label("You can leave this page while the foreground service downloads or installs. Progress and cancellation remain available here.", 11, 0xff929db1, false);
             addMargin(panel, note, 8);
@@ -633,13 +640,27 @@ public final class EpicFragment extends Fragment {
                 setCancelButtonVisible(state.getBoolean("can_cancel", false)
                         && ("running".equals(jobState) || "cancelling".equals(jobState)));
                 String progressJson = state.getString("progress_json", "");
-                if (!progressJson.isEmpty()) {
+                {
                     try {
-                        JSONObject progress = new JSONObject(progressJson);
-                        String phase = progress.optString("phase", "working");
-                        double percent = progress.optDouble("progress", -1);
-                        String label = "Epic " + phase;
-                        if (percent >= 0) label += String.format(java.util.Locale.US, " (%.1f%%)", percent);
+                        // Always render a live state even before the first
+                        // progress snapshot is published by the Python worker.
+                        // This avoids leaving Downloads stuck on "Reconnecting"
+                        // when the foreground notification already confirms work.
+                        String fallbackLabel = "running".equals(jobState)
+                                ? "Epic download/install in progress..."
+                                : "cancelling".equals(jobState)
+                                        ? "Cancelling Epic operation..."
+                                        : "queued".equals(jobState)
+                                                ? "Epic operation queued..."
+                                                : "Epic operation: " + jobState;
+                        String label = fallbackLabel;
+                        if (!progressJson.isEmpty()) {
+                            JSONObject progress = new JSONObject(progressJson);
+                            String phase = progress.optString("phase", "working");
+                            double percent = progress.optDouble("progress", -1);
+                            label = "Epic " + phase;
+                            if (percent >= 0) label += String.format(java.util.Locale.US, " (%.1f%%)", percent);
+                        }
                         final String progressLabel = label;
                         // Job status is polled every 1.5 seconds, but progress can
                         // remain unchanged for many polls. Avoid flooding the main
