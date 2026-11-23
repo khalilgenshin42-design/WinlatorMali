@@ -137,26 +137,157 @@ public final class EpicBridgeClient {
         return call(context, method, null, payloadJson);
     }
 
+    private static final String JOB_PREFS = "epic_bridge_jobs";
+    private static final String JOB_AUTHORITY_SUFFIX = ".provider_authority";
+
+    private static String jobAuthorityKey(String jobId) {
+        return jobId + JOB_AUTHORITY_SUFFIX;
+    }
+
+    private static String alternateAuthority(Context context, String current) {
+        return AUTHORITY.equals(current) ? embeddedAuthority(context) : AUTHORITY;
+    }
+
+    private static Bundle tryCallAuthority(Context context, String authority,
+            String method, String arg, Bundle extras) {
+        try {
+            return callAuthority(context, authority, method, arg, extras);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static boolean isCompatible(Bundle result) {
+        return result != null
+                && result.getInt("protocol_version", -1) == PROTOCOL_VERSION;
+    }
+
+    private static boolean isUnknownJobStatus(Bundle result) {
+        return isCompatible(result) && result.getBoolean("ok", false)
+                && "unknown".equals(result.getString("state", "unknown"));
+    }
+
+    private static boolean isKnownJobStatus(Bundle result) {
+        if (!isCompatible(result) || !result.getBoolean("ok", false)) return false;
+        String state = result.getString("state", "");
+        return !state.isEmpty() && !"unknown".equals(state);
+    }
+
+    private static boolean isTerminalJobStatus(Bundle result) {
+        if (!isKnownJobStatus(result)) return false;
+        String state = result.getString("state", "");
+        return "complete".equals(state) || "failed".equals(state)
+                || "cancelled".equals(state) || "interrupted".equals(state);
+    }
+
     public static Bundle call(Context context, String method, String arg, String payloadJson) {
         Bundle extras = new Bundle();
         extras.putString("payload_json", payloadJson == null ? "{}" : payloadJson);
         try {
-            Bundle result = callEmbedded(context, method, arg, extras);
-            if (shouldFallbackToCompanion(result, false) && isCompanionInstalled(context)) {
-                result = callAuthority(context, AUTHORITY, method, arg, extras);
+            String embedded = embeddedAuthority(context);
+            String jobId = arg == null ? "" : arg;
+            boolean jobStatusCall = "job_status".equals(method);
+            boolean cancelJobCall = "cancel_job".equals(method);
+            boolean jobScopedCall = jobStatusCall || cancelJobCall;
+            android.content.SharedPreferences jobPrefs = context.getSharedPreferences(
+                    JOB_PREFS, Context.MODE_PRIVATE);
+            String authorityKey = jobId.isEmpty() ? "" : jobAuthorityKey(jobId);
+            String savedAuthority = jobScopedCall && !authorityKey.isEmpty()
+                    ? jobPrefs.getString(authorityKey, "") : "";
+
+            Bundle result = null;
+            String selectedAuthority = embedded;
+
+            // Keep every status/cancel request on the same provider that accepted
+            // start_job. The embedded runtime and separately installed companion
+            // have independent SharedPreferences and independent service processes.
+            if (!savedAuthority.isEmpty()) {
+                result = tryCallAuthority(context, savedAuthority, method, arg, extras);
+                selectedAuthority = savedAuthority;
+                if (result == null || !isCompatible(result)
+                        || (jobStatusCall && isUnknownJobStatus(result))) {
+                    String alternate = alternateAuthority(context, savedAuthority);
+                    if (!AUTHORITY.equals(alternate) || isCompanionInstalled(context)) {
+                        Bundle alternateResult = tryCallAuthority(
+                                context, alternate, method, arg, extras);
+                        boolean usefulAlternate = jobStatusCall
+                                ? isKnownJobStatus(alternateResult)
+                                : isCompatible(alternateResult);
+                        if (usefulAlternate) {
+                            result = alternateResult;
+                            selectedAuthority = alternate;
+                            jobPrefs.edit().putString(authorityKey, alternate).apply();
+                        }
+                    }
+                }
+            } else if (cancelJobCall && !jobId.isEmpty()) {
+                // Recover cancellation routing for jobs created before provider
+                // affinity was persisted by probing each provider's job registry.
+                Bundle embeddedStatus = tryCallAuthority(
+                        context, embedded, "job_status", jobId, extras);
+                if (isKnownJobStatus(embeddedStatus)) {
+                    result = tryCallAuthority(context, embedded, method, arg, extras);
+                    selectedAuthority = embedded;
+                } else if (isCompanionInstalled(context)) {
+                    Bundle companionStatus = tryCallAuthority(
+                            context, AUTHORITY, "job_status", jobId, extras);
+                    if (isKnownJobStatus(companionStatus)) {
+                        result = tryCallAuthority(context, AUTHORITY, method, arg, extras);
+                        selectedAuthority = AUTHORITY;
+                        jobPrefs.edit().putString(authorityKey, AUTHORITY).apply();
+                    }
+                }
             }
+
+            if (result == null) {
+                result = callEmbedded(context, method, arg, extras);
+                selectedAuthority = embedded;
+            }
+            if (embedded.equals(selectedAuthority)
+                    && shouldFallbackToCompanion(result, false)
+                    && isCompanionInstalled(context)) {
+                result = tryCallAuthority(context, AUTHORITY, method, arg, extras);
+                selectedAuthority = AUTHORITY;
+            }
+
+            // Older jobs may predate provider-affinity storage. If the embedded
+            // provider answers "unknown", probe the companion before concluding
+            // that the saved job is missing.
+            if (jobStatusCall && savedAuthority.isEmpty()
+                    && isUnknownJobStatus(result) && isCompanionInstalled(context)) {
+                Bundle companionStatus = tryCallAuthority(
+                        context, AUTHORITY, method, arg, extras);
+                if (isKnownJobStatus(companionStatus)) {
+                    result = companionStatus;
+                    selectedAuthority = AUTHORITY;
+                }
+            }
+
             if (result == null) {
                 Bundle unavailable = new Bundle();
                 unavailable.putBoolean("ok", false);
                 unavailable.putString("error", "PROVIDER_UNAVAILABLE");
                 return unavailable;
             }
-            if (result.getInt("protocol_version", -1) != PROTOCOL_VERSION) {
+            if (!isCompatible(result)) {
                 Bundle mismatch = new Bundle();
                 mismatch.putBoolean("ok", false);
                 mismatch.putString("error", "PROTOCOL_MISMATCH");
                 mismatch.putString("message", "Reinstall the matching Epic Bridge companion package");
                 return mismatch;
+            }
+
+            if ("start_job".equals(method) && result.getBoolean("ok", false)) {
+                String startedJobId = result.getString("job_id", "");
+                if (!startedJobId.isEmpty()) {
+                    jobPrefs.edit().putString(
+                            jobAuthorityKey(startedJobId), selectedAuthority).commit();
+                }
+            } else if (jobStatusCall && isKnownJobStatus(result)) {
+                jobPrefs.edit().putString(authorityKey, selectedAuthority).apply();
+                if (isTerminalJobStatus(result)) {
+                    jobPrefs.edit().remove(authorityKey).apply();
+                }
             }
             return result;
         } catch (Exception e) {
