@@ -2290,3 +2290,17 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - No downloader worker counts, Python runtime concurrency, foreground-service behavior, notification behavior, IPC protocol, or install paths were changed.
 - CI/device validation: not yet recorded for this commit. The available combined commit-status query returned no status entries; do not distribute this source as a verified APK until the exact commit has passed the standard APK and Epic runtime/instrumentation/ARM64 workflows.
 - Next: verify both workflows for `ce08bb6`; then device-test a small download while navigating away and back, open Downloads after reconnect, and confirm the progress UI remains aligned with the notification. If the provider continues returning `unknown`, inspect the service's persisted job preferences and service lifecycle before changing more code.
+
+
+## Epic provider-affinity correction (2026-11-23)
+
+- Additional source commit: `6bf0b9f73aa7cdf6d6855a05fd135b2153379c9f` — `fix: pin Epic jobs to their originating provider`.
+- Follow-up hardening commit: `47758e3c7d19d81df2f5564ff41aa6c01d49d08e` — `fix: recover Epic job routing when a provider disappears`.
+- Source audit found a provider-routing hazard in `EpicBridgeClient.call()`: a request could fall back to the separately installed companion when the embedded provider was unavailable, while a later `job_status` request could be answered by the embedded provider. These providers run separate services and maintain separate `epic_runtime_jobs` SharedPreferences, so the non-originating provider can validly answer `state=unknown` for a job that is active in the other provider.
+- The client now records the provider authority returned by `start_job` in host-private `epic_bridge_jobs` preferences and uses that same authority for subsequent status and cancellation requests. For older jobs without an affinity record, it probes the alternate provider when the first provider reports `unknown`; cancellation similarly probes the registries before routing.
+- If the recorded provider becomes unavailable, the client can switch to the alternate provider only when that provider returns a usable response. Terminal job states clear the provider-affinity record.
+- Together with `ce08bb6`, Downloads retains the saved job ID across transient `unknown` status and reconnects its observer when the Downloads section is opened.
+- This is a source-level correction to a real cross-provider consistency hazard. It is not yet proof that the Xiaomi 15T notification/UI mismatch is fixed; CI and device acceptance remain required.
+- No downloader worker counts, Legendary runtime serialization, notification implementation, storage mapping, or Wine install paths were changed.
+- Validation status: no combined commit-status entries were returned for `47758e3` at the time of this update. Do not publish an APK until both the standard APK and Epic runtime/instrumentation/ARM64 workflows pass for the exact branch head.
+- Next: obtain CI results for the current branch head, review compile/instrumentation logs, then test an active small download while switching between Discover/Library/Downloads and while the provider is restarted or temporarily unavailable. Confirm that the notification and Downloads UI report the same operation and progress.
