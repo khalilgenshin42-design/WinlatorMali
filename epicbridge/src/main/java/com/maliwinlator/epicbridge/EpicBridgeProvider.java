@@ -276,6 +276,7 @@ public final class EpicBridgeProvider extends ContentProvider {
             case "account_status":
             case "logout":
             case "library":
+            case "game_details":
             case "installed":
             case "install":
             case "uninstall":
