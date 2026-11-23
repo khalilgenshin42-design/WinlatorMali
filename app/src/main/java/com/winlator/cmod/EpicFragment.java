@@ -527,12 +527,17 @@ public final class EpicFragment extends Fragment {
                                 json = jobStartFailure(started);
                             } else {
                                 monitorJobId = started.getString("job_id", "");
-                                jobPrefs.edit().putString(JOB_ID_KEY, monitorJobId).commit();
-                                if ("install".equals(method)) {
-                                    jobPrefs.edit().putString(ACTIVE_JOB_APP_KEY,
-                                            new JSONObject(payload).optString("app_name", "")).apply();
+                                if (monitorJobId.isEmpty()) {
+                                    json = jobStartFailure(started);
+                                    json = withFallbackMessage(json, "Epic Bridge returned an empty job ID");
+                                } else {
+                                    jobPrefs.edit().putString(JOB_ID_KEY, monitorJobId).commit();
+                                    if ("install".equals(method)) {
+                                        jobPrefs.edit().putString(ACTIVE_JOB_APP_KEY,
+                                                new JSONObject(payload).optString("app_name", "")).apply();
+                                    }
+                                    json = null;
                                 }
-                                json = null;
                             }
                         }
                     } else {
@@ -541,12 +546,17 @@ public final class EpicFragment extends Fragment {
                             json = jobStartFailure(started);
                         } else {
                             monitorJobId = started.getString("job_id", "");
-                            jobPrefs.edit().putString(JOB_ID_KEY, monitorJobId).apply();
-                            if ("install".equals(method)) {
-                                jobPrefs.edit().putString(ACTIVE_JOB_APP_KEY,
-                                        new JSONObject(payload).optString("app_name", "")).apply();
+                            if (monitorJobId.isEmpty()) {
+                                json = jobStartFailure(started);
+                                json = withFallbackMessage(json, "Epic Bridge returned an empty job ID");
+                            } else {
+                                jobPrefs.edit().putString(JOB_ID_KEY, monitorJobId).apply();
+                                if ("install".equals(method)) {
+                                    jobPrefs.edit().putString(ACTIVE_JOB_APP_KEY,
+                                            new JSONObject(payload).optString("app_name", "")).apply();
+                                }
+                                json = null;
                             }
-                            json = null;
                         }
                     }
                 } else {
@@ -593,6 +603,13 @@ public final class EpicFragment extends Fragment {
             json.put("ok", false);
             json.put("message", started.getString("message", "Unable to start Epic operation"));
             json.put("error", started.getString("error", "EPIC_JOB_START_FAILED"));
+        } catch (Exception ignored) {}
+        return json;
+    }
+
+    private JSONObject withFallbackMessage(JSONObject json, String message) {
+        try {
+            if (json.optString("message", "").isEmpty()) json.put("message", message);
         } catch (Exception ignored) {}
         return json;
     }
