@@ -1,13 +1,15 @@
 # Epic APK CI status
-- Result: **FAILURE**
+- Result: **SUCCESS**
 - Run attempt: 1
-- Source commit: 72974c34bc24792f44fbbdba009913b5c734f1c7
-- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45234381233
-- APK artifact: not verified; do not install.
-- Failure details: inspect the failed steps in the workflow run above.
+- Source commit: 4d24258dcb7c502e498a1188f3533343f7faeee0
+- Workflow run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45236863918
+- GitHub prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-4d24258dcb7c
+- Actions artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45236863918/artifacts/14849064154
+- Artifact name: maliwinlator-1.2.1-epic-arm64-debug
+- Built host package: com.maliwinlator.app (versionCode 24)
+- Built companion package: com.maliwinlator.epicbridge (versionCode 2)
+- Verification: managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure/embedded companion audits.
 
-
-- Latest source head under validation: `4d24258dcb7c502e498a1188f3533343f7faeee0`.
-- Previous Epic runtime run `45234381233` failed at Python import due to the malformed `game_details` dispatch block; see the workflow job log for the `IndentationError`. No Epic APK was produced from that run.
-- The standard APK workflow for `72974c34bc24792f44fbbdba009913b5c734f1c7` passed, but it did not validate the Epic runtime.
-- The dispatch fix, endpoint regression tests, and game-details UI wiring are now committed. Await CI runs for the latest branch head; do not install an artifact from the failed run.
+## APK SHA-256
+- 7ddcb6a9a8bf872feb390f4e254adabbe42adc125467977465ce0a1f3b019a15  app-standard-debug.apk
+- 66f3bc8c844c470b2f9bc6a72c9b661d19d7616597ff440554eaa831ed9be902  epicbridge-debug.apk
