@@ -1115,6 +1115,9 @@ public final class EpicFragment extends Fragment {
         addMargin(info, label("Achievements", 13, 0xfff5f6fa, true), 10);
         TextView achievementsValue = label("Checking Epic achievement data...", 11, 0xff929db1, false);
         info.addView(achievementsValue);
+        LinearLayout achievementsList = new LinearLayout(requireContext());
+        achievementsList.setOrientation(LinearLayout.VERTICAL);
+        addMargin(info, achievementsList, 8);
         addMargin(info, label("Playtime", 13, 0xfff5f6fa, true), 12);
         info.addView(label("Not currently provided by the Epic library response.", 11, 0xff929db1, false));
         addMargin(info, label("Cloud saves", 13, 0xfff5f6fa, true), 12);
@@ -1148,16 +1151,60 @@ public final class EpicFragment extends Fragment {
                 return;
             }
             JSONObject achievements = metadata.optJSONObject("achievements");
+            achievementsList.removeAllViews();
             if (achievements != null && achievements.optBoolean("available", false)) {
-                JSONObject definitions = achievements.optJSONObject("definitions");
-                JSONObject userState = achievements.optJSONObject("user_state");
-                if (definitions != null && definitions.has("truncated")) {
-                    achievementsValue.setText("Epic returned achievement data, but the definition payload is too large to display.");
-                } else if (userState != null && userState.has("truncated")) {
-                    achievementsValue.setText("Epic returned achievement data, but the account-progress payload is too large to display.");
-                } else {
-                    achievementsValue.setText("Epic achievement definitions and account progress are available for this title.");
+                int total = achievements.optInt("total_achievements", 0);
+                int unlocked = achievements.optInt("user_unlocked", 0);
+                int xp = achievements.optInt("user_xp", 0);
+                achievementsValue.setText("Unlocked " + unlocked + " / " + total + " • " + xp + " XP");
+                org.json.JSONArray items = achievements.optJSONArray("items");
+                if (items != null) {
+                    int shown = Math.min(items.length(), 30);
+                    for (int index = 0; index < shown; index++) {
+                        JSONObject item = items.optJSONObject(index);
+                        if (item == null) continue;
+                        String name = item.optString("display_name", "Achievement");
+                        if (name.trim().isEmpty()) name = "Achievement";
+                        LinearLayout achievementCard = new LinearLayout(requireContext());
+                        achievementCard.setOrientation(LinearLayout.VERTICAL);
+                        achievementCard.setPadding(dp(10), dp(9), dp(10), dp(9));
+                        achievementCard.setBackground(shape(0xff202838, 0xff303b50, 10));
+                        TextView achievementTitle = label(name, 12, 0xfff5f6fa, true);
+                        achievementCard.addView(achievementTitle);
+                        String description = item.optString("description", "");
+                        if (!description.isEmpty()) {
+                            TextView achievementDescription = label(description, 10, 0xffaeb8c9, false);
+                            addMargin(achievementCard, achievementDescription, 3);
+                        }
+                        boolean isUnlocked = item.optBoolean("unlocked", false);
+                        boolean isHidden = item.optBoolean("hidden", false);
+                        double progress = item.optDouble("progress", 0.0);
+                        String state = isUnlocked ? "Unlocked"
+                                : (isHidden ? "Hidden" : (progress > 0.0
+                                ? "In progress • " + Math.round(progress * 100.0) + "%"
+                                : "Locked"));
+                        TextView achievementState = label(state, 10,
+                                isUnlocked ? 0xff8ed6a7 : 0xffaeb8c9, true);
+                        addMargin(achievementCard, achievementState, 5);
+                        if (!isUnlocked && !isHidden && progress > 0.0) {
+                            ProgressBar achievementProgress = new ProgressBar(requireContext(), null,
+                                    android.R.attr.progressBarStyleHorizontal);
+                            achievementProgress.setMax(100);
+                            achievementProgress.setProgress((int) Math.round(progress * 100.0));
+                            addMargin(achievementCard, achievementProgress, 4);
+                        }
+                        addMargin(achievementsList, achievementCard, 6);
+                    }
                 }
+                if (achievements.optBoolean("truncated", false) || (items != null && items.length() > 30)) {
+                    TextView more = label("Showing the first 30 achievements.", 10, 0xff929db1, false);
+                    addMargin(achievementsList, more, 4);
+                }
+                if (total == 0 && (items == null || items.length() == 0)) {
+                    achievementsValue.setText("No Epic Store achievements are listed for this title.");
+                }
+            } else if (achievements != null && achievements.has("error")) {
+                achievementsValue.setText("Epic achievement data is temporarily unavailable.");
             } else {
                 achievementsValue.setText("No Epic Store achievement data was returned for this title.");
             }
