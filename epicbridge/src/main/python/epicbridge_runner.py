@@ -117,7 +117,8 @@ def _game_details(core, payload):
     app_name = str(payload.get("app_name", "")).strip()
     if not app_name or len(app_name) > 128 or any(ch in app_name for ch in ("/", "\\", "\x00")):
         raise ValueError("A valid Epic app_name is required")
-    game = core.get_game(app_name, update_meta=True, platform="Windows")
+    # Library enumeration already refreshes Windows metadata; avoid re-fetching the entire catalog here.
+    game = core.get_game(app_name, update_meta=False, platform="Windows")
     if not game:
         raise ValueError("The selected Epic title could not be found")
     namespace = str(getattr(game, "namespace", "") or "").strip()
