@@ -1113,11 +1113,13 @@ public final class EpicFragment extends Fragment {
         info.setBackground(shape(0xff171d29, 0xff293247, 13));
         addMargin(info, label("GAME INFORMATION", 10, 0xffaaa6ff, true), 0);
         addMargin(info, label("Achievements", 13, 0xfff5f6fa, true), 10);
-        info.addView(label("Not exposed by the current Epic integration for this title.", 11, 0xff929db1, false));
+        TextView achievementsValue = label("Checking Epic achievement data...", 11, 0xff929db1, false);
+        info.addView(achievementsValue);
         addMargin(info, label("Playtime", 13, 0xfff5f6fa, true), 12);
         info.addView(label("Not currently provided by the Epic library response.", 11, 0xff929db1, false));
         addMargin(info, label("Cloud saves", 13, 0xfff5f6fa, true), 12);
-        info.addView(label("Support and sync status have not yet been verified for this game.", 11, 0xff929db1, false));
+        TextView cloudSavesValue = label("Checking Windows cloud-save support...", 11, 0xff929db1, false);
+        info.addView(cloudSavesValue);
         addMargin(detail, info, 12);
 
         if (installed) {
@@ -1129,6 +1131,48 @@ public final class EpicFragment extends Fragment {
             TextView permission = label("Grant storage access in Account & setup before installing.", 11, 0xffffc978, false);
             addMargin(detail, permission, 9);
         }
+
+        JSONObject detailsPayload = new JSONObject();
+        try { detailsPayload.put("app_name", appName); } catch (Exception ignored) {}
+        runCommand("game_details", detailsPayload.toString(), result -> {
+            if (getView() == null || !appName.equals(selectedGameAppName)) return;
+            if (!result.optBoolean("ok", false)) {
+                achievementsValue.setText("Epic achievement data is currently unavailable.");
+                cloudSavesValue.setText("Unable to check cloud-save status.");
+                return;
+            }
+            JSONObject metadata = result.optJSONObject("game");
+            if (metadata == null) {
+                achievementsValue.setText("Epic did not return game details.");
+                cloudSavesValue.setText("Cloud-save status is unavailable.");
+                return;
+            }
+            JSONObject achievements = metadata.optJSONObject("achievements");
+            if (achievements != null && achievements.optBoolean("available", false)) {
+                JSONObject definitions = achievements.optJSONObject("definitions");
+                JSONObject userState = achievements.optJSONObject("user_state");
+                if (definitions != null && definitions.has("truncated")) {
+                    achievementsValue.setText("Epic returned achievement data, but the definition payload is too large to display.");
+                } else if (userState != null && userState.has("truncated")) {
+                    achievementsValue.setText("Epic returned achievement data, but the account-progress payload is too large to display.");
+                } else {
+                    achievementsValue.setText("Epic achievement definitions and account progress are available for this title.");
+                }
+            } else {
+                achievementsValue.setText("No Epic Store achievement data was returned for this title.");
+            }
+            JSONObject cloud = metadata.optJSONObject("cloud_saves");
+            if (cloud == null || !cloud.optBoolean("supported", false)) {
+                cloudSavesValue.setText("Epic does not report Windows cloud-save support for this title.");
+            } else if (!cloud.has("remote_available") || cloud.isNull("remote_available")) {
+                cloudSavesValue.setText("Windows cloud saves are supported; remote save status could not be checked.");
+            } else {
+                int count = cloud.optInt("remote_count", 0);
+                cloudSavesValue.setText(cloud.optBoolean("remote_available", false)
+                        ? "Windows cloud saves supported • " + count + " remote save record(s) found. Sync is not enabled yet."
+                        : "Windows cloud saves supported • no remote save records found. Sync is not enabled yet.");
+            }
+        });
     }
 
     private void showInstalledActions(String appName, String title) {
