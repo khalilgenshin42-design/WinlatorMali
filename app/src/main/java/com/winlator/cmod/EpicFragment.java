@@ -84,7 +84,12 @@ public final class EpicFragment extends Fragment {
     private EpicLibraryViewModel libraryState;
     private JSONArray cachedGames = new JSONArray();
     private boolean libraryLoaded;
-    private String activeSection = "discover";
+    private String activeSection = "library";
+    private JSONObject selectedGame;
+    private String selectedGameAppName = "";
+    private TextView gameProgressText;
+    private Button gamePrimaryButton;
+    private boolean gameJobActive;
     private volatile String lastProgressLabel = "No active Epic download or installation.";
     private final List<Container> containers = new ArrayList<>();
     private final Set<String> installedApps = new HashSet<>();
@@ -138,7 +143,7 @@ public final class EpicFragment extends Fragment {
         navigationBar = nav;
         nav.setPadding(dp(3), dp(3), dp(3), dp(3));
         nav.setBackground(shape(0xff151a25, 0xff293247, 14));
-        String[][] tabs = {{"discover","Discover"},{"library","Library"},{"downloads","Downloads"},{"account","Account"}};
+        String[][] tabs = {{"library","Library"},{"account","Account"}};
         for (String[] tab : tabs) {
             Button b = action(tab[1], false);
             b.setTextSize(11);
@@ -304,80 +309,12 @@ public final class EpicFragment extends Fragment {
         }
         if (pageContainer == null) return;
         pageContainer.removeAllViews();
-        if ("library".equals(section)) {
+        if ("account".equals(section)) {
+            pageContainer.addView(accountPanel);
+        } else {
             pageContainer.addView(libraryPanel);
             if (!libraryLoaded) refreshLibrary();
-        } else if ("account".equals(section)) {
-            pageContainer.addView(accountPanel);
-        } else if ("downloads".equals(section)) {
-            addHeading(pageContainer, "Downloads", "Your Epic install continues in the foreground.");
-            LinearLayout panel = new LinearLayout(requireContext());
-            panel.setOrientation(LinearLayout.VERTICAL);
-            panel.setPadding(dp(16), dp(16), dp(16), dp(16));
-            panel.setBackground(shape(0xff171d29, 0xff303b50, 15));
-            panel.addView(label("CURRENT ACTIVITY", 10, 0xffaaa6ff, true));
-            downloadsStatusText.setText(lastProgressLabel);
-            // pageContainer.removeAllViews() detaches the old panel, not its
-            // children. Reparent the reusable status view before adding it to
-            // this newly-created Downloads panel, otherwise Android throws
-            // "The specified child already has a parent" on every re-entry.
-            if (downloadsStatusText.getParent() instanceof ViewGroup) {
-                ((ViewGroup) downloadsStatusText.getParent()).removeView(downloadsStatusText);
-            }
-            addMargin(panel, downloadsStatusText, 10);
-            TextView note = label("You can leave this page while the foreground service downloads or installs. Progress and cancellation remain available here.", 11, 0xff929db1, false);
-            addMargin(panel, note, 8);
-            pageContainer.addView(panel);
-            if (cancelJobButton.getParent() instanceof ViewGroup) {
-                ((ViewGroup)cancelJobButton.getParent()).removeView(cancelJobButton);
-            }
-            addMargin(pageContainer, cancelJobButton, 12);
-            android.content.SharedPreferences prefs = requireContext().getApplicationContext()
-                    .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
-            String jobId = prefs.getString(JOB_ID_KEY, "");
-            if (!jobId.isEmpty() && !jobPolling) {
-                downloadsStatusText.setText("Saved Epic operation found. Reconnecting to its foreground status...");
-                // Entering Downloads is an explicit recovery point after a provider
-                // interruption. Attach a fresh observer without starting another job.
-                resumePendingJob();
-            } else if (jobId.isEmpty() && !jobPolling) {
-                downloadsStatusText.setText("No active download or installation.");
-            }
-        } else {
-            LinearLayout hero = new LinearLayout(requireContext());
-            hero.setOrientation(LinearLayout.VERTICAL);
-            hero.setPadding(dp(20), dp(22), dp(20), dp(20));
-            GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[]{0xff3c347f, 0xff202b48, 0xff111827});
-            bg.setCornerRadius(dp(21));
-            hero.setBackground(bg);
-            hero.addView(label("YOUR PC GAME COLLECTION", 10, 0xffd0ceff, true));
-            TextView title = label("Your Epic library.\nReady for Winlator.", 27, 0xffffffff, true);
-            title.setPadding(0, dp(12), 0, dp(8));
-            hero.addView(title);
-            hero.addView(label("Browse your Windows games, install them into a Wine container, and keep track of downloads.", 12, 0xffd2d7e8, false));
-            Button browse = action("Explore my library", true);
-            browse.setOnClickListener(v -> showSection("library"));
-            addMargin(hero, browse, 18);
-            pageContainer.addView(hero);
-            addHeading(pageContainer, "Quick access", "Everything for your Epic games, in one place.");
-            addQuickLink(pageContainer, "Game library", "Browse owned games and manage installs.", "library");
-            addQuickLink(pageContainer, "Downloads", "Check current download or installation status.", "downloads");
-            addQuickLink(pageContainer, "Account & setup", "Sign in, grant storage access, and select a container.", "account");
         }
-    }
-
-    private void addQuickLink(LinearLayout parent, String title, String detail, String target) {
-        LinearLayout item = new LinearLayout(requireContext());
-        item.setOrientation(LinearLayout.VERTICAL);
-        item.setPadding(dp(14), dp(13), dp(14), dp(13));
-        item.setBackground(shape(0xff171d29, 0xff293247, 13));
-        item.addView(label(title, 14, 0xfff5f6fa, true));
-        TextView subtitle = label(detail, 11, 0xff929db1, false);
-        subtitle.setPadding(0, dp(4), 0, 0);
-        item.addView(subtitle);
-        item.setOnClickListener(v -> showSection(target));
-        addMargin(parent, item, 9);
     }
 
     @Override
@@ -896,6 +833,7 @@ public final class EpicFragment extends Fragment {
                 libraryState.setLibrary(games, installedApps, installedPaths);
             }
             renderGameCards(searchField == null ? "" : searchField.getText().toString());
+            if (selectedGame != null) showGameDetails(findCachedGame(selectedGameAppName));
         });
     }
 
@@ -980,28 +918,124 @@ public final class EpicFragment extends Fragment {
         name.setPadding(dp(1), dp(8), dp(1), dp(3));
         card.addView(name);
         card.addView(label(installed ? "Ready to play" :
-                (supported ? "Not installed" : "Not directly installable"), 10,
+                (supported ? "Ready to install" : "Not directly installable"), 10,
                 installed ? 0xff79d6a2 : 0xff929db1, false));
-
-        if (installed && storageReady) {
-            Button play = action("Play", true);
-            play.setOnClickListener(v -> launchGame(appName, title));
-            addMargin(card, play, 7);
-            Button manage = action("Update / Remove", false);
-            manage.setOnClickListener(v -> showInstalledActions(appName, title));
-            addMargin(card, manage, 5);
-        } else if (!installed && supported && storageReady) {
-            Button install = action("Install", true);
-            install.setOnClickListener(v -> installGame(appName, title));
-            addMargin(card, install, 7);
-        } else if (!storageReady) {
-            TextView permission = label("Storage access required", 10, 0xffffc978, false);
-            addMargin(card, permission, 7);
-        } else {
-            TextView unsupported = label("Requires another store or has no Windows build.", 10, 0xff929db1, false);
-            addMargin(card, unsupported, 7);
-        }
+        card.setOnClickListener(v -> showGameDetails(game));
+        card.setClickable(true);
         return card;
+    }
+
+    private JSONObject findCachedGame(String appName) {
+        if (appName == null || appName.isEmpty()) return selectedGame;
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject item = cachedGames.optJSONObject(i);
+            if (item != null && appName.equals(item.optString("app_name"))) return item;
+        }
+        return selectedGame;
+    }
+
+    private void updateGameActionButton(String text, boolean enabled) {
+        if (gamePrimaryButton == null) return;
+        gamePrimaryButton.setText(text);
+        gamePrimaryButton.setEnabled(enabled);
+        gamePrimaryButton.setAlpha(enabled ? 1.0f : 0.72f);
+    }
+
+    private void showGameDetails(JSONObject game) {
+        if (game == null || pageContainer == null) return;
+        selectedGame = game;
+        String appName = game.optString("app_name", "");
+        selectedGameAppName = appName;
+        String title = game.optString("title", appName);
+        boolean installed = installedApps.contains(appName);
+        boolean supported = game.optString("version", "").length() > 0
+                && game.optString("third_party_store", "").isEmpty();
+
+        pageContainer.removeAllViews();
+        LinearLayout detail = new LinearLayout(requireContext());
+        detail.setOrientation(LinearLayout.VERTICAL);
+        pageContainer.addView(detail);
+
+        Button back = action("←  Back to library", false);
+        back.setOnClickListener(v -> showSection("library"));
+        addMargin(detail, back, 0);
+
+        FrameLayout artwork = new FrameLayout(requireContext());
+        GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{artColor(appName, 0), artColor(appName, 1), 0xff111827});
+        art.setCornerRadius(dp(16));
+        ImageView cover = new ImageView(requireContext());
+        cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        cover.setBackground(art);
+        artwork.addView(cover, new FrameLayout.LayoutParams(-1, -1));
+        String coverUrl = game.optString("cover_url", "");
+        if (isTrustedEpicArtworkUrl(coverUrl)) {
+            Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(art).error(art).centerCrop().into(cover);
+        } else {
+            TextView initials = label(gameMonogram(title), 42, 0xfff5f6fa, true);
+            initials.setGravity(Gravity.CENTER);
+            artwork.addView(initials, new FrameLayout.LayoutParams(-1, -1));
+        }
+        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(190));
+        artParams.topMargin = dp(14);
+        detail.addView(artwork, artParams);
+
+        TextView heading = label(title, 24, 0xfff5f6fa, true);
+        heading.setPadding(0, dp(14), 0, dp(4));
+        detail.addView(heading);
+        detail.addView(label(installed ? "INSTALLED  •  Ready to play" :
+                (supported ? "IN YOUR EPIC LIBRARY  •  Ready to install" : "IN YOUR EPIC LIBRARY"),
+                10, installed ? 0xff79d6a2 : 0xffaaa6ff, true));
+
+        gamePrimaryButton = action(gameJobActive ? "Cancel download" :
+                (installed ? "Play game" : (supported ? "Install" : "Unavailable")), true);
+        addMargin(detail, gamePrimaryButton, 16);
+        gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobActive);
+        gamePrimaryButton.setOnClickListener(v -> {
+            if (gameJobActive) {
+                updateGameActionButton("Cancelling...", false);
+                cancelActiveJob();
+            } else if (installed) {
+                launchGame(appName, title);
+            } else if (supported) {
+                installGame(appName, title);
+            }
+        });
+
+        LinearLayout progressCard = new LinearLayout(requireContext());
+        progressCard.setOrientation(LinearLayout.VERTICAL);
+        progressCard.setPadding(dp(14), dp(13), dp(14), dp(13));
+        progressCard.setBackground(shape(0xff171d29, 0xff303b50, 13));
+        progressCard.addView(label("DOWNLOAD STATUS", 10, 0xffaaa6ff, true));
+        gameProgressText = label(gameJobActive ? lastProgressLabel :
+                (installed ? "Game is installed and ready." : "Install this game to see live progress here."),
+                12, 0xffdce3f2, true);
+        addMargin(progressCard, gameProgressText, 8);
+        addMargin(detail, progressCard, 12);
+
+        LinearLayout info = new LinearLayout(requireContext());
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(14), dp(14), dp(14), dp(14));
+        info.setBackground(shape(0xff171d29, 0xff293247, 13));
+        addMargin(info, label("GAME INFORMATION", 10, 0xffaaa6ff, true), 0);
+        addMargin(info, label("Achievements", 13, 0xfff5f6fa, true), 10);
+        info.addView(label("Not exposed by the current Epic integration for this title.", 11, 0xff929db1, false));
+        addMargin(info, label("Playtime", 13, 0xfff5f6fa, true), 12);
+        info.addView(label("Not currently provided by the Epic library response.", 11, 0xff929db1, false));
+        addMargin(info, label("Cloud saves", 13, 0xfff5f6fa, true), 12);
+        info.addView(label("Support and sync status have not yet been verified for this game.", 11, 0xff929db1, false));
+        addMargin(detail, info, 12);
+
+        if (installed) {
+            Button manage = action("Update / Uninstall", false);
+            manage.setOnClickListener(v -> showInstalledActions(appName, title));
+            addMargin(detail, manage, 10);
+        }
+        if (!storageReady && !installed) {
+            TextView permission = label("Grant storage access in Account & setup before installing.", 11, 0xffffc978, false);
+            addMargin(detail, permission, 9);
+        }
     }
 
     private void showInstalledActions(String appName, String title) {
