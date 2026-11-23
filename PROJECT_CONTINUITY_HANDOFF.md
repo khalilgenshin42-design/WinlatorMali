@@ -2420,3 +2420,14 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Do not sync while the game process is running. Never auto-download a remote save over a newer local save without explicit conflict resolution and a backup.
 - Achievements are read-only in the launcher UI. Only the game should unlock achievements through its own legitimate integration; do not call unlock APIs to spoof progress.
 - Keep tokens, presigned URLs, save contents, and raw API responses out of logcat and user-facing diagnostics.
+
+
+## 2026-11-23 — First Epic account metadata endpoint
+
+- Added Python bridge command `game_details` in commit `730c9c0324f12a0b7e9bd3f601546cbdfac43588`.
+- Added `game_details` to the provider's explicit runtime-command allow-list in commit `72974c34bc24792f44fbbdba009913b5c734f1c7`.
+- The command requires an authenticated Epic session, validates the app name, resolves the Windows title metadata, and makes read-only Epic Store achievement definition/user-state calls through Legendary's EPCAPI when a namespace and API object are available.
+- It reports the title's cloud-save support flags and (when supported) only a remote-file count/availability bit. It deliberately strips signed URLs and raw save-file metadata. Playtime remains unavailable.
+- This is a backend endpoint only: the details UI has not yet been wired to it, and live API responses have not yet been verified against an authenticated account. The response is bounded to 48 KiB per achievement payload.
+- Next: verify LegendaryCore's EPCAPI member and model namespace/save-support fields against the exact pinned 0.21.1 package in CI; add mocked runner tests for supported/unsupported titles, API failures, missing namespace, malformed app names and oversized payloads. Then render actual achievement state and cloud-save status in the game page.
+- No cloud save upload/download or mutation is enabled in this change.
