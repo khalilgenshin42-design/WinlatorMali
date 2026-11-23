@@ -373,11 +373,28 @@ class GameDetailsTests(unittest.TestCase):
         result = self.run_details(game, {"files": ["save-a", "save-b", "save-c"]})
         self.assertEqual(result["cloud_saves"]["remote_count"], 3)
 
+    def test_game_details_command_dispatches_to_details_handler(self):
+        fake = {"app_name": "TEST"}
+        with patch.object(runner, "_core", return_value=object()), \
+             patch.object(runner, "_game_details", return_value=fake) as details:
+            response = json.loads(runner.handle("game_details", '{"app_name":"TEST"}'))
+        details.assert_called_once()
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["game"], fake)
+
+    def test_library_command_still_dispatches_to_library_handler(self):
+        fake = [{"app_name": "TEST"}]
+        with patch.object(runner, "_core", return_value=object()), \
+             patch.object(runner, "_library", return_value=fake):
+            response = json.loads(runner.handle("library", "{}"))
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["games"], fake)
+
     def test_app_name_rejects_embedded_nul(self):
         core = SimpleNamespace(login=lambda: True)
         with patch.object(runner, "_require_login"):
             with self.assertRaises(ValueError):
-                runner._game_details(core, {"app_name": "BAD\\x00NAME"})
+                runner._game_details(core, {"app_name": "BAD\x00NAME"})
 
 
 if __name__ == "__main__":
