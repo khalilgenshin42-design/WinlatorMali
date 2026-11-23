@@ -2483,3 +2483,24 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Added runner tests for normalized summary output, hidden-achievement redaction, 100-entry cap and unavailable-summary behavior.
 - Cloud saves remain read-only metadata only (support and remote record count); upload/download/sync is not enabled. Playtime remains unavailable rather than inferred.
 - Next gate: device-test this release on the Xiaomi 15T with the host and companion APKs from this same release. Check sign-in, library navigation, game detail achievement list, and responsiveness while a download/install is active. Record title and whether achievement counts/items appear. Do not enable cloud-save mutation before preview, backup and conflict safeguards exist.
+
+
+## 2026-11-23 — Achievement metadata hardening and detail-page lookup optimization
+
+- Source commit: `d7a56423fe1a998e0ce9bb2cfa88ebad9231c42e`.
+- Both CI workflows passed on this exact commit:
+  - Epic CPython/runtime/ARM64 packaging and Android instrumentation: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45272578826
+  - Standard Android APK build: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45272578903
+- Published experimental prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-d7a56423fe1a
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-d7a56423fe1a/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-d7a56423fe1a/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-d7a56423fe1a/SHA256SUMS
+- APK SHA-256:
+  - `14661e6637ec2f513cff42fbcc4e6e409fd732388d08806b9157e3263c9f7fb9` — host APK
+  - `9325959f149688c2d30dd3a9543cd6b898ff70c9ef527f0893d870f7d67398f2` — companion APK
+- Hardening: achievement numeric fields and text are type-checked and bounded; negative/malformed counters are normalized safely; non-finite progress is handled; icon URLs must be HTTPS with a hostname. Invalid metadata fields no longer invalidate the entire achievement section.
+- Performance: per-game detail lookup now calls Legendary `core.get_game(app_name, update_meta=False, platform="Windows")` to reuse the already-populated Windows catalog instead of refreshing the full catalog whenever a detail page opens. Library enumeration remains responsible for metadata refresh.
+- Regression tests cover malformed metadata and verify the cached metadata lookup flags.
+- CI validates tests, runtime packaging and APK audits; it does not prove live authenticated Epic data behavior or responsiveness on the Xiaomi 15T.
+- Cloud saves remain read-only metadata; upload/download/sync is not enabled. Playtime remains unavailable.
+- Next device gate: install the host and companion APKs from this same release, sign in, open game details and confirm achievement cards populate. Then repeat the previously problematic navigation test while a game is actively downloading and installing, returning to Epic from another Winlator page. Record responsiveness/crashes and achievement accuracy.
