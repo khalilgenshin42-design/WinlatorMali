@@ -236,6 +236,7 @@ public final class EpicBridgeClient {
                 if (isKnownJobStatus(embeddedStatus)) {
                     result = tryCallAuthority(context, embedded, method, arg, extras);
                     selectedAuthority = embedded;
+                    jobPrefs.edit().putString(authorityKey, embedded).apply();
                 } else if (isCompanionInstalled(context)) {
                     Bundle companionStatus = tryCallAuthority(
                             context, AUTHORITY, "job_status", jobId, extras);
