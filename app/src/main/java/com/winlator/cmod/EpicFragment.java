@@ -868,7 +868,20 @@ public final class EpicFragment extends Fragment {
                 libraryState.setLibrary(games, installedApps, installedPaths);
             }
             renderGameCards(searchField == null ? "" : searchField.getText().toString());
-            if (showingGameDetails && selectedGame != null) showGameDetails(findCachedGame(selectedGameAppName));
+            if (showingGameDetails && selectedGame != null) {
+                showGameDetails(findCachedGame(selectedGameAppName));
+            } else if (selectedGame == null) {
+                android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
+                        .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+                String activeJobId = jobPrefs.getString(JOB_ID_KEY, "");
+                String activeAppName = jobPrefs.getString(ACTIVE_JOB_APP_KEY, "");
+                if (!activeJobId.isEmpty() && !activeAppName.isEmpty()) {
+                    selectedGameAppName = activeAppName;
+                    selectedGame = findCachedGame(activeAppName);
+                    gameJobActive = true;
+                    if (selectedGame != null) showGameDetails(selectedGame);
+                }
+            }
         });
     }
 
@@ -1029,6 +1042,9 @@ public final class EpicFragment extends Fragment {
         addMargin(detail, gamePrimaryButton, 16);
         gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobActive);
         gamePrimaryButton.setOnClickListener(v -> {
+            gamePrimaryButton.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
+                    .withEndAction(() -> gamePrimaryButton.animate().scaleX(1.0f).scaleY(1.0f)
+                            .setDuration(110).start()).start();
             if (gameJobActive) {
                 updateGameActionButton("Cancelling...", false);
                 cancelActiveJob();
