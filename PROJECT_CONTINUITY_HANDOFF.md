@@ -2306,3 +2306,12 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - Next: obtain CI results for the current branch head, review compile/instrumentation logs, then test an active small download while switching between Discover/Library/Downloads and while the provider is restarted or temporarily unavailable. Confirm that the notification and Downloads UI report the same operation and progress.
 
 - Additional compatibility commit: `e7d852dbb7913e22cbff65cfb5f55e6519c70d31` — persist provider affinity when recovering cancellation routing for a legacy job that predates the new mapping.
+
+
+## CI validation update (2026-11-23, source commit e7d852d)
+
+- Exact source commit under test: `e7d852dbb7913e22cbff65cfb5f55e6519c70d31`.
+- Standard MaliWinlator 1.2.1 APK workflow run `45205610114` completed successfully. Steps included standard debug APK build and verification that the embedded Epic Bridge APK exactly matches the separately built bridge APK and shares the host signer. Artifact: `maliwinlator-1.2.1-standard-debug-e7d852dbb7913e22cbff65cfb5f55e6519c70d31` (GitHub artifact ID `14834860041`, SHA-256 `5e247b22adf5f03c775c937194e6cf6a8fec0edf8ed87da6f6cb5877a0197326`, 446,734,346 bytes, expires 2026-12-07).
+- Epic CPython/runtime workflow run `45205610044` was still in progress at last inspection. Completed successfully through x86_64 runtime build, Legendary Android-thread-backend static validation, Epic library aggregation tests, host smoke tests, x86_64 site-packages staging, managed x86_64 emulator runtime prerequisite smoke, ARM64 runtime build, and packaged-runtime audit.
+- Current in-progress step: `Run Epic Bridge x86_64 Android instrumentation tests`. The ARM64 Epic runtime/companion/host APK packaging and prerelease publication steps have not yet started.
+- Do not treat the successful standard APK artifact as the final Epic-enabled test package. Wait for the Epic runtime workflow to pass and publish its own installable APK artifacts.
