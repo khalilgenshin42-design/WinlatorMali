@@ -2553,3 +2553,25 @@ User approved replacing the separate Library and Downloads destinations with a u
 - These CI results do not replace physical-device validation. On the Xiaomi 15T, verify Epic sign-in, library/game detail and achievements, then navigate away and back during both active download and active install. Confirm the screen remains responsive, progress reconnects, and the job completes without duplicate starts or crashes.
 - Cloud saves remain read-only metadata; no upload/download/sync is enabled. Playtime remains unavailable.
 - Publication/docs commit on the development branch: `0a1c39539b49d8aa9a19410d4456ef9f865bfac6`.
+
+
+
+## 2026-11-24 — Reconnect monitor shutdown-race fix validated and published
+
+- Application source commit: `dd714b31428dcd8c1b61d2809d6aa99c495a2d4c`.
+- Both required workflows passed on this exact source commit:
+  - Standard APK workflow **45289767835**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45289767835
+  - Epic runtime/ARM64 workflow **45289767942**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45289767942
+- Epic workflow completed CPython 3.15.2 Android runtime build/audit, Legendary 0.21.1 host smoke tests, Epic library aggregation regression tests, managed x86_64 Android runtime smoke, JNI instrumentation, ARM64 runtime and APK packaging, and package/signature/ABI/assets/ELF dependency closure audits.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-dd714b31428d
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-dd714b31428d/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-dd714b31428d/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-dd714b31428d/SHA256SUMS
+- APK SHA-256:
+  - `0879fd25425d012831431fdb9af6fc36d3547cad5fe7b5d82edc2746303bbca5` — host APK
+  - `a96fb5bfc44cf88cd6539eabcd59055d23afa9e38653747e565107fc363a3f72` — companion APK
+- Source change: `resumePendingJob()` now submits its reconnect monitor through the same guarded `submitJobMonitor()` helper used for newly started jobs. If the executor has shut down during Fragment teardown, the rejected submission is contained, the polling flag is reset, and the persisted job ID remains available for a later Fragment to reconnect.
+- This closes the corresponding direct-executor-submission gap in the reconnect path; it complements the earlier guard for newly started jobs. It does not yet prove the original active-download/active-install navigation freeze is resolved on the Xiaomi 15T.
+- CI status document was automatically updated by the successful Epic workflow. Cloud saves remain read-only metadata; upload/download/sync is not enabled. Playtime remains unavailable.
+- Next device validation: install both APKs from this same release, sign in, then navigate away from and back to Epic during an active download and during an active installation. Confirm the screen stays responsive, progress reconnects, the job is not duplicated, and no crash occurs. Also inspect achievement cards for a title known to have achievements.
+- After device feedback, continue source audit of foreground-job state transitions and UI-thread work rather than changing the worker architecture without a reproduced defect.
