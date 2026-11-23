@@ -344,6 +344,25 @@ class GameDetailsTests(unittest.TestCase):
         with patch.object(runner, "_require_login"):
             return runner._game_details(core, {"app_name": "TEST"})
 
+    def test_game_details_uses_cached_metadata_without_catalog_refresh(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=False,
+        )
+        calls = {}
+        def get_game(*args, **kwargs):
+            calls.update(kwargs)
+            return game
+        core = SimpleNamespace(
+            get_game=get_game,
+            get_achievements=lambda selected, update=False: None,
+            egs=SimpleNamespace(),
+        )
+        with patch.object(runner, "_require_login"):
+            runner._game_details(core, {"app_name": "TEST"})
+        self.assertIs(calls.get("update_meta"), False)
+        self.assertEqual(calls.get("platform"), "Windows")
+
     def test_achievement_summary_is_normalized_and_hidden_text_is_redacted(self):
         game = SimpleNamespace(
             app_name="TEST", app_title="Test", namespace="test-ns",
