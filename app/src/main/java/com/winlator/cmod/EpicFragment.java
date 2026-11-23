@@ -583,7 +583,7 @@ public final class EpicFragment extends Fragment {
                 final String jobId = monitorJobId;
                 jobPolling = true;
                 setCancelButtonVisible("install".equals(method));
-                jobIo.execute(() -> {
+                submitJobMonitor(() -> {
                     JSONObject result = waitForJob(appContext, jobId);
                     jobPolling = false;
                     setCancelButtonVisible(false);
@@ -593,6 +593,21 @@ public final class EpicFragment extends Fragment {
             }
             deliverCommandResult(callback, json);
         });
+    }
+
+    private boolean submitJobMonitor(Runnable monitor) {
+        try {
+            jobIo.execute(monitor);
+            return true;
+        } catch (java.util.concurrent.RejectedExecutionException detached) {
+            // The Fragment may have been destroyed after start_job returned but
+            // before its observer was queued. The foreground service still owns
+            // the operation and JOB_ID_KEY was persisted; a replacement Fragment
+            // will reconnect in onResume(). Do not let this lifecycle race crash
+            // the host process or clear the recovery handle.
+            jobPolling = false;
+            return false;
+        }
     }
 
     private JSONObject jobStartFailure(Bundle started) {
