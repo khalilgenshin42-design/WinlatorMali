@@ -2315,3 +2315,17 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - Epic CPython/runtime workflow run `45205610044` was still in progress at last inspection. Completed successfully through x86_64 runtime build, Legendary Android-thread-backend static validation, Epic library aggregation tests, host smoke tests, x86_64 site-packages staging, managed x86_64 emulator runtime prerequisite smoke, ARM64 runtime build, and packaged-runtime audit.
 - Current in-progress step: `Run Epic Bridge x86_64 Android instrumentation tests`. The ARM64 Epic runtime/companion/host APK packaging and prerelease publication steps have not yet started.
 - Do not treat the successful standard APK artifact as the final Epic-enabled test package. Wait for the Epic runtime workflow to pass and publish its own installable APK artifacts.
+
+
+## Epic job recovery and provider-affinity CI complete (2026-11-23)
+
+- Exact source head `e7d852dbb7913e22cbff65cfb5f55e6519c70d31` passed the standard build workflow `45205610114` and the full Epic runtime workflow `45205610044`.
+- Epic workflow completed successfully: CPython 3.15.2 x86_64 instrumentation runtime build; Legendary Android-thread-backend validation; Epic library aggregation tests; host smoke tests; managed x86_64 emulator runtime prerequisite smoke; production ARM64 runtime build and audit; Epic Bridge Android instrumentation; ARM64 host/companion APK packaging; APK upload and prerelease publication.
+- Published test release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-e7d852dbb791
+- Main installable ARM64 debug APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7d852dbb791/app-standard-debug.apk
+- Companion APK (normally already embedded in the main app; install separately only if specifically needed): https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7d852dbb791/epicbridge-debug.apk
+- Main APK SHA-256: `233437f1d0acc009a85dd77401855e24d993563fecc1dd4aa5e962a1f50a9822`.
+- Companion APK SHA-256: `d7dcc69527b6e259f7a87459d19f9ef0ce319b010668cbe7a2ed920b5d22d688`.
+- Epic runtime artifact `maliwinlator-1.2.1-epic-arm64-debug` (artifact ID `14833329172`) SHA-256: `a1ca70499ebc9ac00a8e97faf2b60b04c02f0433dc0af9db3794a55a82505da4`; expires 2026-12-23. CPython ARM64 POC artifact ID `14834334073` is not the installable app.
+- This is a debug-signed experimental test build, not a production release. A different debug certificate may require uninstalling the previous debug app; back up container data first.
+- Device acceptance is still pending. Test a small Epic download/install while navigating between Epic and other Winlator pages; verify progress and status remain consistent between notification and Downloads UI, including after returning to Epic and after reopening Downloads. Do not claim the provider-affinity correction is device-verified until the Xiaomi 15T test passes.
