@@ -2532,3 +2532,24 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Cloud saves remain read-only metadata; no upload/download/sync is enabled. Playtime remains unavailable.
 - Device validation remains required: sign in, inspect achievement cards on a title with achievements, and repeat navigation back to Epic while a game is actively downloading and installing. Confirm responsiveness, progress continuity, and absence of crashes.
 - The branch subsequently advanced to documentation/publication commit `4f1b1fe8198ce457bea75d3294ec0e88140f47c5`; the validated application source for this release remains `069eead51fb8d69bc44e27a93dcd7ce424873a19`.
+
+
+## 2026-11-24 — Foreground job monitor lifecycle handoff guard
+
+- Application source commit: `a17df9acfb03b2a9203712e8e3092ba9d6034080`.
+- Both required workflows passed on that exact source commit:
+  - Standard Android APK workflow: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45280173776
+  - Epic CPython/runtime/ARM64 workflow: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45280173630
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-a17df9acfb03
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-a17df9acfb03/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-a17df9acfb03/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-a17df9acfb03/SHA256SUMS
+- SHA-256:
+  - `2d83aae7f8f2650ef157263e4e1ba58ec86d3333df031ecba1282ef55bb28064` — host APK
+  - `694b89bb949a883e5dc33fefe3291f5d0cc3fa1134679b04a3de9a43df0ec294` — companion APK
+- Source change: monitor submission now tolerates the Fragment being destroyed after the foreground service has accepted a job but before the monitor can be queued. A rejected submission no longer escapes as an executor lifecycle exception; the persisted job ID remains available for a replacement Fragment to reconnect.
+- This complements the earlier separate job-polling executor, cancellation path separation, empty job-ID rejection and malformed status-response handling.
+- CI completed managed x86_64 runtime smoke tests, Android JNI instrumentation, ARM64 APK assembly, embedded companion comparison and package/signature/ABI/assets/ELF dependency closure audits.
+- These CI results do not replace physical-device validation. On the Xiaomi 15T, verify Epic sign-in, library/game detail and achievements, then navigate away and back during both active download and active install. Confirm the screen remains responsive, progress reconnects, and the job completes without duplicate starts or crashes.
+- Cloud saves remain read-only metadata; no upload/download/sync is enabled. Playtime remains unavailable.
+- Publication/docs commit on the development branch: `0a1c39539b49d8aa9a19410d4456ef9f865bfac6`.
