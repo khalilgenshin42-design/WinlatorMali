@@ -2504,3 +2504,31 @@ User approved replacing the separate Library and Downloads destinations with a u
 - CI validates tests, runtime packaging and APK audits; it does not prove live authenticated Epic data behavior or responsiveness on the Xiaomi 15T.
 - Cloud saves remain read-only metadata; upload/download/sync is not enabled. Playtime remains unavailable.
 - Next device gate: install the host and companion APKs from this same release, sign in, open game details and confirm achievement cards populate. Then repeat the previously problematic navigation test while a game is actively downloading and installing, returning to Epic from another Winlator page. Record responsiveness/crashes and achievement accuracy.
+
+
+
+## 2026-11-23 — Epic foreground-job polling isolation and malformed-response hardening
+
+- Source commit: `069eead51fb8d69bc44e27a93dcd7ce424873a19`.
+- Both required workflows passed on this exact source commit:
+  - Standard APK workflow **45277644714**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45277644714
+  - Epic runtime/ARM64 package workflow **45277644511**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45277644511
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-069eead51fb8
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-069eead51fb8/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-069eead51fb8/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-069eead51fb8/SHA256SUMS
+- SHA-256:
+  - `11b7b15e2e496657a2523c36eed0aa1931fff22678f46c156b49d6aa8939025f` — host APK
+  - `eb09e366ef363ad8fe257cd0ba94b2f07b41325cf0dc4ea2338d1c852d75b30d` — companion APK
+- Host package is `com.maliwinlator.app` versionCode 24; companion is `com.maliwinlator.epicbridge` versionCode 2. Both are debug-signed test packages.
+- Runtime/job lifecycle fixes since `d7a56423`:
+  - Long-lived foreground-job polling is isolated from interactive Epic commands on a separate executor, so a download/install monitor should not monopolize the executor needed for library, details, or account requests.
+  - Fragment teardown interrupts/detaches the monitor executor while preserving the persisted job identifier for a later fragment to resume monitoring.
+  - Empty job identifiers are rejected before persisting or polling them.
+  - Malformed foreground job responses now produce a bounded failure result instead of allowing invalid response data to destabilize the UI path.
+  - Job start failure and active-job association handling were hardened.
+- Existing achievement metadata validation and cached per-game metadata lookup optimization are included in this build.
+- CI evidence includes managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, package/signature/ABI/assets/ELF dependency-closure audits and embedded companion checks. This is not a physical Xiaomi 15T test and does not prove authenticated live Epic responses.
+- Cloud saves remain read-only metadata; no upload/download/sync is enabled. Playtime remains unavailable.
+- Device validation remains required: sign in, inspect achievement cards on a title with achievements, and repeat navigation back to Epic while a game is actively downloading and installing. Confirm responsiveness, progress continuity, and absence of crashes.
+- The branch subsequently advanced to documentation/publication commit `4f1b1fe8198ce457bea75d3294ec0e88140f47c5`; the validated application source for this release remains `069eead51fb8d69bc44e27a93dcd7ce424873a19`.
