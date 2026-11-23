@@ -93,6 +93,7 @@ public final class EpicFragment extends Fragment {
     private Button gamePrimaryButton;
     private boolean gameJobActive;
     private boolean showingGameDetails;
+    private String libraryFilter = "All games";
     private volatile String lastProgressLabel = "No active Epic download or installation.";
     private final List<Container> containers = new ArrayList<>();
     private final Set<String> installedApps = new HashSet<>();
@@ -211,6 +212,31 @@ public final class EpicFragment extends Fragment {
         searchField.setPadding(dp(13), 0, dp(13), 0);
         searchField.setBackground(shape(0xff171d29, 0xff303b50, 11));
         libraryPanel.addView(searchField, fullParams());
+
+        LinearLayout filters = new LinearLayout(requireContext());
+        filters.setOrientation(LinearLayout.HORIZONTAL);
+        String[] filterNames = {"All games", "Installed", "Ready to install", "Downloading"};
+        for (String filterName : filterNames) {
+            Button filterButton = action(filterName, filterName.equals(libraryFilter));
+            filterButton.setTextSize(9);
+            filterButton.setMinHeight(dp(36));
+            filterButton.setPadding(dp(6), 0, dp(6), 0);
+            filterButton.setOnClickListener(v -> {
+                libraryFilter = filterName;
+                for (int i = 0; i < filters.getChildCount(); i++) {
+                    View child = filters.getChildAt(i);
+                    if (child instanceof Button) {
+                        boolean selected = filterName.equals(child.getTag());
+                        child.setBackground(shape(selected ? 0xff5b55d9 : 0xff252f43,
+                                selected ? 0xff5b55d9 : 0xff35425a, 11));
+                    }
+                }
+                renderGameCards(searchField.getText().toString());
+            });
+            filterButton.setTag(filterName);
+            filters.addView(filterButton, new LinearLayout.LayoutParams(0, dp(38), 1));
+        }
+        addMargin(libraryPanel, filters, 9);
 
         LinearLayout tools = new LinearLayout(requireContext());
         tools.setGravity(Gravity.CENTER_VERTICAL);
@@ -896,7 +922,16 @@ public final class EpicFragment extends Fragment {
             JSONObject game = cachedGames.optJSONObject(i);
             if (game == null || game.optBoolean("is_dlc", false)) continue;
             String title = game.optString("title", game.optString("app_name"));
+            String appName = game.optString("app_name", "");
+            boolean isInstalled = installedApps.contains(appName);
+            android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
+                    .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+            boolean isDownloading = !jobPrefs.getString(JOB_ID_KEY, "").isEmpty()
+                    && appName.equals(jobPrefs.getString(ACTIVE_JOB_APP_KEY, ""));
             if (!needle.isEmpty() && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
+            if ("Installed".equals(libraryFilter) && !isInstalled) continue;
+            if ("Ready to install".equals(libraryFilter) && (isInstalled || isDownloading)) continue;
+            if ("Downloading".equals(libraryFilter) && !isDownloading) continue;
             if (inRow == 2) {
                 row = new LinearLayout(requireContext());
                 row.setOrientation(LinearLayout.HORIZONTAL);
