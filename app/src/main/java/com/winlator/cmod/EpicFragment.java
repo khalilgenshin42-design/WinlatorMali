@@ -330,6 +330,9 @@ public final class EpicFragment extends Fragment {
             String jobId = prefs.getString(JOB_ID_KEY, "");
             if (!jobId.isEmpty() && !jobPolling) {
                 downloadsStatusText.setText("Saved Epic operation found. Reconnecting to its foreground status...");
+                // Entering Downloads is an explicit recovery point after a provider
+                // interruption. Attach a fresh observer without starting another job.
+                resumePendingJob();
             } else if (jobId.isEmpty() && !jobPolling) {
                 downloadsStatusText.setText("No active download or installation.");
             }
@@ -619,9 +622,11 @@ public final class EpicFragment extends Fragment {
                 Thread.sleep(1500);
                 Bundle state = EpicBridgeClient.call(appContext, "job_status", jobId, "{}");
                 if (!state.getBoolean("ok", false)) {
+                    String message = state.getString("message",
+                            "Epic Bridge is unavailable or no longer authorizes this host");
                     result.put("ok", false);
-                    result.put("message", state.getString("message",
-                            "Epic Bridge is unavailable or no longer authorizes this host"));
+                    result.put("message", message);
+                    publishJobStatusLabel("Epic status unavailable: " + message);
                     return result;
                 }
                 String jobState = state.getString("state", "unknown");
@@ -656,13 +661,13 @@ public final class EpicFragment extends Fragment {
                 if ("unknown".equals(jobState)) {
                     if (unknownSince == 0L) unknownSince = System.currentTimeMillis();
                     if (System.currentTimeMillis() - unknownSince > 30_000L) {
-                        android.content.SharedPreferences prefs =
-                                appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
-                        if (jobId.equals(prefs.getString(JOB_ID_KEY, ""))) {
-                            prefs.edit().remove(JOB_ID_KEY).apply();
-                        }
+                        // "unknown" is not proof that the foreground operation stopped.
+                        // Preserve its only recovery handle; the notification/service may
+                        // still be active. Downloads can attach a new observer on re-entry.
                         result.put("ok", false);
-                        result.put("message", "Epic Bridge did not report this job. The operation may not have started; retry it.");
+                        result.put("pending", true);
+                        result.put("message", "Epic Bridge temporarily cannot report this operation. Its saved job ID was retained. Open Downloads again to reconnect; do not start a second install yet.");
+                        publishJobStatusLabel("Epic status temporarily unavailable — saved operation retained.");
                         return result;
                     }
                     continue;
@@ -694,10 +699,12 @@ public final class EpicFragment extends Fragment {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
+                String message = "Epic operation status polling failed: " + e.getMessage();
                 try {
                     result.put("ok", false);
-                    result.put("message", "Epic operation status polling failed: " + e.getMessage());
+                    result.put("message", message);
                 } catch (Exception ignored) {}
+                publishJobStatusLabel(message);
                 return result;
             }
         }
@@ -706,6 +713,14 @@ public final class EpicFragment extends Fragment {
             result.put("message", "Epic operation is still running in the foreground service. Reopen the Epic tab to resume status tracking.");
         } catch (Exception ignored) {}
         return result;
+    }
+
+    private void publishJobStatusLabel(String label) {
+        lastProgressLabel = label;
+        mainHandler.post(() -> {
+            if (downloadsStatusText != null) downloadsStatusText.setText(label);
+            if (statusText != null && jobPolling) statusText.setText(label);
+        });
     }
 
     private final AtomicInteger cancelButtonVisibility = new AtomicInteger(-1);
@@ -753,7 +768,8 @@ public final class EpicFragment extends Fragment {
 
         jobPolling = true;
         setCancelButtonVisible(false);
-        statusText.setText("Resuming the previous Epic operation...");
+        publishJobStatusLabel("Reconnecting to the saved Epic operation...");
+        statusText.setText("Reconnecting to the saved Epic operation...");
         io.execute(() -> {
             JSONObject result = waitForJob(appContext, jobId);
             jobPolling = false;
@@ -761,10 +777,13 @@ public final class EpicFragment extends Fragment {
             if (getActivity() != null) getActivity().runOnUiThread(() -> {
                 if (getView() == null || statusText == null) return;
                 if (result.optBoolean("ok", false)) {
+                    publishJobStatusLabel("The previous Epic operation completed.");
                     statusText.setText("The previous Epic operation completed.");
                     refreshLibrary();
                 } else {
-                    statusText.setText(result.optString("message", "Epic operation is still running."));
+                    String message = result.optString("message", "Epic operation is still running.");
+                    publishJobStatusLabel(message);
+                    statusText.setText(message);
                 }
             });
         });
@@ -1050,6 +1069,10 @@ public final class EpicFragment extends Fragment {
                 ". The foreground download service keeps working if you leave this tab.");
         runCommand("install", payload.toString(), result -> {
             if (!result.optBoolean("ok", false)) {
+                if (result.optBoolean("pending", false)) {
+                    statusText.setText(result.optString("message"));
+                    return;
+                }
                 statusText.setText((update ? "Update failed: " : "Install failed: ") +
                         result.optString("message"));
                 return;
@@ -1148,6 +1171,10 @@ public final class EpicFragment extends Fragment {
         catch (Exception ignored) {}
         statusText.setText("Uninstalling " + title + "...");
         runCommand("uninstall", payload.toString(), result -> {
+            if (result.optBoolean("pending", false)) {
+                statusText.setText(result.optString("message"));
+                return;
+            }
             statusText.setText(result.optBoolean("ok", false)
                     ? title + " uninstalled." : "Uninstall failed: " + result.optString("message"));
             refreshLibrary();
