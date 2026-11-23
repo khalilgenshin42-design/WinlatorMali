@@ -102,6 +102,7 @@ public final class EpicFragment extends Fragment {
     private volatile boolean jobPolling;
     private static final String JOB_PREFS = "epic_bridge_jobs";
     private static final String JOB_ID_KEY = "active_job_id";
+    private static final String ACTIVE_JOB_APP_KEY = "active_job_app_name";
 
     @Nullable
     @Override
@@ -609,8 +610,18 @@ public final class EpicFragment extends Fragment {
                                 if (statusText != null && jobPolling) {
                                     statusText.setText(progressLabel);
                                 }
-                                if (downloadsStatusText != null) {
-                                    downloadsStatusText.setText(progressLabel);
+                                if (downloadsStatusText != null) downloadsStatusText.setText(progressLabel);
+                                if (gameProgressText != null) gameProgressText.setText(progressLabel);
+                                if ("running".equals(jobState) || "queued".equals(jobState)
+                                        || "cancelling".equals(jobState)) {
+                                    gameJobActive = true;
+                                    updateGameActionButton("cancelling".equals(jobState)
+                                            ? "Cancelling..." : "Cancel download", true);
+                                } else if ("complete".equals(jobState) || "failed".equals(jobState)
+                                        || "cancelled".equals(jobState) || "interrupted".equals(jobState)) {
+                                    gameJobActive = false;
+                                    updateGameActionButton(installedApps.contains(selectedGameAppName)
+                                            ? "Play game" : "Install", true);
                                 }
                             });
                         }
@@ -649,7 +660,7 @@ public final class EpicFragment extends Fragment {
                     android.content.SharedPreferences prefs =
                             appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
                     if (jobId.equals(prefs.getString(JOB_ID_KEY, ""))) {
-                        prefs.edit().remove(JOB_ID_KEY).apply();
+                        prefs.edit().remove(JOB_ID_KEY).remove(ACTIVE_JOB_APP_KEY).apply();
                     }
                     return result;
                 }
@@ -677,6 +688,7 @@ public final class EpicFragment extends Fragment {
         lastProgressLabel = label;
         mainHandler.post(() -> {
             if (downloadsStatusText != null) downloadsStatusText.setText(label);
+            if (gameProgressText != null) gameProgressText.setText(label);
             if (statusText != null && jobPolling) statusText.setText(label);
         });
     }
@@ -710,6 +722,7 @@ public final class EpicFragment extends Fragment {
                     : response.getString("message", "Unable to cancel the Epic operation");
             if (getActivity() != null) getActivity().runOnUiThread(() -> {
                 if (statusText != null) statusText.setText(message);
+                if (gameProgressText != null) gameProgressText.setText(message);
             });
         }, "EpicJobCancel").start();
     }
@@ -723,6 +736,12 @@ public final class EpicFragment extends Fragment {
                 appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
         String jobId = prefs.getString(JOB_ID_KEY, "");
         if (jobId.isEmpty()) return;
+        gameJobActive = true;
+        selectedGameAppName = prefs.getString(ACTIVE_JOB_APP_KEY, "");
+        selectedGame = findCachedGame(selectedGameAppName);
+        if (selectedGame != null && "library".equals(activeSection)) {
+            showGameDetails(selectedGame);
+        }
 
         jobPolling = true;
         setCancelButtonVisible(false);
@@ -1122,7 +1141,17 @@ public final class EpicFragment extends Fragment {
         } catch (Exception ignored) {}
         statusText.setText((update ? "Updating " : "Installing ") + title +
                 ". The foreground download service keeps working if you leave this tab.");
+        gameJobActive = true;
+        android.content.Context appContext = requireContext().getApplicationContext();
+        appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE)
+                .edit().putString(ACTIVE_JOB_APP_KEY, appName).apply();
+        updateGameActionButton("Starting download...", false);
+        if (gameProgressText != null) gameProgressText.setText("Preparing " + title + "...");
         runCommand("install", payload.toString(), result -> {
+            if (!result.optBoolean("pending", false)) {
+                gameJobActive = false;
+                updateGameActionButton(installedApps.contains(appName) ? "Play game" : "Install", true);
+            }
             if (!result.optBoolean("ok", false)) {
                 if (result.optBoolean("pending", false)) {
                     statusText.setText(result.optString("message"));
