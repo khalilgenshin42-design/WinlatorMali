@@ -838,7 +838,7 @@ public final class EpicFragment extends Fragment {
         setCancelButtonVisible(false);
         publishJobStatusLabel("Reconnecting to the saved Epic operation...");
         statusText.setText("Reconnecting to the saved Epic operation...");
-        jobIo.execute(() -> {
+        submitJobMonitor(() -> {
             JSONObject result = waitForJob(appContext, jobId);
             jobPolling = false;
             setCancelButtonVisible(false);
