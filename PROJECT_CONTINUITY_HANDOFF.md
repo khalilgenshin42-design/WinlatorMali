@@ -2329,3 +2329,20 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - Epic runtime artifact `maliwinlator-1.2.1-epic-arm64-debug` (artifact ID `14833329172`) SHA-256: `a1ca70499ebc9ac00a8e97faf2b60b04c02f0433dc0af9db3794a55a82505da4`; expires 2026-12-23. CPython ARM64 POC artifact ID `14834334073` is not the installable app.
 - This is a debug-signed experimental test build, not a production release. A different debug certificate may require uninstalling the previous debug app; back up container data first.
 - Device acceptance is still pending. Test a small Epic download/install while navigating between Epic and other Winlator pages; verify progress and status remain consistent between notification and Downloads UI, including after returning to Epic and after reopening Downloads. Do not claim the provider-affinity correction is device-verified until the Xiaomi 15T test passes.
+
+
+## Engineering step log — 2026-11-23: Downloads re-entry crash and live-state rendering
+
+- User device report after installing the Epic build from source commit `e7d852dbb7913e22cbff65cfb5f55e6519c70d31`: foreground notification works, but opening Downloads during an active download still crashes Winlator; when the screen remains visible it stays on “Reconnecting to the saved Epic operation…” and does not show the current operation or percentage.
+- Inspected the exact `EpicFragment.showSection("downloads")` implementation. Confirmed a deterministic Android view-parent defect: `pageContainer.removeAllViews()` detaches the Downloads panel from the page but leaves the reusable `downloadsStatusText` attached to that detached panel. Re-entering Downloads creates a new panel and attempts to add the same TextView while it still has a parent, which can throw `IllegalStateException: The specified child already has a parent`.
+- Fixed the view lifecycle by explicitly removing `downloadsStatusText` from its previous `ViewGroup` before attaching it to the newly created Downloads panel.
+- Fixed the no-snapshot UI gap: job polling now renders a visible state label for `queued`, `running`, and `cancelling` even before a Python progress snapshot exists; when a snapshot exists it continues to show phase and percentage.
+- Source commit: `d88a6bfb73f32665bb5b26ad9af262c74e63b4b7` (`fix: prevent Epic Downloads re-entry crash and render live job state`).
+- This is a source-level diagnosis/fix only. It has not yet passed CI or been tested on the Xiaomi 15T. The remaining device-level question is whether the bridge returns a known job state and whether Legendary continuously updates the progress snapshot; the foreground notification alone does not prove that the host UI's provider query succeeds.
+
+### Next actions
+
+1. Run the standard APK and Epic runtime workflows for commit `d88a6bfb73f32665bb5b26ad9af262c74e63b4b7`; inspect any failures before publishing an APK.
+2. Add regression coverage for repeated Downloads entry and progress rendering where feasible.
+3. If the UI still reports reconnecting after this build, capture filtered Android logs for `EpicFragment`, `EpicBridgeProvider`, and `EpicRuntimeService` while the notification is active; never include Epic tokens or authorization data.
+4. Do not mark the crash/progress issue device-fixed until the Xiaomi 15T test confirms it.
