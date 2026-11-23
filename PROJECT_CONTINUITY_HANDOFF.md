@@ -2442,3 +2442,26 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Connected the game-details screen to the read-only game_details command in commit `4d24258dcb7c502e498a1188f3533343f7faeee0`. The screen now reports whether Epic Store achievement definitions/account state were returned and whether Windows cloud saves are supported / remote records exist. It still does not display fabricated achievements, playtime, or perform save synchronization.
 - Source-level UI/backend wiring is complete but CI validation for the latest branch head is pending. Do not install or distribute a new APK until both standard APK and Epic runtime/ARM64 workflows pass.
 - Cloud-save synchronization remains disabled. Before enabling it, implement Legendary's local-vs-remote save-state comparison, backup/restore, conflict resolution, game-process exclusion, and a safe explicit user confirmation flow. Playtime remains unavailable pending an authoritative source.
+
+
+## 2026-11-23 — Epic account-details endpoint and current ARM64 build validated
+
+- Latest source commit: `523903bd9677ac2069acf954ea42f9863d4a34a1` (`test: provide account state in library dispatch fixture`).
+- Both workflows completed successfully on this exact commit:
+  - Standard APK run **45240800751**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45240800751
+  - Epic CPython/ARM64 runtime and package run **45240800887**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45240800887
+- Epic workflow job **137924615201** and standard APK job **137924617159** both concluded success.
+- Epic package verification includes managed x86_64 runtime tests, Android JNI instrumentation, ARM64 Gradle assembly, APK signatures/package IDs/ABI/assets/ELF dependency closure and embedded companion audits.
+- Published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-523903bd9677
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-523903bd9677/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-523903bd9677/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-523903bd9677/SHA256SUMS
+- SHA-256:
+  - `bb043773c7ae968d3fd6370c26f567739c0934f07c5c572a147e5c6254726525` — `app-standard-debug.apk`
+  - `9af99e11700d387fecf0775b42cd4c8fc14814bbaa23978a00e2891eb3d1dd4f` — `epicbridge-debug.apk`
+- Built package IDs: host `com.maliwinlator.app` (versionCode 24); companion `com.maliwinlator.epicbridge` (versionCode 2). These are debug-signed test packages, not production release builds.
+- The branch now has a Python `game_details` command, provider allow-list entry and UI call. The command performs read-only achievement-definition/user-state queries and, only for Windows titles flagged as cloud-save-supported, reports remote record count/availability. It does not sync saves. Playtime remains explicitly unavailable.
+- Regression coverage on the runner includes details dispatch, Windows-vs-macOS cloud-save capability, list/dictionary remote records, embedded NUL rejection and library dispatch fixture. CI passing proves the tested mocked/runtime packaging path, not authenticated Epic API behavior on the Xiaomi 15T.
+- Important remaining gap: the game-details UI currently reports that achievement definitions/account progress were returned; it does not yet render individual achievement names, icons, unlock state or progress. The backend payload shape must be validated and safely normalized before presenting those fields.
+- Device validation is now the next external gate: install the host APK and companion from the same release, sign in, open several game detail pages, and confirm the app remains responsive. Record whether achievement data and cloud-save counts appear; no cloud-save mutation is enabled.
+- Next engineering work: inspect the exact Legendary 0.21.1 achievement response schemas, add bounded schema-aware normalization and tests, then render actual achievements without inventing progress. Separately design cloud-save preview/backup/conflict handling before any sync operation is enabled.
