@@ -2431,3 +2431,14 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This is a backend endpoint only: the details UI has not yet been wired to it, and live API responses have not yet been verified against an authenticated account. The response is bounded to 48 KiB per achievement payload.
 - Next: verify LegendaryCore's EPCAPI member and model namespace/save-support fields against the exact pinned 0.21.1 package in CI; add mocked runner tests for supported/unsupported titles, API failures, missing namespace, malformed app names and oversized payloads. Then render actual achievement state and cloud-save status in the game page.
 - No cloud save upload/download or mutation is enabled in this change.
+
+
+## 2026-11-23 — Epic game-details endpoint repair and UI wiring
+
+- CI log review identified the Epic runtime workflow failure on source commit `72974c34bc24792f44fbbdba009913b5c734f1c7`: Python import failed with an IndentationError in handle() because the game_details command branch had been inserted inside the library branch. The standard APK workflow passed, but the Epic runtime test job never reached its runtime/instrumentation/package stages.
+- Fixed the dispatcher structure in commit `f0674d44de1b23d96aaffb1164270725b20a5356`.
+- Corrected details metadata handling: Windows cloud-save support now uses only Legendary's Windows supports_cloud_saves flag; remote save metadata counts both list- and dictionary-shaped files results; app-name validation now rejects an actual NUL character.
+- Added runner regression tests in commit `9039c900bc07983e5016f9cb3de154d903141f14` for Windows-vs-macOS capability flags, list/dictionary remote save records, and embedded-NUL app names.
+- Connected the game-details screen to the read-only game_details command in commit `4d24258dcb7c502e498a1188f3533343f7faeee0`. The screen now reports whether Epic Store achievement definitions/account state were returned and whether Windows cloud saves are supported / remote records exist. It still does not display fabricated achievements, playtime, or perform save synchronization.
+- Source-level UI/backend wiring is complete but CI validation for the latest branch head is pending. Do not install or distribute a new APK until both standard APK and Epic runtime/ARM64 workflows pass.
+- Cloud-save synchronization remains disabled. Before enabling it, implement Legendary's local-vs-remote save-state comparison, backup/restore, conflict resolution, game-process exclusion, and a safe explicit user confirmation flow. Playtime remains unavailable pending an authoritative source.
