@@ -60,6 +60,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class EpicFragment extends Fragment {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
+    // Long-lived job polling must never occupy the command executor: game-details,
+    // library and account requests still need to run while a download is active.
+    private final ExecutorService jobIo = Executors.newSingleThreadExecutor();
     // Keep provider readiness/asset probes off the UI thread and independent of
     // the long-lived install worker, which may be polling a multi-minute job.
     private final ExecutorService statusIo = Executors.newSingleThreadExecutor();
@@ -482,6 +485,7 @@ public final class EpicFragment extends Fragment {
         // waitForJob() treats interruption as a detach and leaves the persisted
         // job ID intact for the next Fragment instance to resume monitoring.
         io.shutdownNow();
+        jobIo.shutdownNow();
         statusIo.shutdownNow();
         super.onDestroy();
     }
@@ -502,6 +506,7 @@ public final class EpicFragment extends Fragment {
         android.content.Context appContext = requireContext().getApplicationContext();
         io.execute(() -> {
             JSONObject json;
+            String monitorJobId = "";
             try {
                 if ("install".equals(method) || "uninstall".equals(method)) {
                     android.content.SharedPreferences jobPrefs =
@@ -513,45 +518,35 @@ public final class EpicFragment extends Fragment {
                         if (!"complete".equals(existingStatus) && !"failed".equals(existingStatus)
                                 && !"interrupted".equals(existingStatus)) {
                             json = new JSONObject();
-                            try {
-                                json.put("ok", false);
-                                json.put("message", "Another Epic operation is already running. Reopen the Epic tab to resume its status.");
-                            } catch (Exception ignored) {}
+                            json.put("ok", false);
+                            json.put("message", "Another Epic operation is already running. Reopen the Epic tab to resume its status.");
                         } else {
-                            jobPrefs.edit().remove(JOB_ID_KEY).apply();
+                            jobPrefs.edit().remove(JOB_ID_KEY).remove(ACTIVE_JOB_APP_KEY).apply();
                             Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
                             if (!started.getBoolean("ok", false)) {
-                                json = new JSONObject();
-                                try {
-                                    json.put("ok", false);
-                                    json.put("message", started.getString("message", "Unable to start Epic operation"));
-                                } catch (Exception ignored) {}
+                                json = jobStartFailure(started);
                             } else {
-                                String jobId = started.getString("job_id", "");
-                                jobPrefs.edit().putString(JOB_ID_KEY, jobId).commit();
-                                jobPolling = true;
-                                setCancelButtonVisible("install".equals(method));
-                                json = waitForJob(appContext, jobId);
-                                jobPolling = false;
-                                setCancelButtonVisible(false);
+                                monitorJobId = started.getString("job_id", "");
+                                jobPrefs.edit().putString(JOB_ID_KEY, monitorJobId).commit();
+                                if ("install".equals(method)) {
+                                    jobPrefs.edit().putString(ACTIVE_JOB_APP_KEY,
+                                            new JSONObject(payload).optString("app_name", "")).apply();
+                                }
+                                json = null;
                             }
                         }
                     } else {
                         Bundle started = EpicBridgeClient.call(appContext, "start_job", method, payload);
                         if (!started.getBoolean("ok", false)) {
-                            json = new JSONObject();
-                            try {
-                                json.put("ok", false);
-                                json.put("message", started.getString("message", "Unable to start Epic operation"));
-                            } catch (Exception ignored) {}
+                            json = jobStartFailure(started);
                         } else {
-                            String jobId = started.getString("job_id", "");
-                            jobPrefs.edit().putString(JOB_ID_KEY, jobId).apply();
-                            jobPolling = true;
-                            setCancelButtonVisible("install".equals(method));
-                            json = waitForJob(appContext, jobId);
-                            jobPolling = false;
-                            setCancelButtonVisible(false);
+                            monitorJobId = started.getString("job_id", "");
+                            jobPrefs.edit().putString(JOB_ID_KEY, monitorJobId).apply();
+                            if ("install".equals(method)) {
+                                jobPrefs.edit().putString(ACTIVE_JOB_APP_KEY,
+                                        new JSONObject(payload).optString("app_name", "")).apply();
+                            }
+                            json = null;
                         }
                     }
                 } else {
@@ -561,16 +556,12 @@ public final class EpicFragment extends Fragment {
                         json = body == null ? new JSONObject() : new JSONObject(body);
                     } catch (Exception e) {
                         json = new JSONObject();
-                        try {
-                            json.put("ok", false);
-                            json.put("message", response.getString("message", "Epic Bridge operation failed"));
-                            json.put("error", response.getString("error", "IPC_ERROR"));
-                        } catch (Exception ignored) {}
+                        json.put("ok", false);
+                        json.put("message", response.getString("message", "Epic Bridge operation failed"));
+                        json.put("error", response.getString("error", "IPC_ERROR"));
                     }
                 }
-
             } catch (Exception error) {
-                jobPolling = false;
                 json = new JSONObject();
                 try {
                     json.put("ok", false);
@@ -580,10 +571,35 @@ public final class EpicFragment extends Fragment {
                 } catch (Exception ignored) {}
             }
 
-            JSONObject finalJson = json;
-            if (getActivity() != null) getActivity().runOnUiThread(() -> {
-                if (getView() != null && callback != null) callback.onResult(finalJson);
-            });
+            if (!monitorJobId.isEmpty()) {
+                final String jobId = monitorJobId;
+                jobPolling = true;
+                setCancelButtonVisible("install".equals(method));
+                jobIo.execute(() -> {
+                    JSONObject result = waitForJob(appContext, jobId);
+                    jobPolling = false;
+                    setCancelButtonVisible(false);
+                    deliverCommandResult(callback, result);
+                });
+                return;
+            }
+            deliverCommandResult(callback, json);
+        });
+    }
+
+    private JSONObject jobStartFailure(Bundle started) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("ok", false);
+            json.put("message", started.getString("message", "Unable to start Epic operation"));
+            json.put("error", started.getString("error", "EPIC_JOB_START_FAILED"));
+        } catch (Exception ignored) {}
+        return json;
+    }
+
+    private void deliverCommandResult(CommandCallback callback, JSONObject result) {
+        if (getActivity() != null) getActivity().runOnUiThread(() -> {
+            if (getView() != null && callback != null) callback.onResult(result);
         });
     }
 
@@ -789,7 +805,7 @@ public final class EpicFragment extends Fragment {
         setCancelButtonVisible(false);
         publishJobStatusLabel("Reconnecting to the saved Epic operation...");
         statusText.setText("Reconnecting to the saved Epic operation...");
-        io.execute(() -> {
+        jobIo.execute(() -> {
             JSONObject result = waitForJob(appContext, jobId);
             jobPolling = false;
             setCancelButtonVisible(false);
