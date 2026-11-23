@@ -30,3 +30,10 @@
 - Change: retain the persisted active Epic job ID when status remains `unknown`; mark the operation pending, reconnect when Downloads is opened, and surface reconnect/provider errors in the Downloads status label.
 - No APK is published for this commit yet.
 - The combined commit-status query returned no status entries at the time of this update. Verify the exact source commit through both the standard APK and Epic runtime/instrumentation/ARM64 workflows before publishing.
+
+
+## Epic provider-affinity recovery — validation pending
+- Active-job retention/reconnect fix: `ce08bb6ff1eb65572762123857603addf3f31b35`.
+- Provider-affinity persistence and fallback recovery: `6bf0b9f73aa7cdf6d6855a05fd135b2153379c9f`, hardened by `47758e3c7d19d81df2f5564ff41aa6c01d49d08e`.
+- The host now pins each job's status/cancel calls to the provider that accepted `start_job`; older jobs probe the alternate provider if the first returns `unknown`. The UI no longer deletes a saved job ID merely because status remains unknown for 30 seconds.
+- No APK has been published for these commits. The combined commit-status query returned no status entries for `47758e3` when checked. Exact-head standard APK and Epic runtime/instrumentation/ARM64 validation is still required.
