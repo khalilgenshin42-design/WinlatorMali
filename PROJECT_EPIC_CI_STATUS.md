@@ -21,3 +21,14 @@
 - Main ARM64 debug APK SHA-256: `2e5ca21a2ce8d3d201090d2a944f5c3781ca6853a1df40131eefffd42c684feb`.
 - CI covered managed x86_64 runtime smoke, Android JNI instrumentation (LegendaryCore, AES-GCM, worker-thread, mmap and downloader lifecycle), ARM64 packaging and embedded companion/package audits.
 - Device test remains pending. UI crash correction is CI-verified, not Xiaomi 15T device-verified; progress percentage still needs device confirmation.
+
+
+## 2026-11-23 — Unified Epic Library redesign validation
+- Implemented a unified Library/Account navigation; removed the standalone Downloads destination.
+- Game cards open per-game details with install/launch, active job progress, cancel, update/uninstall, and capability placeholders for achievements/playtime/cloud saves.
+- Added Library filters for All games, Installed, Ready to install, and Downloading.
+- Saved app-name association lets the UI restore the correct game details while a foreground job remains active.
+- Relevant source commits: `048aa327`, `45d4ccaa`, `6ed60c18`, `e5585743`, `db7c04d0`.
+- Latest source revision: `db7c04d0070c5faa033f081014556f21e8fd7863`.
+- CI status for latest revision: pending/running; do not publish APK until both workflows pass.
+- Device verification pending. Progress uses existing provider JSON when present and an indeterminate state otherwise. Achievement, playtime, and cloud-save integration are not yet implemented or confirmed by Epic API data.
