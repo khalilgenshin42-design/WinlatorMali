@@ -2465,3 +2465,21 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Important remaining gap: the game-details UI currently reports that achievement definitions/account progress were returned; it does not yet render individual achievement names, icons, unlock state or progress. The backend payload shape must be validated and safely normalized before presenting those fields.
 - Device validation is now the next external gate: install the host APK and companion from the same release, sign in, open several game detail pages, and confirm the app remains responsive. Record whether achievement data and cloud-save counts appear; no cloud-save mutation is enabled.
 - Next engineering work: inspect the exact Legendary 0.21.1 achievement response schemas, add bounded schema-aware normalization and tests, then render actual achievements without inventing progress. Separately design cloud-save preview/backup/conflict handling before any sync operation is enabled.
+
+## 2026-11-23 — Achievement summaries rendered; build and tests passed
+
+- Source commit: `57d6be1fe6a9619b70aec9994ae4873f428402df`.
+- The Epic runtime workflow **45246911918** and standard APK workflow **45246912027** both completed successfully on this exact commit.
+- Epic job `137946021591` and standard APK job `137946014197` concluded success. The Epic workflow ran Legendary 0.21.1 host/runtime checks, managed x86_64 Android runtime smoke, JNI instrumentation, ARM64 packaging, embedded companion and binary/dependency audits.
+- Published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-57d6be1fe6a9
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-57d6be1fe6a9/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-57d6be1fe6a9/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-57d6be1fe6a9/SHA256SUMS
+- Release asset SHA-256:
+  - `909ac93d548ebbdb55de15ca2b8daec68a774b386110cdab36ade8ff1984f564` — `app-standard-debug.apk`
+  - `bf99e7d8311c6d962a6993a840d89b025b8a5dbf7280c0fc85d7f638b8776337` — `epicbridge-debug.apk`
+- New achievement backend uses Legendary 0.21.1 `core.get_achievements(game, update=True)` and normalizes its parsed summary. It caps entries at 100, bounds strings and response size, validates icon URLs, clamps progress, and redacts the display name, description and icon for locked hidden achievements.
+- The game details UI now shows unlocked/total count, XP, up to 30 achievement entries, descriptions, locked/unlocked state and progress bars. This is source/CI verified; authenticated account data and title-specific accuracy still require device testing.
+- Added runner tests for normalized summary output, hidden-achievement redaction, 100-entry cap and unavailable-summary behavior.
+- Cloud saves remain read-only metadata only (support and remote record count); upload/download/sync is not enabled. Playtime remains unavailable rather than inferred.
+- Next gate: device-test this release on the Xiaomi 15T with the host and companion APKs from this same release. Check sign-in, library navigation, game detail achievement list, and responsiveness while a download/install is active. Record title and whether achievement counts/items appear. Do not enable cloud-save mutation before preview, backup and conflict safeguards exist.
