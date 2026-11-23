@@ -2356,3 +2356,31 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - CI evidence includes x86_64 managed-emulator runtime smoke, Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative cases, worker-thread, mmap and downloader lifecycle), ARM64 APK packaging, embedded companion byte comparison, package/signature/ABI/assets/ELF dependency closure audits.
 - The release is a debug-signed experimental test build, not a production release. It may require uninstalling an older debug package if signing certificates differ; back up containers before any uninstall.
 - The view-parent crash fix and fallback status label have passed CI, but user-device verification is still outstanding. In particular, the UI percentage depends on provider status/progress snapshot delivery; a fallback label cannot guarantee the percentage is available.
+
+
+## 2026-11-23 — Epic Library / game-details redesign
+
+User approved replacing the separate Library and Downloads destinations with a unified Library and per-game details flow. Implementation is in progress on `development/maliwinlator-1.2.1-bootstrap`.
+
+### Implemented in source
+- Changed Epic navigation to `Library` and `Account`; removed the separate Discover and Downloads navigation destinations.
+- Library cards now open a per-game details screen instead of embedding separate Install/Play buttons in every card.
+- Added a game details view with trusted Epic artwork (existing allow-listed artwork URL handling), title/status, install or launch action, progress/status panel, progress bar, and Update/Uninstall action for installed games.
+- Install action changes immediately to a starting state and then to Cancel download while the saved foreground job is active. Cancel routes through the existing `cancel_job` provider API; the existing foreground service and Legendary worker remain the download engine.
+- Added Library filters: All games, Installed, Ready to install, Downloading.
+- Persisted the active app name beside the saved job ID so the app can restore the corresponding game's details screen after fragment recreation/library reload.
+- Added explicit Achievements, Playtime, and Cloud saves information areas. Current implementation clearly says these values/support are not exposed or verified by the existing Epic integration; no synthetic values or unsupported cloud-save behavior are claimed.
+- Existing account sign-in, storage permissions, and container destination selection remain in Account.
+
+### Source commits
+- `048aa327750f5c83ab2e57bbfbf88475597c32cb` — unified Library navigation and per-game details screen.
+- `45d4ccaaac05c7c4302622815421ef095dafae66` — game-page install/cancel state, saved app association, progress display integration.
+- `6ed60c1820778ad29c93ce834829b7760dbbb00f` — determinate/indeterminate progress bar.
+- `e5585743c5499b351005e729230c5f2d3e63ac6a` — restore active game's detail page after library reload and add install-button press animation.
+- `db7c04d0070c5faa033f081014556f21e8fd7863` — Library status filters.
+
+### Validation / limitations
+- CI workflows are running for the latest source revision; no APK should be distributed until both relevant workflows complete successfully.
+- The current UI progress bar consumes the existing provider's `progress_json.progress` field and displays a pulsing indeterminate bar when only a job state/phase is available. It does not invent download size, speed, or ETA.
+- Achievements, playtime, and cloud-save sync still require separate capability discovery and backend/API implementation. The UI currently labels these as unavailable/unverified.
+- Device validation is still required on the Xiaomi 15T, especially installing, canceling, leaving/re-entering the game page, and checking progress updates.
