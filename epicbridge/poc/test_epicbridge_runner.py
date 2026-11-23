@@ -384,8 +384,7 @@ class GameDetailsTests(unittest.TestCase):
 
     def test_library_command_still_dispatches_to_library_handler(self):
         fake = [{"app_name": "TEST"}]
-        with patch.object(runner, "_core", return_value=object()), \
-             patch.object(runner, "_library", return_value=fake):
+        with patch.object(runner, "_core", return_value=SimpleNamespace(lgd=SimpleNamespace(userdata={}))), patch.object(runner, "_library", return_value=fake):
             response = json.loads(runner.handle("library", "{}"))
         self.assertTrue(response["ok"])
         self.assertEqual(response["games"], fake)
