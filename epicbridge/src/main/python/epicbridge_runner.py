@@ -135,18 +135,72 @@ def _game_details(core, payload):
         },
         "playtime": {"available": False},
     }
-    if namespace and egs is not None:
+    if namespace and callable(getattr(core, "get_achievements", None)):
         try:
-            definitions = egs.get_game_achievements(namespace)
-            user_state = egs.get_game_achievements_user(namespace)
-            def bounded(value):
-                encoded = _dump(value)
-                return value if len(encoded.encode("utf-8")) <= 48 * 1024 else {"truncated": True}
-            result["achievements"] = {
-                "available": True,
-                "definitions": bounded(definitions),
-                "user_state": bounded(user_state),
-            }
+            # Use Legendary's own 0.21.1 model/response parser rather than
+            # exposing raw GraphQL payloads or guessing their nested schema.
+            summary = core.get_achievements(game, update=True)
+            if isinstance(summary, dict):
+                normalized = {
+                    "available": True,
+                    "total_achievements": max(0, int(summary.get("total_achievements", 0) or 0)),
+                    "total_product_xp": max(0, int(summary.get("total_product_xp", 0) or 0)),
+                    "user_unlocked": max(0, int(summary.get("user_unlocked", 0) or 0)),
+                    "user_xp": max(0, int(summary.get("user_xp", 0) or 0)),
+                    "items": [],
+                    "truncated": False,
+                }
+                for category in ("completed", "in_progress", "uninitiated", "hidden"):
+                    entries = summary.get(category, [])
+                    if not isinstance(entries, list):
+                        continue
+                    for entry in entries:
+                        if not isinstance(entry, dict):
+                            continue
+                        if len(normalized["items"]) >= 100:
+                            normalized["truncated"] = True
+                            break
+                        unlocked = bool(entry.get("unlocked", False))
+                        hidden = bool(entry.get("hidden", False)) and not unlocked
+                        try:
+                            progress = float(entry.get("progress", 0.0) or 0.0)
+                        except (TypeError, ValueError):
+                            progress = 0.0
+                        if not 0.0 <= progress <= 1.0:
+                            progress = 0.0
+                        try:
+                            xp = max(0, int(entry.get("xp", 0) or 0))
+                        except (TypeError, ValueError):
+                            xp = 0
+                        icon_link = entry.get("icon_link", "")
+                        if not isinstance(icon_link, str) or not icon_link.startswith("https://") or len(icon_link) > 2048:
+                            icon_link = ""
+                        normalized["items"].append({
+                            "name": str(entry.get("name", ""))[:128],
+                            "display_name": "Hidden achievement" if hidden else str(entry.get("display_name", ""))[:160],
+                            "description": "" if hidden else str(entry.get("description", ""))[:512],
+                            "unlocked": unlocked,
+                            "hidden": hidden,
+                            "progress": progress,
+                            "xp": xp,
+                            "tier": str(entry.get("tier", ""))[:32],
+                            "rarity": str(entry.get("rarity", ""))[:32],
+                            "unlock_date": str(entry.get("unlock_date", "") or "")[:64],
+                            "icon_link": "" if hidden else icon_link,
+                            "category": category,
+                        })
+                if len(_dump(normalized).encode("utf-8")) <= 48 * 1024:
+                    result["achievements"] = normalized
+                else:
+                    result["achievements"] = {
+                        "available": True,
+                        "total_achievements": normalized["total_achievements"],
+                        "total_product_xp": normalized["total_product_xp"],
+                        "user_unlocked": normalized["user_unlocked"],
+                        "user_xp": normalized["user_xp"],
+                        "items": [],
+                        "truncated": True,
+                    }
         except Exception as exc:
             log.warning("Achievement query unavailable (type=%s)", type(exc).__name__)
             result["achievements"]["error"] = "ACHIEVEMENTS_UNAVAILABLE"
