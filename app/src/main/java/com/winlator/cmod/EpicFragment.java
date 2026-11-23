@@ -26,6 +26,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -88,8 +89,10 @@ public final class EpicFragment extends Fragment {
     private JSONObject selectedGame;
     private String selectedGameAppName = "";
     private TextView gameProgressText;
+    private ProgressBar gameProgressBar;
     private Button gamePrimaryButton;
     private boolean gameJobActive;
+    private boolean showingGameDetails;
     private volatile String lastProgressLabel = "No active Epic download or installation.";
     private final List<Container> containers = new ArrayList<>();
     private final Set<String> installedApps = new HashSet<>();
@@ -311,8 +314,10 @@ public final class EpicFragment extends Fragment {
         if (pageContainer == null) return;
         pageContainer.removeAllViews();
         if ("account".equals(section)) {
+            showingGameDetails = false;
             pageContainer.addView(accountPanel);
         } else {
+            showingGameDetails = false;
             pageContainer.addView(libraryPanel);
             if (!libraryLoaded) refreshLibrary();
         }
@@ -592,14 +597,16 @@ public final class EpicFragment extends Fragment {
                                                 ? "Epic operation queued..."
                                                 : "Epic operation: " + jobState;
                         String label = fallbackLabel;
+                        double percent = -1;
                         if (!progressJson.isEmpty()) {
                             JSONObject progress = new JSONObject(progressJson);
                             String phase = progress.optString("phase", "working");
-                            double percent = progress.optDouble("progress", -1);
+                            percent = progress.optDouble("progress", -1);
                             label = "Epic " + phase;
                             if (percent >= 0) label += String.format(java.util.Locale.US, " (%.1f%%)", percent);
                         }
                         final String progressLabel = label;
+                        final double displayPercent = percent;
                         // Job status is polled every 1.5 seconds, but progress can
                         // remain unchanged for many polls. Avoid flooding the main
                         // queue with identical TextView updates during slow phases.
@@ -612,6 +619,15 @@ public final class EpicFragment extends Fragment {
                                 }
                                 if (downloadsStatusText != null) downloadsStatusText.setText(progressLabel);
                                 if (gameProgressText != null) gameProgressText.setText(progressLabel);
+                                if (gameProgressBar != null) {
+                                    if (displayPercent >= 0) {
+                                        gameProgressBar.setIndeterminate(false);
+                                        gameProgressBar.setProgress((int) Math.max(0, Math.min(100,
+                                                Math.round(displayPercent))));
+                                    } else {
+                                        gameProgressBar.setIndeterminate(true);
+                                    }
+                                }
                                 if ("running".equals(jobState) || "queued".equals(jobState)
                                         || "cancelling".equals(jobState)) {
                                     gameJobActive = true;
@@ -852,7 +868,7 @@ public final class EpicFragment extends Fragment {
                 libraryState.setLibrary(games, installedApps, installedPaths);
             }
             renderGameCards(searchField == null ? "" : searchField.getText().toString());
-            if (selectedGame != null) showGameDetails(findCachedGame(selectedGameAppName));
+            if (showingGameDetails && selectedGame != null) showGameDetails(findCachedGame(selectedGameAppName));
         });
     }
 
@@ -963,6 +979,7 @@ public final class EpicFragment extends Fragment {
     private void showGameDetails(JSONObject game) {
         if (game == null || pageContainer == null) return;
         selectedGame = game;
+        showingGameDetails = true;
         String appName = game.optString("app_name", "");
         selectedGameAppName = appName;
         String title = game.optString("title", appName);
@@ -1031,6 +1048,12 @@ public final class EpicFragment extends Fragment {
                 (installed ? "Game is installed and ready." : "Install this game to see live progress here."),
                 12, 0xffdce3f2, true);
         addMargin(progressCard, gameProgressText, 8);
+        gameProgressBar = new ProgressBar(requireContext(), null,
+                android.R.attr.progressBarStyleHorizontal);
+        gameProgressBar.setMax(100);
+        gameProgressBar.setIndeterminate(gameJobActive);
+        gameProgressBar.setProgress(0);
+        addMargin(progressCard, gameProgressBar, 10);
         addMargin(detail, progressCard, 12);
 
         LinearLayout info = new LinearLayout(requireContext());
