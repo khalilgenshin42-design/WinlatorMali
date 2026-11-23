@@ -162,6 +162,14 @@ public final class EpicBridgeClient {
                 && result.getInt("protocol_version", -1) == PROTOCOL_VERSION;
     }
 
+    private static boolean isProviderUnavailable(Bundle result) {
+        if (result == null) return true;
+        String error = result.getString("error", "");
+        return "PROVIDER_UNAVAILABLE".equals(error)
+                || "PROVIDER_CALL_FAILED".equals(error)
+                || "RUNTIME_NOT_READY".equals(error);
+    }
+
     private static boolean isUnknownJobStatus(Bundle result) {
         return isCompatible(result) && result.getBoolean("ok", false)
                 && "unknown".equals(result.getString("state", "unknown"));
@@ -204,7 +212,7 @@ public final class EpicBridgeClient {
             if (!savedAuthority.isEmpty()) {
                 result = tryCallAuthority(context, savedAuthority, method, arg, extras);
                 selectedAuthority = savedAuthority;
-                if (result == null || !isCompatible(result)
+                if (result == null || !isCompatible(result) || isProviderUnavailable(result)
                         || (jobStatusCall && isUnknownJobStatus(result))) {
                     String alternate = alternateAuthority(context, savedAuthority);
                     if (!AUTHORITY.equals(alternate) || isCompanionInstalled(context)) {
@@ -212,7 +220,7 @@ public final class EpicBridgeClient {
                                 context, alternate, method, arg, extras);
                         boolean usefulAlternate = jobStatusCall
                                 ? isKnownJobStatus(alternateResult)
-                                : isCompatible(alternateResult);
+                                : isCompatible(alternateResult) && !isProviderUnavailable(alternateResult);
                         if (usefulAlternate) {
                             result = alternateResult;
                             selectedAuthority = alternate;
@@ -283,7 +291,7 @@ public final class EpicBridgeClient {
                     jobPrefs.edit().putString(
                             jobAuthorityKey(startedJobId), selectedAuthority).commit();
                 }
-            } else if (jobStatusCall && isKnownJobStatus(result)) {
+            } else if (jobStatusCall && !authorityKey.isEmpty() && isKnownJobStatus(result)) {
                 jobPrefs.edit().putString(authorityKey, selectedAuthority).apply();
                 if (isTerminalJobStatus(result)) {
                     jobPrefs.edit().remove(authorityKey).apply();
