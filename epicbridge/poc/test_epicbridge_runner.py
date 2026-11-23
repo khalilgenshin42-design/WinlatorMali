@@ -330,5 +330,55 @@ class ErrorSanitizationTests(unittest.TestCase):
         self.assertNotIn(secret_path, response)
 
 
+class GameDetailsTests(unittest.TestCase):
+    def run_details(self, game, remote=None):
+        egs = SimpleNamespace(
+            get_game_achievements=lambda namespace: {"namespace": namespace},
+            get_game_achievements_user=lambda namespace: {"earned": []},
+            get_user_cloud_saves=lambda app_name: remote or {"files": []},
+        )
+        core = SimpleNamespace(
+            login=lambda: True,
+            get_game=lambda *args, **kwargs: game,
+            egs=egs,
+        )
+        with patch.object(runner, "_require_login"):
+            return runner._game_details(core, {"app_name": "TEST"})
+
+    def test_windows_cloud_save_flag_controls_support(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=False, supports_mac_cloud_saves=True,
+        )
+        result = self.run_details(game, {"files": {"save-a": {}, "save-b": {}}})
+        self.assertFalse(result["cloud_saves"]["supported"])
+        self.assertIsNone(result["cloud_saves"]["remote_available"])
+        self.assertIsNone(result["cloud_saves"]["remote_count"])
+
+    def test_remote_cloud_save_dictionary_is_counted(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=True,
+        )
+        result = self.run_details(game, {"files": {"save-a": {}, "save-b": {}}})
+        self.assertTrue(result["cloud_saves"]["supported"])
+        self.assertTrue(result["cloud_saves"]["remote_available"])
+        self.assertEqual(result["cloud_saves"]["remote_count"], 2)
+
+    def test_remote_cloud_save_list_is_counted(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=True,
+        )
+        result = self.run_details(game, {"files": ["save-a", "save-b", "save-c"]})
+        self.assertEqual(result["cloud_saves"]["remote_count"], 3)
+
+    def test_app_name_rejects_embedded_nul(self):
+        core = SimpleNamespace(login=lambda: True)
+        with patch.object(runner, "_require_login"):
+            with self.assertRaises(ValueError):
+                runner._game_details(core, {"app_name": "BAD\\x00NAME"})
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
