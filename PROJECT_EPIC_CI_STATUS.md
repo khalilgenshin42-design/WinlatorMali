@@ -13,3 +13,10 @@
 ## APK SHA-256
 - c8f1f1ff47353a7c25f26a22da5ebb5fb41fae636486582201acd864ae9d7f9c  app-standard-debug.apk
 - 07ea7643b02e47cffe6da1a821015c836029146cfb23b1cde9c0003f1c301929  epicbridge-debug.apk
+
+
+## Capability audit (2026-11-23)
+- Legendary 0.21.1 source includes Epic Store achievement definition/user-state queries and EGS cloud-save listing/upload/download/sync primitives. See `EPIC_INTEGRATION_DESIGN.md` and `PROJECT_CONTINUITY_HANDOFF.md` for integration constraints.
+- These APIs have not yet been wired into the Android bridge or game details UI. Current build does not yet provide achievements display or launcher-managed cloud-save synchronization.
+- Playtime remains unavailable; no authoritative endpoint has been verified.
+- CI success validates package/runtime build and tests, not live Epic API behavior or Xiaomi 15T device functionality.
