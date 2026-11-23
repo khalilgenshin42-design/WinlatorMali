@@ -13,3 +13,11 @@
 ## APK SHA-256
 - 2e5ca21a2ce8d3d201090d2a944f5c3781ca6853a1df40131eefffd42c684feb  app-standard-debug.apk
 - eb4d741775625c9bd4f03068ef2064755638eac3dc3aebcaa7e6a461ea08e496  epicbridge-debug.apk
+
+
+## 2026-11-23 — CI passed and experimental APK published
+- Fix commit `d88a6bfb73f32665bb5b26ad9af262c74e63b4b7` passed standard workflow `45221637699` and Epic runtime/instrumentation workflow `45221637577`.
+- Published release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-d88a6bfb73f3
+- Main ARM64 debug APK SHA-256: `2e5ca21a2ce8d3d201090d2a944f5c3781ca6853a1df40131eefffd42c684feb`.
+- CI covered managed x86_64 runtime smoke, Android JNI instrumentation (LegendaryCore, AES-GCM, worker-thread, mmap and downloader lifecycle), ARM64 packaging and embedded companion/package audits.
+- Device test remains pending. UI crash correction is CI-verified, not Xiaomi 15T device-verified; progress percentage still needs device confirmation.
