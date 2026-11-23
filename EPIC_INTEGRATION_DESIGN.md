@@ -192,3 +192,23 @@ The default container drive map defines Wine `F:` as Android external storage ro
 ### Android AES-GCM compatibility
 
 Pinned Legendary 0.21.1 only imports PyCryptodomex AES in two places: encrypted chunk and manifest decryption, both using AES-GCM `decrypt_and_verify`. The Android companion will replace those two imports with a small compatibility shim backed by Android JCA `AES/GCM/NoPadding` through a built-in JNI module. The shim must retain 128-bit tag authentication and reject invalid tags. This avoids bundling PyCryptodomex's many native extensions; desktop Legendary remains unchanged. The NIST AES-128-GCM known-answer vector is part of host validation, and the same vector must pass on Android before encrypted Epic downloads are enabled.
+
+
+## 2026-11-23 — Verified Legendary services available for UI integration
+
+The current Android companion pins Legendary 0.21.1. Source/API audit confirms that this version's Epic API client has separate methods for Epic Store achievements and EGS cloud saves:
+
+- `EPCAPI.get_game_achievements(namespace)` returns achievement definitions from the Epic Store GraphQL service.
+- `EPCAPI.get_game_achievements_user(namespace)` returns the current Epic account's achievement state for that namespace.
+- `EPCAPI.get_user_cloud_saves(app_name)` lists cloud-save files; passing requested filenames obtains write links for upload.
+- Legendary's `sync-saves` path checks each installed title's `supports_cloud_saves` / `supports_mac_cloud_saves` metadata and compares local and remote save timestamps before selecting download or upload. Reuse this code rather than recreating file format/manifest/chunk handling.
+
+The Android host targets Windows game installations, so only the Windows cloud-save support metadata should be considered. A cloud-save feature tag alone is not enough to authorize sync: the install manifest must also provide a valid save path and Legendary must identify the title as supported.
+
+Epic Store achievements are separate from EOS Social Overlay. Epic's current EOS documentation says the Social Overlay does not support Linux ARM64, but Legendary's Store GraphQL queries are ordinary authenticated Epic account API calls. Use them for read-only library display if the pinned API response schema is validated. Do not claim that this launcher can unlock achievements: the game itself must submit unlocks through its own supported Epic/EOS integration.
+
+EOS Player Data Storage is a game-side EOS API and is not the same product as Epic Games Launcher Cloud Saves. Do not substitute one for the other.
+
+No playtime field is currently returned by the branch's Legendary library/installed JSON or the Android bridge. Do not infer playtime from launch count or app activity; only display it after an authoritative supported account endpoint is identified.
+
+Implementation order: read-only capability/achievement/save metadata endpoint; provider/host bridge; details UI; safe preview/conflict/backup-based sync; process-aware pre-launch/post-exit sync; CI and device verification. All sync must be blocked while the game is running, and every destructive overwrite must have a verified backup and explicit conflict choice.
