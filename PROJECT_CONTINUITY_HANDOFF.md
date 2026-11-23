@@ -2346,3 +2346,13 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 2. Add regression coverage for repeated Downloads entry and progress rendering where feasible.
 3. If the UI still reports reconnecting after this build, capture filtered Android logs for `EpicFragment`, `EpicBridgeProvider`, and `EpicRuntimeService` while the notification is active; never include Epic tokens or authorization data.
 4. Do not mark the crash/progress issue device-fixed until the Xiaomi 15T test confirms it.
+
+
+## 2026-11-23 validation result — Downloads UI correction
+
+- Source commit `d88a6bfb73f32665bb5b26ad9af262c74e63b4b7` passed both CI workflows: standard debug APK workflow `45221637699` and Epic runtime/Android instrumentation workflow `45221637577`.
+- Published experimental ARM64 debug release: [maliwinlator-1.2.1-epic-d88a6bfb73f3](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-d88a6bfb73f3).
+- Main APK: `app-standard-debug.apk`, 510,892,640 bytes, SHA-256 `2e5ca21a2ce8d3d201090d2a944f5c3781ca6853a1df40131eefffd42c684feb`. Embedded Epic Bridge is included; companion APK is separately attached as a fallback package and is not normally required for the embedded setup.
+- CI evidence includes x86_64 managed-emulator runtime smoke, Android JNI instrumentation (LegendaryCore, AES-GCM positive/negative cases, worker-thread, mmap and downloader lifecycle), ARM64 APK packaging, embedded companion byte comparison, package/signature/ABI/assets/ELF dependency closure audits.
+- The release is a debug-signed experimental test build, not a production release. It may require uninstalling an older debug package if signing certificates differ; back up containers before any uninstall.
+- The view-parent crash fix and fallback status label have passed CI, but user-device verification is still outstanding. In particular, the UI percentage depends on provider status/progress snapshot delivery; a fallback label cannot guarantee the percentage is available.
