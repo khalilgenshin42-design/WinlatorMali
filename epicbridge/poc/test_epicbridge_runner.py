@@ -331,19 +331,72 @@ class ErrorSanitizationTests(unittest.TestCase):
 
 
 class GameDetailsTests(unittest.TestCase):
-    def run_details(self, game, remote=None):
+    def run_details(self, game, remote=None, achievements=None):
         egs = SimpleNamespace(
-            get_game_achievements=lambda namespace: {"namespace": namespace},
-            get_game_achievements_user=lambda namespace: {"earned": []},
             get_user_cloud_saves=lambda app_name: remote or {"files": []},
         )
         core = SimpleNamespace(
             login=lambda: True,
             get_game=lambda *args, **kwargs: game,
+            get_achievements=lambda selected, update=False: achievements,
             egs=egs,
         )
         with patch.object(runner, "_require_login"):
             return runner._game_details(core, {"app_name": "TEST"})
+
+    def test_achievement_summary_is_normalized_and_hidden_text_is_redacted(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=False,
+        )
+        raw = {
+            "total_achievements": 2, "total_product_xp": 100,
+            "user_unlocked": 1, "user_xp": 50,
+            "completed": [{
+                "name": "FIRST", "display_name": "First Steps",
+                "description": "Complete the tutorial", "unlocked": True,
+                "progress": 1.0, "xp": 50, "icon_link": "https://cdn.example/icon.png",
+            }],
+            "hidden": [{
+                "name": "SECRET", "display_name": "Secret Ending",
+                "description": "Spoiler text", "hidden": True,
+                "unlocked": False, "progress": 0.0, "xp": 50,
+                "icon_link": "https://cdn.example/secret.png",
+            }],
+        }
+        result = self.run_details(game, achievements=raw)["achievements"]
+        self.assertTrue(result["available"])
+        self.assertEqual(result["total_achievements"], 2)
+        self.assertEqual(result["user_unlocked"], 1)
+        self.assertEqual(result["items"][0]["display_name"], "First Steps")
+        self.assertTrue(result["items"][0]["unlocked"])
+        self.assertEqual(result["items"][1]["display_name"], "Hidden achievement")
+        self.assertEqual(result["items"][1]["description"], "")
+        self.assertEqual(result["items"][1]["icon_link"], "")
+
+    def test_achievement_summary_caps_item_count(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=False,
+        )
+        entries = [
+            {"name": f"ACH_{index}", "display_name": f"Achievement {index}",
+             "unlocked": False, "progress": 0.0, "xp": 1}
+            for index in range(125)
+        ]
+        result = self.run_details(
+            game, achievements={"uninitiated": entries}
+        )["achievements"]
+        self.assertEqual(len(result["items"]), 100)
+        self.assertTrue(result["truncated"])
+
+    def test_missing_achievement_summary_is_not_reported_as_available(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=False,
+        )
+        result = self.run_details(game, achievements=None)["achievements"]
+        self.assertFalse(result["available"])
 
     def test_windows_cloud_save_flag_controls_support(self):
         game = SimpleNamespace(
