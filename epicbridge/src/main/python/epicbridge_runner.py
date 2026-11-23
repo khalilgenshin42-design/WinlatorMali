@@ -9,6 +9,7 @@ import json
 import logging
 import os
 from queue import Queue
+from urllib.parse import urlsplit
 
 log = logging.getLogger("EpicBridge")
 
@@ -141,12 +142,21 @@ def _game_details(core, payload):
             # exposing raw GraphQL payloads or guessing their nested schema.
             summary = core.get_achievements(game, update=True)
             if isinstance(summary, dict):
+                def safe_int(value):
+                    try:
+                        return max(0, min(int(value or 0), 2_147_483_647))
+                    except (TypeError, ValueError, OverflowError):
+                        return 0
+
+                def safe_text(value, limit):
+                    return value[:limit] if isinstance(value, str) else ""
+
                 normalized = {
                     "available": True,
-                    "total_achievements": max(0, int(summary.get("total_achievements", 0) or 0)),
-                    "total_product_xp": max(0, int(summary.get("total_product_xp", 0) or 0)),
-                    "user_unlocked": max(0, int(summary.get("user_unlocked", 0) or 0)),
-                    "user_xp": max(0, int(summary.get("user_xp", 0) or 0)),
+                    "total_achievements": safe_int(summary.get("total_achievements")),
+                    "total_product_xp": safe_int(summary.get("total_product_xp")),
+                    "user_unlocked": safe_int(summary.get("user_unlocked")),
+                    "user_xp": safe_int(summary.get("user_xp")),
                     "items": [],
                     "truncated": False,
                 }
@@ -172,20 +182,24 @@ def _game_details(core, payload):
                             xp = max(0, int(entry.get("xp", 0) or 0))
                         except (TypeError, ValueError):
                             xp = 0
-                        icon_link = entry.get("icon_link", "")
-                        if not isinstance(icon_link, str) or not icon_link.startswith("https://") or len(icon_link) > 2048:
+                        icon_link = safe_text(entry.get("icon_link"), 2048)
+                        try:
+                            parsed_icon = urlsplit(icon_link)
+                            if parsed_icon.scheme != "https" or not parsed_icon.hostname:
+                                icon_link = ""
+                        except ValueError:
                             icon_link = ""
                         normalized["items"].append({
-                            "name": str(entry.get("name", ""))[:128],
-                            "display_name": "Hidden achievement" if hidden else str(entry.get("display_name", ""))[:160],
-                            "description": "" if hidden else str(entry.get("description", ""))[:512],
+                            "name": safe_text(entry.get("name"), 128),
+                            "display_name": "Hidden achievement" if hidden else safe_text(entry.get("display_name"), 160),
+                            "description": "" if hidden else safe_text(entry.get("description"), 512),
                             "unlocked": unlocked,
                             "hidden": hidden,
                             "progress": progress,
                             "xp": xp,
-                            "tier": str(entry.get("tier", ""))[:32],
-                            "rarity": str(entry.get("rarity", ""))[:32],
-                            "unlock_date": str(entry.get("unlock_date", "") or "")[:64],
+                            "tier": safe_text(entry.get("tier"), 32),
+                            "rarity": safe_text(entry.get("rarity"), 32),
+                            "unlock_date": safe_text(str(entry.get("unlock_date")) if entry.get("unlock_date") is not None else "", 64),
                             "icon_link": "" if hidden else icon_link,
                             "category": category,
                         })
