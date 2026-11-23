@@ -23,3 +23,10 @@
 - Main APK SHA-256: `259002ec0ac0230901974ec42b6d636e4f02c41f46c52d233cf443b6058ba980`
 - Companion APK SHA-256: `256d1926b443066cb934e1591b968dc3c3665cab8eb3fea371bdc7c6c66ae43a`
 - Remaining: device acceptance of instant cached navigation, manual refresh, and cache invalidation after library mutations.
+
+
+## Epic active-job recovery hardening — validation pending
+- Source commit: `ce08bb6ff1eb65572762123857603addf3f31b35`
+- Change: retain the persisted active Epic job ID when status remains `unknown`; mark the operation pending, reconnect when Downloads is opened, and surface reconnect/provider errors in the Downloads status label.
+- No APK is published for this commit yet.
+- The combined commit-status query returned no status entries at the time of this update. Verify the exact source commit through both the standard APK and Epic runtime/instrumentation/ARM64 workflows before publishing.
