@@ -2304,3 +2304,5 @@ If the failure persists, inspect whether the Epic fragment is retained on the na
 - No downloader worker counts, Legendary runtime serialization, notification implementation, storage mapping, or Wine install paths were changed.
 - Validation status: no combined commit-status entries were returned for `47758e3` at the time of this update. Do not publish an APK until both the standard APK and Epic runtime/instrumentation/ARM64 workflows pass for the exact branch head.
 - Next: obtain CI results for the current branch head, review compile/instrumentation logs, then test an active small download while switching between Discover/Library/Downloads and while the provider is restarted or temporarily unavailable. Confirm that the notification and Downloads UI report the same operation and progress.
+
+- Additional compatibility commit: `e7d852dbb7913e22cbff65cfb5f55e6519c70d31` — persist provider affinity when recovering cancellation routing for a legacy job that predates the new mapping.
