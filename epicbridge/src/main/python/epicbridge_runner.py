@@ -109,6 +109,60 @@ def _library(core):
     return result
 
 
+
+def _game_details(core, payload):
+    """Read-only, bounded Epic account metadata for one owned Windows title."""
+    _require_login(core)
+    app_name = str(payload.get("app_name", "")).strip()
+    if not app_name or len(app_name) > 128 or any(ch in app_name for ch in ("/", "\\", "\\0")):
+        raise ValueError("A valid Epic app_name is required")
+    game = core.get_game(app_name, update_meta=True, platform="Windows")
+    if not game:
+        raise ValueError("The selected Epic title could not be found")
+    namespace = str(getattr(game, "namespace", "") or "").strip()
+    metadata = getattr(game, "metadata", None)
+    if not namespace and isinstance(metadata, dict):
+        namespace = str(metadata.get("namespace", "") or "").strip()
+    egs = getattr(core, "egs", None)
+    result = {
+        "app_name": app_name,
+        "title": str(getattr(game, "app_title", "") or app_name)[:256],
+        "achievements": {"available": False, "definitions": None, "user_state": None},
+        "cloud_saves": {
+            "supported": bool(getattr(game, "supports_cloud_saves", False)
+                              or getattr(game, "supports_mac_cloud_saves", False)),
+            "remote_available": None,
+            "remote_count": None,
+        },
+        "playtime": {"available": False},
+    }
+    if namespace and egs is not None:
+        try:
+            definitions = egs.get_game_achievements(namespace)
+            user_state = egs.get_game_achievements_user(namespace)
+            def bounded(value):
+                encoded = _dump(value)
+                return value if len(encoded.encode("utf-8")) <= 48 * 1024 else {"truncated": True}
+            result["achievements"] = {
+                "available": True,
+                "definitions": bounded(definitions),
+                "user_state": bounded(user_state),
+            }
+        except Exception as exc:
+            log.warning("Achievement query unavailable (type=%s)", type(exc).__name__)
+            result["achievements"]["error"] = "ACHIEVEMENTS_UNAVAILABLE"
+    if result["cloud_saves"]["supported"] and egs is not None:
+        try:
+            remote = egs.get_user_cloud_saves(app_name)
+            files = remote.get("files", []) if isinstance(remote, dict) else []
+            result["cloud_saves"]["remote_available"] = bool(files)
+            result["cloud_saves"]["remote_count"] = len(files) if isinstance(files, list) else 0
+        except Exception as exc:
+            log.warning("Cloud-save metadata unavailable (type=%s)", type(exc).__name__)
+            result["cloud_saves"]["error"] = "CLOUD_METADATA_UNAVAILABLE"
+    return result
+
+
 def _installed(core):
     games = core.get_installed_list(include_dlc=True)
     result = []
@@ -643,6 +697,9 @@ def handle(command: str, payload_json: str = "{}") -> str:
             return _dump({"ok": True, "logged_in": False})
 
         if command == "library":
+        if command == "game_details":
+            return _dump({"ok": True, "game": _game_details(core, payload)})
+
             return _dump({"ok": True, "games": _library(core), "account": _account(core)})
 
         if command == "installed":
