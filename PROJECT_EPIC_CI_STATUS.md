@@ -13,3 +13,18 @@
 ## APK SHA-256
 - 233437f1d0acc009a85dd77401855e24d993563fecc1dd4aa5e962a1f50a9822  app-standard-debug.apk
 - d7dcc69527b6e259f7a87459d19f9ef0ce319b010668cbe7a2ed920b5d22d688  epicbridge-debug.apk
+
+
+## 2026-11-23 — Epic job recovery build published
+
+Exact commit `e7d852dbb7913e22cbff65cfb5f55e6519c70d31`: standard workflow `45205610114` and Epic runtime/instrumentation/ARM64 packaging workflow `45205610044` both succeeded. Android instrumentation, managed x86_64 runtime smoke, ARM64 runtime build/audit, host APK packaging, and companion embedding checks passed.
+
+Release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-e7d852dbb791
+
+Main APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7d852dbb791/app-standard-debug.apk
+
+Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7d852dbb791/epicbridge-debug.apk
+
+Main APK SHA-256: `233437f1d0acc009a85dd77401855e24d993563fecc1dd4aa5e962a1f50a9822`. Companion SHA-256: `d7dcc69527b6e259f7a87459d19f9ef0ce319b010668cbe7a2ed920b5d22d688`.
+
+This remains an experimental debug-signed test build. Device testing on Xiaomi 15T is required before considering the active-job UI/provider-affinity issue fixed in practice. Back up containers before uninstalling any prior debug build if signature mismatch requires it.
