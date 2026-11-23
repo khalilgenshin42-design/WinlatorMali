@@ -28,3 +28,11 @@ Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/d
 Main APK SHA-256: `233437f1d0acc009a85dd77401855e24d993563fecc1dd4aa5e962a1f50a9822`. Companion SHA-256: `d7dcc69527b6e259f7a87459d19f9ef0ce319b010668cbe7a2ed920b5d22d688`.
 
 This remains an experimental debug-signed test build. Device testing on Xiaomi 15T is required before considering the active-job UI/provider-affinity issue fixed in practice. Back up containers before uninstalling any prior debug build if signature mismatch requires it.
+
+
+## 2026-11-23 — Downloads UI crash fix queued for validation
+- User reproduced a crash when entering Downloads during an active Epic download. The notification still works; the Downloads screen can remain stuck on “Reconnecting to the saved Epic operation…” without progress or percentage.
+- Source inspection found a repeat-entry view-parent bug in `EpicFragment.showSection`: the reusable `downloadsStatusText` TextView was not detached from the old panel before being attached to a newly-created panel. Fixed by removing it from its existing parent before reattachment.
+- Added fallback live labels for queued/running/cancelling job states when a progress snapshot is not yet available. Percentage display remains driven by the provider's progress JSON.
+- Fix commit: `d88a6bfb73f32665bb5b26ad9af262c74e63b4b7`.
+- CI status: pending; no APK published for this fix yet. Device status: not yet verified.
