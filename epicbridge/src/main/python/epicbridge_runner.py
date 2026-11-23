@@ -114,7 +114,7 @@ def _game_details(core, payload):
     """Read-only, bounded Epic account metadata for one owned Windows title."""
     _require_login(core)
     app_name = str(payload.get("app_name", "")).strip()
-    if not app_name or len(app_name) > 128 or any(ch in app_name for ch in ("/", "\\", "\\0")):
+    if not app_name or len(app_name) > 128 or any(ch in app_name for ch in ("/", "\\", "\x00")):
         raise ValueError("A valid Epic app_name is required")
     game = core.get_game(app_name, update_meta=True, platform="Windows")
     if not game:
@@ -129,8 +129,7 @@ def _game_details(core, payload):
         "title": str(getattr(game, "app_title", "") or app_name)[:256],
         "achievements": {"available": False, "definitions": None, "user_state": None},
         "cloud_saves": {
-            "supported": bool(getattr(game, "supports_cloud_saves", False)
-                              or getattr(game, "supports_mac_cloud_saves", False)),
+            "supported": bool(getattr(game, "supports_cloud_saves", False)),
             "remote_available": None,
             "remote_count": None,
         },
@@ -155,8 +154,12 @@ def _game_details(core, payload):
         try:
             remote = egs.get_user_cloud_saves(app_name)
             files = remote.get("files", []) if isinstance(remote, dict) else []
-            result["cloud_saves"]["remote_available"] = bool(files)
-            result["cloud_saves"]["remote_count"] = len(files) if isinstance(files, list) else 0
+            if isinstance(files, (list, dict)):
+                result["cloud_saves"]["remote_available"] = bool(files)
+                result["cloud_saves"]["remote_count"] = len(files)
+            else:
+                result["cloud_saves"]["remote_available"] = False
+                result["cloud_saves"]["remote_count"] = 0
         except Exception as exc:
             log.warning("Cloud-save metadata unavailable (type=%s)", type(exc).__name__)
             result["cloud_saves"]["error"] = "CLOUD_METADATA_UNAVAILABLE"
@@ -697,10 +700,10 @@ def handle(command: str, payload_json: str = "{}") -> str:
             return _dump({"ok": True, "logged_in": False})
 
         if command == "library":
+            return _dump({"ok": True, "games": _library(core), "account": _account(core)})
+
         if command == "game_details":
             return _dump({"ok": True, "game": _game_details(core, payload)})
-
-            return _dump({"ok": True, "games": _library(core), "account": _account(core)})
 
         if command == "installed":
             return _dump({"ok": True, "games": _installed(core)})
