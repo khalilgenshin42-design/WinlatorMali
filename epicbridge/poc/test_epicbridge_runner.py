@@ -398,6 +398,35 @@ class GameDetailsTests(unittest.TestCase):
         result = self.run_details(game, achievements=None)["achievements"]
         self.assertFalse(result["available"])
 
+    def test_malformed_achievement_metadata_is_safely_normalized(self):
+        game = SimpleNamespace(
+            app_name="TEST", app_title="Test", namespace="test-ns",
+            supports_cloud_saves=False,
+        )
+        raw = {
+            "total_achievements": "not-a-number",
+            "total_product_xp": None,
+            "user_unlocked": -4,
+            "user_xp": "unknown",
+            "uninitiated": [{
+                "name": None, "display_name": 42, "description": None,
+                "unlocked": False, "progress": float("nan"),
+                "xp": "bad", "icon_link": "javascript:alert(1)",
+                "tier": None, "rarity": 12,
+            }],
+        }
+        result = self.run_details(game, achievements=raw)["achievements"]
+        self.assertTrue(result["available"])
+        self.assertEqual(result["total_achievements"], 0)
+        self.assertEqual(result["user_unlocked"], 0)
+        self.assertEqual(result["items"][0]["name"], "")
+        self.assertEqual(result["items"][0]["display_name"], "")
+        self.assertEqual(result["items"][0]["progress"], 0.0)
+        self.assertEqual(result["items"][0]["xp"], 0)
+        self.assertEqual(result["items"][0]["icon_link"], "")
+        self.assertEqual(result["items"][0]["tier"], "")
+        self.assertEqual(result["items"][0]["rarity"], "")
+
     def test_windows_cloud_save_flag_controls_support(self):
         game = SimpleNamespace(
             app_name="TEST", app_title="Test", namespace="test-ns",
