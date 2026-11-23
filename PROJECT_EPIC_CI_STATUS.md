@@ -37,3 +37,4 @@
 - Provider-affinity persistence and fallback recovery: `6bf0b9f73aa7cdf6d6855a05fd135b2153379c9f`, hardened by `47758e3c7d19d81df2f5564ff41aa6c01d49d08e`.
 - The host now pins each job's status/cancel calls to the provider that accepted `start_job`; older jobs probe the alternate provider if the first returns `unknown`. The UI no longer deletes a saved job ID merely because status remains unknown for 30 seconds.
 - No APK has been published for these commits. The combined commit-status query returned no status entries for `47758e3` when checked. Exact-head standard APK and Epic runtime/instrumentation/ARM64 validation is still required.
+- Legacy cancellation routing follow-up: `e7d852dbb7913e22cbff65cfb5f55e6519c70d31` persists the resolved provider authority after probing the embedded or companion job registry.
