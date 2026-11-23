@@ -2384,3 +2384,39 @@ User approved replacing the separate Library and Downloads destinations with a u
 - The current UI progress bar consumes the existing provider's `progress_json.progress` field and displays a pulsing indeterminate bar when only a job state/phase is available. It does not invent download size, speed, or ETA.
 - Achievements, playtime, and cloud-save sync still require separate capability discovery and backend/API implementation. The UI currently labels these as unavailable/unverified.
 - Device validation is still required on the Xiaomi 15T, especially installing, canceling, leaving/re-entering the game page, and checking progress updates.
+
+
+## 2026-11-23 — Epic achievements / cloud-save backend audit
+
+### Confirmed build state
+- Current branch head at audit start: `f6574e1a53d571f81f885a9ac7aae6bfac9d70e9` (documentation commits are ahead of the source build).
+- Source commit `db7c04d0070c5faa033f081014556f21e8fd7863` passed standard APK CI run `45230482494` and Epic runtime/ARM64 package CI run `45230482434`.
+- Epic package release: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-db7c04d0070c
+- Epic Actions artifact: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45230482434/artifacts/14848870030 (artifact name `maliwinlator-1.2.1-epic-arm64-debug`).
+- Epic CI job completed successfully, including CPython 3.15.2 Android x86_64/ARM64 runtime packaging, managed emulator runtime smoke, JNI instrumentation, host APK and embedded companion packaging, package/ABI/ELF audits. This is not Xiaomi 15T device validation.
+
+### Backend capability findings
+- Pinned Legendary 0.21.1 already has Epic Games Store cloud-save primitives: remote save listing, requesting upload links, download/upload, local-vs-remote state comparison, and CLI `sync-saves` behavior. Do not implement a parallel undocumented datastorage protocol while this maintained implementation is available.
+- Legendary's game metadata includes per-title cloud-save support flags (including Windows/macOS variants); use the Windows flag for this Winlator integration and do not infer support from the mere presence of remote files.
+- Legendary's Epic API client includes `get_game_achievements(namespace)` and `get_game_achievements_user(namespace)` methods for Epic Store achievement definitions and the signed-in user's achievement state. This is distinct from relying on EOS Social Overlay.
+- Epic documentation states that the EOS Social Overlay does not support Linux ARM64. That limitation does not invalidate Legendary's separate Epic Store GraphQL achievement queries. Game-side achievement unlocks still depend on the title's own supported integration and valid game auth/session context; the launcher must not fake unlocks.
+- EOS Player Data Storage is not interchangeable with Epic Games Launcher Cloud Saves. Epic's own documentation explicitly distinguishes the launcher-managed service from game-side EOS Player Data Storage.
+- Playtime is not currently exposed by this branch's Legendary library response or EpicBridge runner. Do not fabricate it or use install/launch timestamps as playtime. Investigate an authoritative Epic account endpoint before displaying it.
+
+### Current code gap
+- `epicbridge_runner.py` currently exposes login/status/library/installed/install/uninstall/launch_info and runtime tests only. It has no game-services/achievements/cloud-save command.
+- `EpicBridgeProvider` currently does not allow achievements or cloud-save read/sync methods through its command switch.
+- `EpicFragment.showGameDetails()` still renders static explanatory text for achievements, playtime and cloud saves.
+
+### Next implementation sequence
+1. Add a read-only per-title capability/details query using pinned Legendary APIs: confirm title metadata, query EGS achievement definitions and user state, query remote cloud-save metadata only for titles marked cloud-save-supported, and return bounded sanitized JSON.
+2. Add provider allow-list and host bridge call support for that read-only command; test malformed app names, unauthenticated state, unsupported titles, missing namespace, empty data, API errors and large responses.
+3. Render actual achievements and cloud-save availability/status in game details. Keep playtime explicitly unavailable until a trustworthy source is verified.
+4. Add cloud-save preview and safe sync flow using Legendary's own state comparison. Before any download/upload, create a local backup and present a conflict decision; never silently overwrite newer local or remote data. Run sync before launch / after game exit only after process lifecycle and save-path handling are validated.
+5. Add Android runtime tests and CI; then request Xiaomi 15T device validation.
+
+### Safety / compatibility rules
+- Cloud save support is title-specific. Require Legendary's per-game support flag and valid local save-path metadata; do not guess save paths.
+- Do not sync while the game process is running. Never auto-download a remote save over a newer local save without explicit conflict resolution and a backup.
+- Achievements are read-only in the launcher UI. Only the game should unlock achievements through its own legitimate integration; do not call unlock APIs to spoof progress.
+- Keep tokens, presigned URLs, save contents, and raw API responses out of logcat and user-facing diagnostics.
