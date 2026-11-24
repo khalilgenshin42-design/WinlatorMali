@@ -2660,3 +2660,25 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Debug-signed test build.
 - CI success does not prove physical Xiaomi 15T validation. Device review still needed for Ready to install filter contents/empty states and existing active-download/install navigation responsiveness.
 - Prior PROJECT_EPIC_CI_STATUS.md was automatically updated by workflow run 45309341058 and records the above hashes and release URL.
+
+
+
+## 2026-11-24 — Epic storefront visual redesign (published)
+
+- Source commit: `b464202c12583750984507af3573da14203dbe34`.
+- Reworked the Epic Library presentation in `EpicFragment.java`: horizontally browsable cover-art game rail replaces the two-column grid; larger featured hero; stronger storefront typography and status treatment; larger artwork-led game detail header; staggered card entrance and press animations.
+- Preserved real Epic Bridge install eligibility, installed state, persisted active-job identity, real progress/cancel behavior, achievement metadata and read-only cloud-save support metadata. No mock progress, invented playtime or save synchronization was introduced.
+- Standard APK workflow **45388889849** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45388889849
+- Epic runtime/ARM64 workflow **45388889914** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45388889914
+- Epic workflow completed managed x86_64 runtime smoke, Android JNI instrumentation, CPython 3.15.2 Android x86_64/ARM64 packaging, ARM64 APK assembly, package/signature/ABI/assets/ELF dependency-closure and embedded-companion audits.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-b464202c1258
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b464202c1258/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b464202c1258/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b464202c1258/SHA256SUMS
+- APK SHA-256:
+  - `75f45ed9c272743dcd4ca3e09af362795384cb4365f3382a0247bb661c3067f1` — host APK
+  - `68377c428a66d945142839884525e29c9d46c604910641bc6dd33d18da3a543f` — companion APK
+- Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Debug-signed test build; a different debug signing certificate may require uninstalling an older debug package before installing.
+- CI and managed-emulator success do not establish physical Xiaomi 15T visual validation. User review is required for the storefront appearance, artwork coverage, navigation, and active-download progress.
+- Known feature boundaries remain: playtime unavailable; cloud saves are support metadata only with no upload/download/sync; achievements display real returned Epic metadata and are unlocked by games through their supported Epic/EOS integration, not by launcher UI.
+- Next: get user's visual review of this build, then refine the hero/card/detail composition based on the actual result. Keep all download/install actions connected to the existing worker and never fake metadata or progress.
