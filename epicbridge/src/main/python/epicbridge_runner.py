@@ -576,9 +576,15 @@ def _runtime_self_test():
             {"type": "Thumbnail", "url": "http://insecure.example/thumb.jpg"},
         ]
     })
-    if _cover_image(artwork_game) != "https://cdn1.epicgames.com/box.jpg":
+    artwork = _artwork_images(artwork_game)
+    if artwork["cover_url"] != "https://cdn1.epicgames.com/box.jpg":
         raise RuntimeError("Epic catalog portrait artwork selection failed")
-    if _cover_image(SimpleNamespace(metadata={"keyImages": [{"url": "file:///private/path"}]})):
+    if artwork["hero_url"] != "https://cdn1.epicgames.com/wide.jpg":
+        raise RuntimeError("Epic catalog landscape artwork selection failed")
+    unsafe_artwork = _artwork_images(SimpleNamespace(
+        metadata={"keyImages": [{"url": "file:///private/path"}]}
+    ))
+    if unsafe_artwork["cover_url"] or unsafe_artwork["hero_url"]:
         raise RuntimeError("Epic catalog artwork accepted a non-HTTPS URL")
 
     core = _core()
