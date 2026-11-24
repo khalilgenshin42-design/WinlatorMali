@@ -1504,9 +1504,16 @@ public final class EpicFragment extends Fragment {
         addMargin(achievementsCard, label("Your Epic progress", 15, 0xfff5f6fa, true), 7);
         TextView achievementsValue = label("Checking Epic achievement data...", 11, 0xffaeb8cb, false);
         addMargin(achievementsCard, achievementsValue, 4);
+        HorizontalScrollView achievementsRail = new HorizontalScrollView(requireContext());
+        achievementsRail.setHorizontalScrollBarEnabled(false);
+        achievementsRail.setClipToPadding(false);
+        achievementsRail.setFillViewport(false);
+        achievementsRail.setPadding(0, dp(2), dp(2), dp(8));
         LinearLayout achievementsList = new LinearLayout(requireContext());
-        achievementsList.setOrientation(LinearLayout.VERTICAL);
-        addMargin(achievementsCard, achievementsList, 10);
+        achievementsList.setOrientation(LinearLayout.HORIZONTAL);
+        achievementsRail.addView(achievementsList,
+                new HorizontalScrollView.LayoutParams(-2, -2));
+        addMargin(achievementsCard, achievementsRail, 10);
         addMargin(detail, achievementsCard, 12);
 
         // Compact two-column account-stat row gives the profile a deliberate
@@ -1636,7 +1643,10 @@ public final class EpicFragment extends Fragment {
                             achievementProgress.setProgress((int) Math.round(progress * 100.0));
                             addMargin(achievementCard, achievementProgress, 4);
                         }
-                        addMargin(achievementsList, achievementCard, 6);
+                        LinearLayout.LayoutParams achievementParams =
+                                new LinearLayout.LayoutParams(dp(250), -2);
+                        achievementParams.rightMargin = dp(9);
+                        achievementsList.addView(achievementCard, achievementParams);
                     }
                 }
                 if (achievements.optBoolean("truncated", false) || (items != null && items.length() > 30)) {
