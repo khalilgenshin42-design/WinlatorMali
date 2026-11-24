@@ -1706,6 +1706,28 @@ public final class EpicFragment extends Fragment {
                             achievementProgress.setProgress((int) Math.round(progress * 100.0));
                             addMargin(achievementCard, achievementProgress, 4);
                         }
+                        StringBuilder achievementDetails = new StringBuilder();
+                        if (!description.isEmpty()) achievementDetails.append(description).append("\\n\\n");
+                        achievementDetails.append(state);
+                        if (achievementXp > 0) achievementDetails.append("\\n").append(achievementXp).append(" XP");
+                        if (!tier.isEmpty()) achievementDetails.append(" • ").append(tier);
+                        if (!rarity.isEmpty()) achievementDetails.append(" • ").append(rarity);
+                        if (isUnlocked && !unlockDate.isEmpty() && !"null".equals(unlockDate)) {
+                            achievementDetails.append("\\nUnlocked: ").append(unlockDate);
+                        } else if (!isUnlocked && !isHidden && progress > 0.0) {
+                            achievementDetails.append("\\nProgress: ")
+                                    .append(Math.round(progress * 100.0)).append("%");
+                        }
+                        achievementCard.setClickable(true);
+                        achievementCard.setFocusable(true);
+                        achievementCard.setContentDescription(name + ". " + state
+                                + ". Tap for achievement details.");
+                        achievementCard.setOnClickListener(v ->
+                                new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                                        .setTitle(name)
+                                        .setMessage(achievementDetails.toString())
+                                        .setPositiveButton("Close", null)
+                                        .show());
                         LinearLayout.LayoutParams achievementParams =
                                 new LinearLayout.LayoutParams(dp(250), -2);
                         achievementParams.rightMargin = dp(9);
