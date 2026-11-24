@@ -2888,3 +2888,14 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Epic runtime/ARM64 workflow **45495719482** is pending: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45495719482
 - Previous animation/accessibility commit `698661a3a4343c09996a2267c840f36b1ee5030d` has standard APK workflow **45495158540** passed; Epic runtime workflow **45495158521** remains in progress: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45495158521
 - Do not publish `1eb94b4` until both workflows for that exact SHA pass. No physical Xiaomi 15T validation has occurred.
+
+
+## 2026-11-24 — Achievement profile interaction (validation pending)
+
+- Source commits: `9404e027a5ae38be7842d1b920da11395bc4cf36` (tap-to-open achievement detail dialog) and `9df83c7fed3981373cab3e661c6d249450bf77e9` (stable final title capture in click listener).
+- Achievement rail cards are now actionable: tapping a card opens a compact detail dialog with the actual description, unlock/hidden/in-progress state, XP, tier/rarity, unlock date, and progress where available. The card also exposes a useful accessibility content description and keyboard focusability.
+- No achievement state is modified; this is a read-only presentation of the account metadata already returned by Legendary.
+- Standard APK workflow for final commit **45502418513** is running: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45502418513
+- Epic runtime/ARM64 workflow for final commit **45502418476** is pending: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45502418476
+- Earlier achievement artwork/completion commit `1eb94b4f926d3fb39902a205f2f30626c304c0ca` passed both workflows **45495719392** and **45495719482**. Its standard APK artifact is available from the workflow run page; the Epic runtime run also uploaded its ARM64 artifact.
+- Do not publish the newer interaction commit until both workflows for the exact final SHA pass. No physical Xiaomi 15T validation has occurred.
