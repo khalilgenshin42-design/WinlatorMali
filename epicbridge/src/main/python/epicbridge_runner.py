@@ -36,14 +36,14 @@ def _require_login(core):
         raise RuntimeError("Epic authentication is required or the saved session expired")
 
 
-def _cover_image(game):
-    """Return one HTTPS Epic catalog cover URL without exposing full catalog metadata."""
+def _artwork_images(game):
+    """Return safe HTTPS portrait and landscape Epic catalog artwork URLs."""
     metadata = getattr(game, "metadata", None)
     if not isinstance(metadata, dict):
-        return ""
+        return {"cover_url": "", "hero_url": ""}
     images = metadata.get("keyImages", [])
     if not isinstance(images, list):
-        return ""
+        return {"cover_url": "", "hero_url": ""}
 
     by_type = {}
     for image in images:
@@ -52,27 +52,28 @@ def _cover_image(game):
             if isinstance(image_type, str) and image_type not in by_type:
                 by_type[image_type] = image
 
-    # Prefer portrait box art, then wide offer art, then smaller catalog previews.
-    for image_type in (
-        "DieselGameBoxTall",
-        "OfferImageTall",
-        "OfferImageWide",
-        "DieselGameBox",
-        "Thumbnail",
-        "Featured",
-    ):
-        image = by_type.get(image_type, {})
-        url = image.get("url", "")
-        if isinstance(url, str) and url.startswith("https://") and len(url) <= 2048:
-            return url
-
-    # Catalog variants can introduce new image types; use the first safe HTTPS image.
-    for image in images:
-        if isinstance(image, dict):
+    def select(types):
+        for image_type in types:
+            image = by_type.get(image_type, {})
             url = image.get("url", "")
             if isinstance(url, str) and url.startswith("https://") and len(url) <= 2048:
                 return url
-    return ""
+        return ""
+
+    # Portrait box art remains on compact cards; wide offer art is used on
+    # hero/profile surfaces instead of stretching portrait artwork.
+    cover = select(("DieselGameBoxTall", "OfferImageTall", "DieselGameBox",
+                    "OfferImageWide", "Thumbnail", "Featured"))
+    hero = select(("OfferImageWide", "DieselGameBox", "Featured",
+                   "Thumbnail", "DieselGameBoxTall", "OfferImageTall"))
+    if not hero:
+        for image in images:
+            if isinstance(image, dict):
+                url = image.get("url", "")
+                if isinstance(url, str) and url.startswith("https://") and len(url) <= 2048:
+                    hero = url
+                    break
+    return {"cover_url": cover or hero, "hero_url": hero or cover}
 
 
 def _library(core):
@@ -98,13 +99,15 @@ def _library(core):
                 "version": dlc.app_version("Windows") or "",
                 "is_dlc": True,
             })
+        artwork = _artwork_images(game)
         result.append({
             "app_name": game.app_name,
             "title": game.app_title or game.app_name,
             "version": game.app_version("Windows") or "",
             "is_dlc": bool(game.is_dlc),
             "third_party_store": game.third_party_store or "",
-            "cover_url": _cover_image(game),
+            "cover_url": artwork["cover_url"],
+            "hero_url": artwork["hero_url"],
             "dlcs": dlcs,
         })
     return result
