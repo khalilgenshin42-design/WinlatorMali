@@ -22,6 +22,34 @@ def game(app_name, title, catalog="catalog-main", *, is_dlc=False):
     )
 
 
+class ArtworkMetadataTests(unittest.TestCase):
+    def test_portrait_cover_and_wide_hero_are_selected_independently(self):
+        game_metadata = SimpleNamespace(metadata={
+            "keyImages": [
+                {"type": "OfferImageWide", "url": "https://cdn1.epicgames.com/hero.jpg"},
+                {"type": "DieselGameBoxTall", "url": "https://cdn1.epicgames.com/cover.jpg"},
+            ]
+        })
+        artwork = runner._artwork_images(game_metadata)
+        self.assertEqual(artwork["cover_url"], "https://cdn1.epicgames.com/cover.jpg")
+        self.assertEqual(artwork["hero_url"], "https://cdn1.epicgames.com/hero.jpg")
+
+    def test_artwork_rejects_non_https_and_oversized_urls(self):
+        game_metadata = SimpleNamespace(metadata={"keyImages": [
+            {"type": "OfferImageWide", "url": "http://cdn1.epicgames.com/insecure.jpg"},
+            {"type": "DieselGameBoxTall", "url": "https://cdn1.epicgames.com/" + "x" * 2048},
+        ]})
+        artwork = runner._artwork_images(game_metadata)
+        self.assertEqual(artwork["cover_url"], "")
+        self.assertEqual(artwork["hero_url"], "")
+
+    def test_missing_or_malformed_catalog_artwork_is_empty(self):
+        self.assertEqual(runner._artwork_images(SimpleNamespace(metadata=None)),
+                         {"cover_url": "", "hero_url": ""})
+        self.assertEqual(runner._artwork_images(SimpleNamespace(metadata={"keyImages": "invalid"})),
+                         {"cover_url": "", "hero_url": ""})
+
+
 class LibraryMergeTests(unittest.TestCase):
     def run_library(self, games, dlcs, extra_games, extra_dlcs):
         class FakeCore:
