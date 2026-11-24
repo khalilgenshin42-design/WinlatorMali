@@ -1018,7 +1018,7 @@ public final class EpicFragment extends Fragment {
         if (gamesContainer == null || !isAdded()) return;
         gamesContainer.removeAllViews();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
-        if (needle.isEmpty() && "All".equals(libraryFilter)) renderFeaturedHero();
+        if (needle.isEmpty() && "All games".equals(libraryFilter)) renderFeaturedHero();
 
         int count = 0;
         if ("Downloading".equals(libraryFilter)) {
@@ -1030,7 +1030,7 @@ public final class EpicFragment extends Fragment {
         } else {
             count += addGameShelf("RECENTLY OPENED", "recent", needle);
             count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
-            count += addGameShelf("READY TO PLAY", "downloading", needle);
+            count += addGameShelf("ACTIVE DOWNLOADS & INSTALLS", "downloading", needle);
             count += addGameShelf("READY TO INSTALL", "ready", needle);
             count += addGameShelf("YOUR EPIC COLLECTION", "all", needle);
         }
