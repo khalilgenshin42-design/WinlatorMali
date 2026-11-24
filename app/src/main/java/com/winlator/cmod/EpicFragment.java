@@ -656,6 +656,9 @@ public final class EpicFragment extends Fragment {
     }
 
     private JSONObject waitForJob(android.content.Context appContext, String jobId) {
+        android.content.SharedPreferences jobPrefs = appContext
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        final String monitoredAppName = jobPrefs.getString(ACTIVE_JOB_APP_KEY, "");
         long deadline = System.currentTimeMillis() + 5L * 60L * 60L * 1000L;
         JSONObject result = new JSONObject();
         long unknownSince = 0L;
@@ -712,26 +715,35 @@ public final class EpicFragment extends Fragment {
                                     statusText.setText(progressLabel);
                                 }
                                 if (downloadsStatusText != null) downloadsStatusText.setText(progressLabel);
-                                if (gameProgressText != null) gameProgressText.setText(progressLabel);
-                                if (gameProgressBar != null) {
-                                    if (displayPercent >= 0) {
-                                        gameProgressBar.setIndeterminate(false);
-                                        gameProgressBar.setProgress((int) Math.max(0, Math.min(100,
-                                                Math.round(displayPercent))));
-                                    } else {
-                                        gameProgressBar.setIndeterminate(true);
+                                // A single Epic job may run while the user browses other
+                                // game profiles. Keep its progress and cancel action scoped
+                                // to the title that actually owns the persisted job.
+                                if (monitoredAppName.equals(selectedGameAppName)) {
+                                    if (gameProgressText != null) gameProgressText.setText(progressLabel);
+                                    if (gameProgressBar != null) {
+                                        if (displayPercent >= 0) {
+                                            gameProgressBar.setIndeterminate(false);
+                                            gameProgressBar.setProgress((int) Math.max(0, Math.min(100,
+                                                    Math.round(displayPercent))));
+                                        } else {
+                                            gameProgressBar.setIndeterminate(true);
+                                        }
                                     }
-                                }
-                                if ("running".equals(jobState) || "queued".equals(jobState)
-                                        || "cancelling".equals(jobState)) {
-                                    gameJobActive = true;
-                                    updateGameActionButton("cancelling".equals(jobState)
-                                            ? "Cancelling..." : "Cancel download", true);
-                                } else if ("complete".equals(jobState) || "failed".equals(jobState)
-                                        || "cancelled".equals(jobState) || "interrupted".equals(jobState)) {
-                                    gameJobActive = false;
-                                    updateGameActionButton(installedApps.contains(selectedGameAppName)
-                                            ? "Play game" : "Install", true);
+                                    if ("running".equals(jobState) || "queued".equals(jobState)
+                                            || "cancelling".equals(jobState)) {
+                                        gameJobActive = true;
+                                        updateGameActionButton("cancelling".equals(jobState)
+                                                ? "Cancelling..." : "Cancel download", true);
+                                    } else if ("complete".equals(jobState) || "failed".equals(jobState)
+                                            || "cancelled".equals(jobState) || "interrupted".equals(jobState)) {
+                                        gameJobActive = false;
+                                        JSONObject currentGame = findCachedGame(selectedGameAppName);
+                                        String nextAction = installedApps.contains(selectedGameAppName)
+                                                ? "Play game" : (isGameInstallSupported(currentGame)
+                                                ? "Install" : "Unavailable");
+                                        updateGameActionButton(nextAction, installedApps.contains(selectedGameAppName)
+                                                || (isGameInstallSupported(currentGame) && storageReady));
+                                    }
                                 }
                             });
                         }
@@ -1227,6 +1239,19 @@ public final class EpicFragment extends Fragment {
         gamePrimaryButton.setAlpha(enabled ? 1.0f : 0.72f);
     }
 
+    private boolean isGameInstallSupported(JSONObject game) {
+        return game != null && !game.optString("version", "").isEmpty()
+                && game.optString("third_party_store", "").isEmpty();
+    }
+
+    private boolean isActiveJobForGame(String appName) {
+        if (appName == null || appName.isEmpty() || getContext() == null) return false;
+        android.content.SharedPreferences prefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        return !prefs.getString(JOB_ID_KEY, "").isEmpty()
+                && appName.equals(prefs.getString(ACTIVE_JOB_APP_KEY, ""));
+    }
+
     private void showGameDetails(JSONObject game) {
         if (game == null || pageContainer == null) return;
         selectedGame = game;
@@ -1235,8 +1260,8 @@ public final class EpicFragment extends Fragment {
         selectedGameAppName = appName;
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
-        boolean supported = game.optString("version", "").length() > 0
-                && game.optString("third_party_store", "").isEmpty();
+        boolean supported = isGameInstallSupported(game);
+        boolean gameJobForThisTitle = isActiveJobForGame(appName);
 
         pageContainer.removeAllViews();
         LinearLayout detail = new LinearLayout(requireContext());
@@ -1288,15 +1313,15 @@ public final class EpicFragment extends Fragment {
                 (supported ? "IN YOUR EPIC LIBRARY  •  Ready to install" : "IN YOUR EPIC LIBRARY"),
                 10, installed ? 0xff79d6a2 : 0xffaaa6ff, true));
 
-        gamePrimaryButton = action(gameJobActive ? "Cancel download" :
+        gamePrimaryButton = action(gameJobForThisTitle ? "Cancel download" :
                 (installed ? "Play game" : (supported ? "Install" : "Unavailable")), true);
         addMargin(detail, gamePrimaryButton, 16);
-        gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobActive);
+        gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobForThisTitle);
         gamePrimaryButton.setOnClickListener(v -> {
             gamePrimaryButton.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
                     .withEndAction(() -> gamePrimaryButton.animate().scaleX(1.0f).scaleY(1.0f)
                             .setDuration(110).start()).start();
-            if (gameJobActive) {
+            if (isActiveJobForGame(appName)) {
                 updateGameActionButton("Cancelling...", false);
                 cancelActiveJob();
             } else if (installed) {
@@ -1311,14 +1336,14 @@ public final class EpicFragment extends Fragment {
         progressCard.setPadding(dp(14), dp(13), dp(14), dp(13));
         progressCard.setBackground(shape(0xff171d29, 0xff303b50, 13));
         progressCard.addView(label("DOWNLOAD STATUS", 10, 0xffaaa6ff, true));
-        gameProgressText = label(gameJobActive ? lastProgressLabel :
+        gameProgressText = label(gameJobForThisTitle ? lastProgressLabel :
                 (installed ? "Game is installed and ready." : "Install this game to see live progress here."),
                 12, 0xffdce3f2, true);
         addMargin(progressCard, gameProgressText, 8);
         gameProgressBar = new ProgressBar(requireContext(), null,
                 android.R.attr.progressBarStyleHorizontal);
         gameProgressBar.setMax(100);
-        gameProgressBar.setIndeterminate(gameJobActive);
+        gameProgressBar.setIndeterminate(gameJobForThisTitle);
         gameProgressBar.setProgress(0);
         addMargin(progressCard, gameProgressBar, 10);
         addMargin(detail, progressCard, 12);
