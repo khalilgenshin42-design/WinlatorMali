@@ -2877,3 +2877,14 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Reviewed the exact GitHub commit diff and confirmed only `EpicFragment.java` changed. The source branch head is this commit.
 - No CI runs were created for this commit at the time of this handoff update. The latest published build remains the prior validated source SHA `7f218d4fa4d775a0c03da805eb9ffbd936e479fd`; do not install/publish the new source revision until both standard APK and Epic runtime/ARM64 workflows validate it.
 - Next: obtain CI validation for `698661a`, then continue the larger composition work. Do not treat the animation/accessibility refinement as the complete visual redesign.
+
+
+## 2026-11-24 — Achievement presentation upgrade (validation pending)
+
+- Source commit: `1eb94b4f926d3fb39902a205f2f30626c304c0ca`.
+- The game profile now renders Epic's existing per-achievement `icon_link` artwork in the horizontal achievement rail, subject to the same trusted Epic artwork host validation used elsewhere in the UI. Text fallback remains when an icon URL is absent or rejected.
+- Added an overall completion bar calculated strictly from Epic's returned unlocked/total achievement counts. The summary still shows the returned XP values; no local progress is invented and no achievement unlock behavior is added.
+- Standard APK workflow **45495719392** is in progress: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45495719392
+- Epic runtime/ARM64 workflow **45495719482** is pending: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45495719482
+- Previous animation/accessibility commit `698661a3a4343c09996a2267c840f36b1ee5030d` has standard APK workflow **45495158540** passed; Epic runtime workflow **45495158521** remains in progress: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45495158521
+- Do not publish `1eb94b4` until both workflows for that exact SHA pass. No physical Xiaomi 15T validation has occurred.
