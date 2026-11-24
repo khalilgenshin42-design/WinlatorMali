@@ -131,31 +131,31 @@ public final class EpicFragment extends Fragment {
         scroll.setBackgroundColor(0xff0a0c12);
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(14), dp(12), dp(14), dp(30));
+        root.setPadding(dp(16), dp(14), dp(16), dp(36));
         scroll.addView(root);
 
         LinearLayout brand = new LinearLayout(requireContext());
         brand.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout brandCopy = new LinearLayout(requireContext());
         brandCopy.setOrientation(LinearLayout.VERTICAL);
-        TextView logo = label("MALIWINLATOR", 19, 0xfff5f6fa, true);
+        TextView logo = label("EPIC GAMES", 22, 0xfff5f6fa, true);
         brandCopy.addView(logo);
-        TextView brandSubtitle = label("EPIC GAMES  /  PC LIBRARY", 8, 0xff8995ad, true);
+        TextView brandSubtitle = label("YOUR PC GAME COLLECTION", 9, 0xff9ca8bf, true);
         brandSubtitle.setLetterSpacing(0.12f);
         LinearLayout.LayoutParams brandSubtitleParams = new LinearLayout.LayoutParams(-2, -2);
         brandSubtitleParams.topMargin = dp(2);
         brandCopy.addView(brandSubtitle, brandSubtitleParams);
         brand.addView(brandCopy, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView edition = label("GAME HUB", 9, 0xffd9d5ff, true);
+        TextView edition = label("MALIWINLATOR", 9, 0xffd9d5ff, true);
         edition.setPadding(dp(10), dp(6), dp(10), dp(6));
         edition.setBackground(shape(0xff20283a, 0xff20283a, 30));
         brand.addView(edition);
         root.addView(brand);
 
+        // Runtime diagnostics belong to Account, not the player-facing storefront.
         statusText = label("Connecting to Epic Bridge...", 12, 0xffb8c2d5, false);
-        statusText.setPadding(dp(12), dp(11), dp(12), dp(11));
+        statusText.setPadding(dp(13), dp(12), dp(13), dp(12));
         statusText.setBackground(shape(0xff171d29, 0xff293247, 12));
-        addMargin(root, statusText, 14);
 
         LinearLayout nav = new LinearLayout(requireContext());
         navigationBar = nav;
@@ -179,7 +179,8 @@ public final class EpicFragment extends Fragment {
 
         accountPanel = new LinearLayout(requireContext());
         accountPanel.setOrientation(LinearLayout.VERTICAL);
-        addHeading(accountPanel, "Epic account", "Sign in and configure where your Windows games are installed.");
+        addHeading(accountPanel, "Account & setup", "Manage your Epic connection and game installation destination.");
+        addMargin(accountPanel, statusText, 2);
 
         installBridgeButton = action("Install Epic Bridge", true);
         installBridgeButton.setOnClickListener(v -> installBridge());
@@ -216,12 +217,13 @@ public final class EpicFragment extends Fragment {
 
         libraryPanel = new LinearLayout(requireContext());
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
-        libraryPanel.addView(label("YOUR LIBRARY", 11, 0xffaaa6ff, true));
-        TextView libraryIntro = label("Your next adventure starts here.", 20, 0xfff5f6fa, true);
-        libraryIntro.setPadding(0, dp(5), 0, dp(3));
+        libraryPanel.setPadding(0, dp(3), 0, 0);
+        libraryPanel.addView(label("PLAYER LIBRARY  /  EPIC", 9, 0xffaaa6ff, true));
+        TextView libraryIntro = label("Your games.", 29, 0xfff5f6fa, true);
+        libraryIntro.setPadding(0, dp(4), 0, dp(2));
         libraryPanel.addView(libraryIntro);
-        TextView librarySubtitle = label("Browse your Epic collection and jump straight into a game.", 11, 0xff929db1, false);
-        librarySubtitle.setPadding(0, 0, 0, dp(12));
+        TextView librarySubtitle = label("Pick up where you left off, or find your next game.", 12, 0xff929db1, false);
+        librarySubtitle.setPadding(0, 0, 0, dp(15));
         libraryPanel.addView(librarySubtitle);
         featuredContainer = new LinearLayout(requireContext());
         featuredContainer.setOrientation(LinearLayout.VERTICAL);
@@ -1072,9 +1074,37 @@ public final class EpicFragment extends Fragment {
         if (featuredContainer == null || !isAdded()) return;
         featuredContainer.removeAllViews();
         JSONObject featured = null;
+        android.content.SharedPreferences uiPrefs = requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE);
+        String lastOpenedApp = uiPrefs.getString("last_opened_app", "");
+        // Prefer the player's last opened title; otherwise surface an installed
+        // game before falling back to the stable order returned by Epic.
         for (int i = 0; i < cachedGames.length(); i++) {
             JSONObject candidate = cachedGames.optJSONObject(i);
-            if (candidate != null && !candidate.optBoolean("is_dlc", false)) { featured = candidate; break; }
+            if (candidate != null && !candidate.optBoolean("is_dlc", false)
+                    && lastOpenedApp.equals(candidate.optString("app_name", ""))) {
+                featured = candidate;
+                break;
+            }
+        }
+        if (featured == null) {
+            for (int i = 0; i < cachedGames.length(); i++) {
+                JSONObject candidate = cachedGames.optJSONObject(i);
+                if (candidate != null && !candidate.optBoolean("is_dlc", false)
+                        && installedApps.contains(candidate.optString("app_name", ""))) {
+                    featured = candidate;
+                    break;
+                }
+            }
+        }
+        if (featured == null) {
+            for (int i = 0; i < cachedGames.length(); i++) {
+                JSONObject candidate = cachedGames.optJSONObject(i);
+                if (candidate != null && !candidate.optBoolean("is_dlc", false)) {
+                    featured = candidate;
+                    break;
+                }
+            }
         }
         if (featured == null) {
             LinearLayout empty = new LinearLayout(requireContext());
@@ -1134,7 +1164,7 @@ public final class EpicFragment extends Fragment {
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-2, dp(42));
         buttonParams.topMargin = dp(12);
         content.addView(explore, buttonParams);
-        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(258));
+        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(310));
         heroParams.bottomMargin = dp(8);
         featuredContainer.addView(hero, heroParams);
         hero.setAlpha(0f);
@@ -1273,6 +1303,9 @@ public final class EpicFragment extends Fragment {
         showingGameDetails = true;
         String appName = game.optString("app_name", "");
         selectedGameAppName = appName;
+        requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE)
+                .edit().putString("last_opened_app", appName).apply();
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
         boolean supported = isGameInstallSupported(game);
@@ -1285,11 +1318,6 @@ public final class EpicFragment extends Fragment {
         detail.setAlpha(0f);
         detail.setTranslationY(dp(12));
         detail.animate().alpha(1f).translationY(0f).setDuration(240).start();
-
-        Button back = action("‹  YOUR LIBRARY", false);
-        back.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-        back.setOnClickListener(v -> showSection("library"));
-        addMargin(detail, back, 0);
 
         FrameLayout artwork = new FrameLayout(requireContext());
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
@@ -1312,6 +1340,16 @@ public final class EpicFragment extends Fragment {
         detailShade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[]{0x00070a12, 0x33070a12, 0xe6070a12}));
         artwork.addView(detailShade, new FrameLayout.LayoutParams(-1, -1));
+        Button back = action("‹  LIBRARY", false);
+        back.setTextSize(11);
+        back.setMinHeight(dp(38));
+        back.setPadding(dp(12), 0, dp(12), 0);
+        back.setBackground(shape(0xb8141b29, 0x665e6a84, 18));
+        back.setOnClickListener(v -> showSection("library"));
+        FrameLayout.LayoutParams backParams = new FrameLayout.LayoutParams(-2, dp(38),
+                Gravity.TOP | Gravity.LEFT);
+        backParams.setMargins(dp(14), dp(14), 0, 0);
+        artwork.addView(back, backParams);
         LinearLayout artworkCaption = new LinearLayout(requireContext());
         artworkCaption.setOrientation(LinearLayout.VERTICAL);
         artworkCaption.setPadding(dp(17), dp(12), dp(17), dp(16));
@@ -1327,8 +1365,8 @@ public final class EpicFragment extends Fragment {
                 Gravity.BOTTOM | Gravity.LEFT);
         captionParams.setMargins(dp(16), 0, dp(16), dp(14));
         artwork.addView(artworkCaption, new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM));
-        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(270));
-        artParams.topMargin = dp(14);
+        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(340));
+        artParams.topMargin = dp(4);
         detail.addView(artwork, artParams);
 
 
