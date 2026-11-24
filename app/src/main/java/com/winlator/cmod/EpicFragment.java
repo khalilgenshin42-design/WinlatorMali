@@ -1044,6 +1044,10 @@ public final class EpicFragment extends Fragment {
         String appName = featuredGame.optString("app_name", "");
         String title = featuredGame.optString("title", appName);
         boolean installed = installedApps.contains(appName);
+        android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        boolean downloading = !jobPrefs.getString(JOB_ID_KEY, "").isEmpty()
+                && appName.equals(jobPrefs.getString(ACTIVE_JOB_APP_KEY, ""));
         FrameLayout hero = new FrameLayout(requireContext());
         hero.setBackground(shape(0xff20283a, 0xff3a4560, 18));
         hero.setClipToOutline(true);
@@ -1072,9 +1076,11 @@ public final class EpicFragment extends Fragment {
         name.setMaxLines(2);
         name.setShadowLayer(dp(8), 0, dp(2), 0xaa000000);
         addMargin(content, name, 6);
-        addMargin(content, label(installed ? "INSTALLED  ·  READY TO PLAY" : "EPIC GAMES STORE", 10,
-                installed ? 0xffa9f2c9 : 0xffc6c9d6, true), 4);
-        Button explore = action(installed ? "VIEW GAME  →" : "EXPLORE GAME  →", true);
+        addMargin(content, label(downloading ? "DOWNLOAD OR INSTALL IN PROGRESS" :
+                (installed ? "INSTALLED  ·  READY TO PLAY" : "EPIC GAMES STORE"), 10,
+                downloading ? 0xffffd18a : (installed ? 0xffa9f2c9 : 0xffc6c9d6), true), 4);
+        Button explore = action(downloading ? "VIEW PROGRESS  →" :
+                (installed ? "VIEW GAME  →" : "EXPLORE GAME  →"), true);
         explore.setTextSize(11);
         explore.setMinHeight(dp(40));
         explore.setOnClickListener(v -> showGameDetails(featuredGame));
@@ -1093,6 +1099,10 @@ public final class EpicFragment extends Fragment {
         String appName = game.optString("app_name");
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
+        android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        boolean downloading = !jobPrefs.getString(JOB_ID_KEY, "").isEmpty()
+                && appName.equals(jobPrefs.getString(ACTIVE_JOB_APP_KEY, ""));
         boolean supported = game.optString("version", "").length() > 0
                 && game.optString("third_party_store", "").isEmpty();
 
@@ -1124,8 +1134,8 @@ public final class EpicFragment extends Fragment {
             initials.setGravity(Gravity.CENTER);
             artwork.addView(initials, new FrameLayout.LayoutParams(-1, -1));
         }
-        TextView tag = label(installed ? "INSTALLED" : "EPIC LIBRARY", 8,
-                installed ? 0xffb9f3d1 : 0xffd3d0ff, true);
+        TextView tag = label(downloading ? "DOWNLOADING" : (installed ? "INSTALLED" : "EPIC LIBRARY"), 8,
+                downloading ? 0xffffd18a : (installed ? 0xffb9f3d1 : 0xffd3d0ff), true);
         tag.setPadding(dp(6), dp(4), dp(6), dp(4));
         tag.setBackground(shape(0x8830394f, 0x8830394f, 5));
         FrameLayout.LayoutParams tagParams = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.LEFT);
@@ -1138,9 +1148,10 @@ public final class EpicFragment extends Fragment {
         name.setMinLines(2);
         name.setPadding(dp(1), dp(8), dp(1), dp(3));
         card.addView(name);
-        card.addView(label(installed ? "Ready to play" :
-                (supported ? "Ready to install" : "Not directly installable"), 10,
-                installed ? 0xff79d6a2 : 0xff929db1, false));
+        card.addView(label(downloading ? "Download or installation in progress" :
+                (installed ? "Ready to play" :
+                (supported ? "Ready to install" : "Not directly installable")), 10,
+                downloading ? 0xffffd18a : (installed ? 0xff79d6a2 : 0xff929db1), false));
         TextView open = label("VIEW DETAILS  →", 9, 0xffc7c3ff, true);
         open.setPadding(dp(1), dp(9), 0, 0);
         card.addView(open);
