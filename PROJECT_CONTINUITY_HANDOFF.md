@@ -2575,3 +2575,26 @@ User approved replacing the separate Library and Downloads destinations with a u
 - CI status document was automatically updated by the successful Epic workflow. Cloud saves remain read-only metadata; upload/download/sync is not enabled. Playtime remains unavailable.
 - Next device validation: install both APKs from this same release, sign in, then navigate away from and back to Epic during an active download and during an active installation. Confirm the screen stays responsive, progress reconnects, the job is not duplicated, and no crash occurs. Also inspect achievement cards for a title known to have achievements.
 - After device feedback, continue source audit of foreground-job state transitions and UI-thread work rather than changing the worker architecture without a reproduced defect.
+
+
+
+## 2026-11-24 — Epic Library storefront refinement built and published
+
+- Application source commit: `5f70c4b0da911fdd4587a7fe2bf38b99a7d4489a` (`ui: surface live Epic install state in featured and library cards`).
+- The implementation continues the visual rebuild toward the previously discussed polished Epic storefront: structured EPIC GAMES header and collection subtitle, featured hero artwork, horizontal filter chips, larger game cards, detail-page artwork/overlay, clearer library navigation, and active-job state surfaced in featured/library cards.
+- Search no longer causes the hero entrance animation to replay; the featured hero remains present while filtering/searching.
+- Featured and library cards now read persisted active-job state and show a download/installation-in-progress label rather than a generic state when that game has an active operation.
+- Standard APK workflow **45297673475** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45297673475
+- Epic runtime/ARM64 workflow **45297673513** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45297673513
+- Epic workflow verification includes managed x86_64 runtime tests, Android JNI instrumentation, CPython Android ARM64 runtime packaging, Legendary checks, ARM64 Gradle assembly, APK package/signature/ABI/assets/ELF dependency closure audits, and embedded companion comparison.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-5f70c4b0da91
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-5f70c4b0da91/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-5f70c4b0da91/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-5f70c4b0da91/SHA256SUMS
+- SHA-256:
+  - `e991cb49e85808c84016590565909cc475872fa7c867a3d7cfa08192ed33c901` — host APK
+  - `46c22b6ef447afb6db9b06bdca9d3e8ec08009d92b752925e1843d67494cbcbc` — companion APK
+- Host package: `com.maliwinlator.app`, versionCode 24. Companion: `com.maliwinlator.epicbridge`, versionCode 2. Both are debug-signed test builds.
+- The CI status file was automatically updated by the Epic workflow. CI success is not physical-device validation; no screenshot comparison or Xiaomi 15T test of this storefront commit has yet been performed.
+- Cloud-save integration remains read-only metadata; no save upload/download/sync is enabled. Playtime remains unavailable. Achievement UI displays only returned and normalized data.
+- Next: continue visual hierarchy/card/detail polish without replacing the working Epic download engine, then run both workflows. After a validated build is ready, request device testing of the storefront and the previously problematic navigation during active download and active installation.
