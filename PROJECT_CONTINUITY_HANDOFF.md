@@ -2789,11 +2789,21 @@ User approved replacing the separate Library and Downloads destinations with a u
 - These are CI-validated artifacts, not yet visually or functionally validated on the Xiaomi 15T.
 
 
-## 2026-11-24 — Dedicated Epic storefront header and account navigation (CI pending)
+## 2026-11-24 — Dedicated Epic storefront header and account navigation (CI passed; prerelease published)
 
 - Source commit: `4f618a315b88ef458968a7d25ad8a227881919e4`.
 - Removed the full-width Library/Account segmented navigation bar from the storefront root. Library is now the default dedicated launcher surface; Account & setup remains reachable from a compact Account action in the brand header.
 - Tightened root insets, increased the collection heading hierarchy, and reduced search/filter control height so the library's artwork and game shelves carry more of the visual weight.
 - Account/setup workflow and the existing `showSection("account")` path are retained. Game profile still hides the storefront header and its back action returns to Library.
-- Both required workflows were triggered for this exact SHA: standard APK **45464666917** (in progress at handoff) and Epic runtime/ARM64 **45464666941** (queued): https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45464666917 and https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45464666941.
-- Do not publish or describe this composition as build-validated until both runs pass. No physical-device visual validation yet.
+- Both required workflows passed for the exact source SHA `4f618a315b88ef458968a7d25ad8a227881919e4`:
+  - Standard APK: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45464666917
+  - Epic runtime/ARM64: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45464666941
+- Prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-4f618a315b88
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4f618a315b88/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4f618a315b88/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4f618a315b88/SHA256SUMS
+- GitHub release asset SHA-256:
+  - Host APK: `1c3ca3b5cb82237b6605f13cc65584f4eddc1dfffb95f0e23dfbcfe4f330ed2a`
+  - Companion APK: `87553aa70077fbb581157e939032ed43bcbae697252e191b65ac4d4877394a12`
+- Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Both are debug-signed experimental builds; installation over a build signed with a different debug certificate may require uninstalling that package first.
+- CI validation passed; this does not establish visual or functional validation on the Xiaomi 15T. The larger immersive storefront/profile redesign remains the next implementation task.
