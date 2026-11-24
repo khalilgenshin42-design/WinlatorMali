@@ -81,6 +81,8 @@ public final class EpicFragment extends Fragment {
     private LinearLayout gamesContainer;
     private LinearLayout featuredContainer;
     private LinearLayout pageContainer;
+    private ScrollView storefrontScroll;
+    private int storefrontScrollY;
     private LinearLayout navigationBar;
     private View brandHeader;
     private LinearLayout accountPanel;
@@ -128,6 +130,7 @@ public final class EpicFragment extends Fragment {
         installedPaths.putAll(libraryState.getInstalledPaths());
 
         ScrollView scroll = new ScrollView(requireContext());
+        storefrontScroll = scroll;
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(0xff0a0c12);
         LinearLayout root = new LinearLayout(requireContext());
@@ -376,6 +379,9 @@ public final class EpicFragment extends Fragment {
         } else {
             showingGameDetails = false;
             pageContainer.addView(libraryPanel);
+            if (storefrontScroll != null) {
+                storefrontScroll.post(() -> storefrontScroll.scrollTo(0, Math.max(0, storefrontScrollY)));
+            }
             if (!libraryLoaded) refreshLibrary();
         }
     }
@@ -1187,11 +1193,22 @@ public final class EpicFragment extends Fragment {
         addMargin(content, label(downloading ? "DOWNLOAD OR INSTALL IN PROGRESS" :
                 (installed ? "INSTALLED  ·  READY TO PLAY" : "EPIC GAMES STORE"), 10,
                 downloading ? 0xffffd18a : (installed ? 0xffa9f2c9 : 0xffc6c9d6), true), 4);
+        boolean supported = isGameInstallSupported(featuredGame);
         Button explore = action(downloading ? "VIEW PROGRESS  →" :
-                (installed ? "VIEW GAME  →" : "EXPLORE GAME  →"), true);
+                (installed ? "PLAY NOW  →" : (supported ? "INSTALL GAME  →" : "VIEW DETAILS  →")), true);
         explore.setTextSize(11);
         explore.setMinHeight(dp(40));
-        explore.setOnClickListener(v -> showGameDetails(featuredGame));
+        explore.setOnClickListener(v -> {
+            if (isActiveJobForGame(appName)) {
+                showGameDetails(featuredGame);
+            } else if (installed) {
+                launchGame(appName, title);
+            } else if (supported && storageReady) {
+                installGame(appName, title);
+            } else {
+                showGameDetails(featuredGame);
+            }
+        });
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-2, dp(42));
         buttonParams.topMargin = dp(12);
         content.addView(explore, buttonParams);
@@ -1333,6 +1350,29 @@ public final class EpicFragment extends Fragment {
                 && appName.equals(prefs.getString(ACTIVE_JOB_APP_KEY, ""));
     }
 
+    private void returnToLibraryFromProfile() {
+        if (pageContainer == null || !showingGameDetails) {
+            showSection("library");
+            return;
+        }
+        View current = pageContainer.getChildCount() > 0 ? pageContainer.getChildAt(0) : null;
+        if (current == null) {
+            showSection("library");
+            return;
+        }
+        current.animate().alpha(0f).translationY(dp(12)).setDuration(130)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> {
+                    showSection("library");
+                    if (storefrontScroll != null) {
+                        storefrontScroll.setAlpha(0f);
+                        storefrontScroll.setTranslationY(dp(8));
+                        storefrontScroll.animate().alpha(1f).translationY(0f).setDuration(210)
+                                .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+                    }
+                }).start();
+    }
+
     private void showGameDetails(JSONObject game) {
         if (game == null || pageContainer == null) return;
         selectedGame = game;
@@ -1347,6 +1387,7 @@ public final class EpicFragment extends Fragment {
         boolean supported = isGameInstallSupported(game);
         boolean gameJobForThisTitle = isActiveJobForGame(appName);
 
+        if (storefrontScroll != null) storefrontScrollY = storefrontScroll.getScrollY();
         if (brandHeader != null) brandHeader.setVisibility(View.GONE);
         if (navigationBar != null) navigationBar.setVisibility(View.GONE);
         pageContainer.removeAllViews();
@@ -1354,8 +1395,11 @@ public final class EpicFragment extends Fragment {
         detail.setOrientation(LinearLayout.VERTICAL);
         pageContainer.addView(detail);
         detail.setAlpha(0f);
-        detail.setTranslationY(dp(12));
-        detail.animate().alpha(1f).translationY(0f).setDuration(240).start();
+        detail.setTranslationY(dp(22));
+        detail.setScaleX(0.985f);
+        detail.setScaleY(0.985f);
+        detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
 
         FrameLayout artwork = new FrameLayout(requireContext());
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
@@ -1386,7 +1430,7 @@ public final class EpicFragment extends Fragment {
         back.setMinHeight(dp(38));
         back.setPadding(dp(12), 0, dp(12), 0);
         back.setBackground(shape(0xb8141b29, 0x665e6a84, 18));
-        back.setOnClickListener(v -> showSection("library"));
+        back.setOnClickListener(v -> returnToLibraryFromProfile());
         FrameLayout.LayoutParams backParams = new FrameLayout.LayoutParams(-2, dp(38),
                 Gravity.TOP | Gravity.LEFT);
         backParams.setMargins(dp(14), dp(14), 0, 0);
