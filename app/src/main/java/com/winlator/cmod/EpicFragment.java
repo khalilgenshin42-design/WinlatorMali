@@ -1509,27 +1509,40 @@ public final class EpicFragment extends Fragment {
         addMargin(achievementsCard, achievementsList, 10);
         addMargin(detail, achievementsCard, 12);
 
+        // Compact two-column account-stat row gives the profile a deliberate
+        // storefront hierarchy without inventing playtime or cloud-sync support.
+        LinearLayout accountInfoRow = new LinearLayout(requireContext());
+        accountInfoRow.setOrientation(LinearLayout.HORIZONTAL);
+        accountInfoRow.setGravity(Gravity.TOP);
+        accountInfoRow.setBaselineAligned(false);
+
         LinearLayout playtimeCard = new LinearLayout(requireContext());
         playtimeCard.setOrientation(LinearLayout.VERTICAL);
-        playtimeCard.setPadding(dp(14), dp(13), dp(14), dp(13));
-        playtimeCard.setBackground(shape(0xff171d29, 0xff293247, 13));
-        playtimeCard.addView(label("PLAYTIME", 10, 0xffaaa6ff, true));
-        addMargin(playtimeCard, label("Time played", 14, 0xfff5f6fa, true), 6);
-        addMargin(playtimeCard, label("Playtime is not currently provided by the Epic library response.", 11,
+        playtimeCard.setPadding(dp(13), dp(14), dp(13), dp(14));
+        playtimeCard.setBackground(shape(0xff171d29, 0xff293247, 14));
+        playtimeCard.addView(label("PLAYTIME", 9, 0xffaaa6ff, true));
+        addMargin(playtimeCard, label("Not available", 15, 0xfff5f6fa, true), 8);
+        addMargin(playtimeCard, label("Epic does not return playtime for this title.", 10,
                 0xff929db1, false), 4);
-        addMargin(detail, playtimeCard, 9);
 
         LinearLayout cloudSavesCard = new LinearLayout(requireContext());
         cloudSavesCard.setOrientation(LinearLayout.VERTICAL);
-        cloudSavesCard.setPadding(dp(14), dp(13), dp(14), dp(13));
-        cloudSavesCard.setBackground(shape(0xff171d29, 0xff293247, 13));
-        cloudSavesCard.addView(label("CLOUD SAVES", 10, 0xffaaa6ff, true));
-        addMargin(cloudSavesCard, label("Windows save support", 14, 0xfff5f6fa, true), 6);
-        TextView cloudSavesValue = label("Checking Windows cloud-save support...", 11, 0xff929db1, false);
+        cloudSavesCard.setPadding(dp(13), dp(14), dp(13), dp(14));
+        cloudSavesCard.setBackground(shape(0xff171d29, 0xff293247, 14));
+        cloudSavesCard.addView(label("CLOUD SAVES", 9, 0xffaaa6ff, true));
+        addMargin(cloudSavesCard, label("Support status", 15, 0xfff5f6fa, true), 8);
+        TextView cloudSavesValue = label("Checking title metadata...", 10, 0xff929db1, false);
         addMargin(cloudSavesCard, cloudSavesValue, 4);
-        addMargin(cloudSavesCard, label("Status only — save synchronization is not enabled.", 10,
-                0xff929db1, false), 8);
-        addMargin(detail, cloudSavesCard, 9);
+        addMargin(cloudSavesCard, label("No save transfer is performed.", 9,
+                0xff929db1, false), 7);
+
+        LinearLayout.LayoutParams statParams = new LinearLayout.LayoutParams(0, -1, 1f);
+        statParams.rightMargin = dp(5);
+        accountInfoRow.addView(playtimeCard, statParams);
+        LinearLayout.LayoutParams cloudParams = new LinearLayout.LayoutParams(0, -1, 1f);
+        cloudParams.leftMargin = dp(5);
+        accountInfoRow.addView(cloudSavesCard, cloudParams);
+        addMargin(detail, accountInfoRow, 9);
 
         if (installed) {
             Button manage = action("Update / Uninstall", false);
