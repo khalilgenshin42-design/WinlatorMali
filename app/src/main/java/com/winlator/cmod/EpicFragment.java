@@ -132,7 +132,7 @@ public final class EpicFragment extends Fragment {
         scroll.setBackgroundColor(0xff0a0c12);
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(16), dp(14), dp(16), dp(36));
+        root.setPadding(dp(14), dp(12), dp(14), dp(36));
         scroll.addView(root);
 
         LinearLayout brand = new LinearLayout(requireContext());
@@ -152,6 +152,15 @@ public final class EpicFragment extends Fragment {
         edition.setPadding(dp(10), dp(6), dp(10), dp(6));
         edition.setBackground(shape(0xff20283a, 0xff20283a, 30));
         brand.addView(edition);
+        Button accountShortcut = action("ACCOUNT  ↗", false);
+        accountShortcut.setTextSize(9);
+        accountShortcut.setMinHeight(dp(36));
+        accountShortcut.setPadding(dp(9), 0, dp(9), 0);
+        accountShortcut.setOnClickListener(v -> showSection("account"));
+        LinearLayout.LayoutParams accountShortcutParams =
+                new LinearLayout.LayoutParams(-2, dp(36));
+        accountShortcutParams.leftMargin = dp(8);
+        brand.addView(accountShortcut, accountShortcutParams);
         root.addView(brand);
 
         // Runtime diagnostics belong to Account, not the player-facing storefront.
@@ -159,21 +168,9 @@ public final class EpicFragment extends Fragment {
         statusText.setPadding(dp(13), dp(12), dp(13), dp(12));
         statusText.setBackground(shape(0xff171d29, 0xff293247, 12));
 
-        LinearLayout nav = new LinearLayout(requireContext());
-        navigationBar = nav;
-        nav.setPadding(dp(3), dp(3), dp(3), dp(3));
-        nav.setBackground(shape(0xff151a25, 0xff293247, 14));
-        String[][] tabs = {{"library","Library"},{"account","Account"}};
-        for (String[] tab : tabs) {
-            Button b = action(tab[1], false);
-            b.setTextSize(11);
-            b.setMinHeight(dp(40));
-            b.setPadding(dp(2), 0, dp(2), 0);
-            b.setTag(tab[0]);
-            b.setOnClickListener(v -> showSection(tab[0]));
-            nav.addView(b, new LinearLayout.LayoutParams(0, dp(42), 1));
-        }
-        addMargin(root, nav, 14);
+        // Keep Account reachable from the compact header action. The storefront
+        // itself now owns the full page rather than sharing space with a settings tab.
+        navigationBar = null;
 
         pageContainer = new LinearLayout(requireContext());
         pageContainer.setOrientation(LinearLayout.VERTICAL);
@@ -220,8 +217,8 @@ public final class EpicFragment extends Fragment {
         libraryPanel = new LinearLayout(requireContext());
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
         libraryPanel.setPadding(0, dp(3), 0, 0);
-        libraryPanel.addView(label("PLAYER LIBRARY  /  EPIC", 9, 0xffaaa6ff, true));
-        TextView libraryIntro = label("Your games.", 29, 0xfff5f6fa, true);
+        libraryPanel.addView(label("YOUR COLLECTION  /  EPIC GAMES", 9, 0xffaaa6ff, true));
+        TextView libraryIntro = label("Your games.", 31, 0xfff5f6fa, true);
         libraryIntro.setPadding(0, dp(4), 0, dp(2));
         libraryPanel.addView(libraryIntro);
         TextView librarySubtitle = label("Pick up where you left off, or find your next game.", 12, 0xff929db1, false);
@@ -237,7 +234,7 @@ public final class EpicFragment extends Fragment {
         searchField.setHintTextColor(0xff77839a);
         searchField.setPadding(dp(13), 0, dp(13), 0);
         searchField.setBackground(shape(0xff171d29, 0xff303b50, 11));
-        libraryPanel.addView(searchField, fullParams());
+        libraryPanel.addView(searchField, new LinearLayout.LayoutParams(-1, dp(42)));
 
         HorizontalScrollView filterScroll = new HorizontalScrollView(requireContext());
         filterScroll.setHorizontalScrollBarEnabled(false);
@@ -248,7 +245,7 @@ public final class EpicFragment extends Fragment {
         for (String filterName : filterNames) {
             Button filterButton = action(filterName, filterName.equals(libraryFilter));
             filterButton.setTextSize(11);
-            filterButton.setMinHeight(dp(40));
+            filterButton.setMinHeight(dp(34));
             filterButton.setPadding(dp(13), 0, dp(13), 0);
             filterButton.setOnClickListener(v -> {
                 libraryFilter = filterName;
@@ -263,7 +260,7 @@ public final class EpicFragment extends Fragment {
                 renderGameCards(searchField.getText().toString());
             });
             filterButton.setTag(filterName);
-            LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-2, dp(40));
+            LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-2, dp(36));
             filterParams.rightMargin = dp(8);
             filters.addView(filterButton, filterParams);
         }
