@@ -2787,3 +2787,13 @@ User approved replacing the separate Library and Downloads destinations with a u
   - Companion APK: `84629b7314550ea65fdabfb6bb8ac0643b471938ab4010a6048b5b1e02496abc`
 - Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Both debug-signed experimental builds; installation over a build signed with a different debug certificate may require uninstalling that package first.
 - These are CI-validated artifacts, not yet visually or functionally validated on the Xiaomi 15T.
+
+
+## 2026-11-24 — Dedicated Epic storefront header and account navigation (CI pending)
+
+- Source commit: `4f618a315b88ef458968a7d25ad8a227881919e4`.
+- Removed the full-width Library/Account segmented navigation bar from the storefront root. Library is now the default dedicated launcher surface; Account & setup remains reachable from a compact Account action in the brand header.
+- Tightened root insets, increased the collection heading hierarchy, and reduced search/filter control height so the library's artwork and game shelves carry more of the visual weight.
+- Account/setup workflow and the existing `showSection("account")` path are retained. Game profile still hides the storefront header and its back action returns to Library.
+- Both required workflows were triggered for this exact SHA: standard APK **45464666917** (in progress at handoff) and Epic runtime/ARM64 **45464666941** (queued): https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45464666917 and https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45464666941.
+- Do not publish or describe this composition as build-validated until both runs pass. No physical-device visual validation yet.
