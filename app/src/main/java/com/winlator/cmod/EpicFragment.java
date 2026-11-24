@@ -220,16 +220,19 @@ public final class EpicFragment extends Fragment {
         libraryPanel = new LinearLayout(requireContext());
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
         libraryPanel.setPadding(0, dp(3), 0, 0);
-        libraryPanel.addView(label("YOUR COLLECTION  /  EPIC GAMES", 9, 0xffaaa6ff, true));
-        TextView libraryIntro = label("Your games.", 31, 0xfff5f6fa, true);
-        libraryIntro.setPadding(0, dp(4), 0, dp(2));
-        libraryPanel.addView(libraryIntro);
-        TextView librarySubtitle = label("Pick up where you left off, or find your next game.", 12, 0xff929db1, false);
-        librarySubtitle.setPadding(0, 0, 0, dp(15));
-        libraryPanel.addView(librarySubtitle);
+        // Lead with the selected game's cinematic artwork. Collection controls
+        // follow the hero so the home screen reads like a game launcher, not a
+        // settings page with a featured tile appended beneath a large heading.
         featuredContainer = new LinearLayout(requireContext());
         featuredContainer.setOrientation(LinearLayout.VERTICAL);
-        addMargin(libraryPanel, featuredContainer, 2);
+        addMargin(libraryPanel, featuredContainer, 8);
+        libraryPanel.addView(label("YOUR COLLECTION  /  EPIC GAMES", 9, 0xffaaa6ff, true));
+        TextView libraryIntro = label("Your games.", 27, 0xfff5f6fa, true);
+        libraryIntro.setPadding(0, dp(3), 0, dp(1));
+        libraryPanel.addView(libraryIntro);
+        TextView librarySubtitle = label("Pick up where you left off, or find your next game.", 11, 0xff929db1, false);
+        librarySubtitle.setPadding(0, 0, 0, dp(12));
+        libraryPanel.addView(librarySubtitle);
         searchField = new EditText(requireContext());
         searchField.setSingleLine(true);
         searchField.setHint("Search your games");
@@ -1212,7 +1215,9 @@ public final class EpicFragment extends Fragment {
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-2, dp(42));
         buttonParams.topMargin = dp(12);
         content.addView(explore, buttonParams);
-        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(310));
+        // Give the featured title enough vertical room to feel like the
+        // storefront's primary destination on a phone-sized display.
+        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(356));
         heroParams.bottomMargin = dp(8);
         featuredContainer.addView(hero, heroParams);
         hero.setAlpha(0f);
