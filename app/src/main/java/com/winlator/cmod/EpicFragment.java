@@ -82,6 +82,7 @@ public final class EpicFragment extends Fragment {
     private LinearLayout featuredContainer;
     private LinearLayout pageContainer;
     private LinearLayout navigationBar;
+    private View brandHeader;
     private LinearLayout accountPanel;
     private LinearLayout libraryPanel;
     private EditText searchField;
@@ -135,6 +136,7 @@ public final class EpicFragment extends Fragment {
         scroll.addView(root);
 
         LinearLayout brand = new LinearLayout(requireContext());
+        brandHeader = brand;
         brand.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout brandCopy = new LinearLayout(requireContext());
         brandCopy.setOrientation(LinearLayout.VERTICAL);
@@ -355,6 +357,8 @@ public final class EpicFragment extends Fragment {
 
     private void showSection(String section) {
         activeSection = section;
+        if (brandHeader != null) brandHeader.setVisibility(View.VISIBLE);
+        if (navigationBar != null) navigationBar.setVisibility(View.VISIBLE);
         if (navigationBar != null) {
             for (int i = 0; i < navigationBar.getChildCount(); i++) {
                 View child = navigationBar.getChildAt(i);
@@ -1311,6 +1315,8 @@ public final class EpicFragment extends Fragment {
         boolean supported = isGameInstallSupported(game);
         boolean gameJobForThisTitle = isActiveJobForGame(appName);
 
+        if (brandHeader != null) brandHeader.setVisibility(View.GONE);
+        if (navigationBar != null) navigationBar.setVisibility(View.GONE);
         pageContainer.removeAllViews();
         LinearLayout detail = new LinearLayout(requireContext());
         detail.setOrientation(LinearLayout.VERTICAL);
