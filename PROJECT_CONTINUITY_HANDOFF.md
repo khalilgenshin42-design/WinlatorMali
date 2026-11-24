@@ -2710,3 +2710,15 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2.
 - Automated workflow checks passed; this is not physical Xiaomi 15T validation. No visual claims beyond source changes should be made until device review.
 - This is an intermediate structural milestone, not a recreation of the lost demo. Next work should continue replacing the generic profile/library composition with a more intentional, artwork-led launcher experience while retaining real job state and worker integration. Avoid cosmetic-only commits.
+
+
+## 2026-11-24 — Epic storefront shelves and catalog artwork pipeline (in progress)
+
+- Shelf implementation source commit: `262c15c6df1292be5fa25ca381aa0d4911c1339b`. The All games view now groups real titles into Recently opened, Installed on this device, Active downloads & installs, Ready to install, and remaining Epic collection shelves. Existing filter/search behavior and actual install worker state are retained. A filter-name mismatch was corrected before this commit.
+- Epic catalog artwork source commit: `b070391750062269f69299e3c56d8cbdeda36fea`. The companion now extracts separate portrait and landscape image URLs from Epic `keyImages` metadata, preferring known portrait box-art and wide offer-art types. Only bounded HTTPS URLs are returned; host-side trusted Epic/Unreal hostname validation remains the final display gate.
+- Hero/profile image integration source commit: `11ca680a01df6ff8248e2ac3b91b31ee0c8bba68`. Featured hero and profile use `hero_url` with the existing cover as fallback. A follow-up correction at source commit `f545189719eae98715d75bea55392d4725026a4c` restores portrait `cover_url` for compact cards and reserves `hero_url` for profile surfaces.
+- Standard APK workflow **45402633259** passed for source commit `11ca680a01df6ff8248e2ac3b91b31ee0c8bba68`: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45402633259
+- Epic runtime/ARM64 workflow **45402633156** is still running for source commit `11ca680a01df6ff8248e2ac3b91b31ee0c8bba68`: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45402633156
+- Important build caveat: the current running workflows checked out `11ca680`, not the later card/profile URL correction `f545189`. The final correction still needs a fresh standard + Epic workflow validation before any APK from it is described as tested or published.
+- No new release link is published for these changes yet. Do not ask for physical device review until a build containing the final source commit is published.
+- Next: finish the active Epic workflow, add regression coverage for artwork selection, trigger both workflows against the final branch head, verify the published release/checksums, then append the completed milestone here. This remains an intermediate storefront milestone, not a claim of recreating the lost interactive demo.
