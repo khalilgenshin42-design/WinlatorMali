@@ -2923,3 +2923,15 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Existing actual job state, install support checks, worker, persisted job identity, and progress polling are unchanged. This is a presentation/layout improvement, not new download functionality.
 - Standard APK workflow **45508732700** and Epic runtime/ARM64 workflow **45508732689** are queued/running for the exact new source SHA. Do not publish until both pass. No Xiaomi 15T validation has occurred.
 - The dedicated storefront/profile composition redesign remains ongoing; these incremental improvements do not claim parity with the unavailable original demo.
+
+
+## 2026-11-25 — Live library overview beneath featured artwork (CI running)
+
+- Source commit: `24da555340fb28920733dfea7548540ede3135c4`.
+- Added a compact three-metric overview directly beneath the featured hero: total non-DLC games in the Epic catalog, locally installed games, and catalog entries currently eligible for installation.
+- All values are derived from the current Epic catalog and local installed-state data; no sample values, invented download progress, or provider-side claims are used. The overview is shown on the unfiltered Library home and is rebuilt alongside the featured hero.
+- The existing install/download worker, persisted job state, artwork URL validation, profile route, and account flow are unchanged.
+- Standard APK workflow **45513947492** is running: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45513947492
+- Epic runtime/ARM64 workflow **45513947490** is queued: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45513947490
+- Do not describe this source revision as validated or publish it until both workflows pass on this exact SHA. No Xiaomi 15T device validation has occurred.
+- This is a hierarchy/data-presentation step, not the completed premium storefront redesign or a claim of reproducing the lost demo.
