@@ -1047,7 +1047,10 @@ public final class EpicFragment extends Fragment {
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
         animateGameCardEntrance = !hasRenderedGameCards && needle.isEmpty()
                 && "All games".equals(libraryFilter);
-        if (needle.isEmpty() && "All games".equals(libraryFilter)) renderFeaturedHero();
+        if (needle.isEmpty() && "All games".equals(libraryFilter)) {
+            renderFeaturedHero();
+            renderLibraryStats();
+        }
 
         int count = 0;
         if ("Downloading".equals(libraryFilter)) {
@@ -1270,6 +1273,50 @@ public final class EpicFragment extends Fragment {
             hero.setAlpha(1f);
             hero.setTranslationY(0f);
         }
+    }
+
+    /** A compact, data-backed snapshot gives the collection a clear second
+     * level of hierarchy beneath the featured artwork. Counts come only from
+     * the current Epic catalog and local install/job state. */
+    private void renderLibraryStats() {
+        if (featuredContainer == null || !isAdded()) return;
+        int total = 0;
+        int installed = 0;
+        int ready = 0;
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject game = cachedGames.optJSONObject(i);
+            if (game == null || game.optBoolean("is_dlc", false)) continue;
+            String appName = game.optString("app_name", "");
+            total++;
+            if (installedApps.contains(appName)) installed++;
+            else if (isGameInstallSupported(game)) ready++;
+        }
+        LinearLayout stats = new LinearLayout(requireContext());
+        stats.setOrientation(LinearLayout.HORIZONTAL);
+        stats.setGravity(Gravity.CENTER_VERTICAL);
+        String[] values = {String.valueOf(total), String.valueOf(installed), String.valueOf(ready)};
+        String[] captions = {"IN YOUR LIBRARY", "INSTALLED", "READY TO INSTALL"};
+        int[] accents = {0xffc9c5ff, 0xffa9f2c9, 0xffffd18a};
+        for (int i = 0; i < values.length; i++) {
+            LinearLayout tile = new LinearLayout(requireContext());
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setPadding(dp(12), dp(10), dp(8), dp(10));
+            tile.setBackground(shape(0xff151b28, 0xff303b50, 13));
+            TextView value = label(values[i], 21, accents[i], true);
+            tile.addView(value);
+            TextView caption = label(captions[i], 8, 0xff9ca8bf, true);
+            caption.setLetterSpacing(0.035f);
+            LinearLayout.LayoutParams captionParams = new LinearLayout.LayoutParams(-1, -2);
+            captionParams.topMargin = dp(3);
+            tile.addView(caption, captionParams);
+            LinearLayout.LayoutParams tileParams = new LinearLayout.LayoutParams(0, -2, 1f);
+            if (i > 0) tileParams.leftMargin = dp(7);
+            stats.addView(tile, tileParams);
+        }
+        LinearLayout.LayoutParams statsParams = new LinearLayout.LayoutParams(-1, -2);
+        statsParams.topMargin = dp(3);
+        statsParams.bottomMargin = dp(7);
+        featuredContainer.addView(stats, statsParams);
     }
 
     private View createGameCard(JSONObject game) {
