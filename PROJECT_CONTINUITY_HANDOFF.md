@@ -2618,3 +2618,25 @@ User approved replacing the separate Library and Downloads destinations with a u
 - CI success does not establish physical Xiaomi 15T validation. This build still needs device testing of the storefront, game details, achievements, and navigation during active downloads and installations.
 - Cloud saves remain read-only support metadata; no upload/download/sync is enabled. Playtime remains unavailable.
 - Next UI task: split the current single GAME INFORMATION panel into visually distinct achievements, playtime and cloud-save sections. Keep achievements sourced only from Epic; do not invent playtime or claim cloud-save synchronization.
+
+
+## 2026-11-24 — Epic game profile information cards validated and published
+
+- Application source commit: `4bf04b6402dc0e3392758697519016fa2809576f` (`ui: separate Epic game profile information cards`).
+- Replaced the dense GAME INFORMATION panel in `EpicFragment.showGameDetails(...)` with three distinct sections: ACHIEVEMENTS, PLAYTIME and CLOUD SAVES.
+- Achievement content remains driven by the real Epic metadata response, including normalized achievement entries, progress, locked/hidden/unlocked state, rewards and dates (existing display cap retained). No synthetic achievements were added.
+- Playtime explicitly states that the Epic library response does not currently provide it. Cloud saves display Windows save-support metadata only and explicitly state that save synchronization is not enabled. No cloud-save transfer behavior or download/install worker changes were introduced.
+- Standard APK workflow **45302814407** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45302814407
+- Epic runtime/ARM64 workflow **45302814428** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45302814428
+- Epic workflow completed all 53 steps successfully, including Legendary 0.21.1/library aggregation regression checks, managed x86_64 Android runtime smoke, Epic Bridge x86_64 Android instrumentation, production Android ARM64 CPython runtime build/audit, ARM64 host/companion APK assembly, embedded companion comparison, package/signature/ABI/assets/ELF dependency-closure audits and release publication.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-4bf04b6402dc
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4bf04b6402dc/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4bf04b6402dc/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-4bf04b6402dc/SHA256SUMS
+- APK SHA-256:
+  - `5578c566ae6c4751162a07a620b8a94074f5c404a8f46f9e8e04924618df7d01` — host APK
+  - `402054d449f9d2428548e02cd815065b9938e048b05da067099c16bd694c0755` — companion APK
+- Host package: `com.maliwinlator.app`, versionCode 24. Companion: `com.maliwinlator.epicbridge`, versionCode 2. Both are debug-signed test builds.
+- CI status file was automatically updated by the successful Epic workflow. CI/managed-emulator verification does not establish physical Xiaomi 15T validation. The new profile sections and storefront still require device review; also recheck navigation away/back during active downloads and active installations.
+- Cloud saves remain read-only support metadata; no upload/download/sync is enabled. Playtime remains unavailable. Achievements display only returned Epic data.
+- Next: continue the storefront/profile UI audit against the desired polished Epic launcher experience, keeping persisted job state and the existing download/install engine intact. Only add controls when their backend actions are genuinely implemented. After the next published build, request a focused device validation pass.
