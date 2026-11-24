@@ -1091,7 +1091,7 @@ public final class EpicFragment extends Fragment {
             if ("downloading".equals(mode) && !downloading) continue;
             if ("all".equals(mode) && (installed || downloading || supported)) continue;
             View card = createGameCard(game);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(224), -2);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(158), -2);
             params.rightMargin = dp(12);
             row.addView(card, params);
             count++;
@@ -1232,8 +1232,10 @@ public final class EpicFragment extends Fragment {
                 new int[]{artColor(appName, 0), artColor(appName, 1), 0xff0b101b});
         cover.setBackground(fallback);
         artwork.addView(cover, new FrameLayout.LayoutParams(-1, -1));
-        String coverUrl = game.optString("hero_url",
-                game.optString("cover_url", ""));
+        // Compact library tiles use Epic's portrait box art. Keep wide offer
+        // artwork for the featured hero and the immersive game profile.
+        String coverUrl = game.optString("cover_url", "");
+        if (coverUrl.isEmpty()) coverUrl = game.optString("hero_url", "");
         if (isTrustedEpicArtworkUrl(coverUrl)) {
             Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .placeholder(fallback).error(fallback).centerCrop().into(cover);
@@ -1269,7 +1271,9 @@ public final class EpicFragment extends Fragment {
                 Gravity.BOTTOM | Gravity.RIGHT);
         openParams.setMargins(0, 0, dp(8), dp(8));
         artwork.addView(open, openParams);
-        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(152)));
+        // Epic box art is portrait-oriented (roughly 2:3); avoid cropping it
+        // into the old landscape tile shape.
+        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(206)));
 
         TextView name = label(title, 13, 0xfff5f6fa, true);
         name.setMaxLines(2);
@@ -1364,7 +1368,10 @@ public final class EpicFragment extends Fragment {
         cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
         cover.setBackground(art);
         artwork.addView(cover, new FrameLayout.LayoutParams(-1, -1));
-        String coverUrl = game.optString("cover_url", "");
+        // Profiles prioritize the wide cinematic offer image; portrait box art
+        // remains a fallback for catalog entries that do not publish a hero image.
+        String coverUrl = game.optString("hero_url", "");
+        if (coverUrl.isEmpty()) coverUrl = game.optString("cover_url", "");
         if (isTrustedEpicArtworkUrl(coverUrl)) {
             Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .placeholder(art).error(art).centerCrop().into(cover);
