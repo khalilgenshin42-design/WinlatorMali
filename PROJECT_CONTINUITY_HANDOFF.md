@@ -2899,3 +2899,14 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Epic runtime/ARM64 workflow for final commit **45502418476** is pending: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45502418476
 - Earlier achievement artwork/completion commit `1eb94b4f926d3fb39902a205f2f30626c304c0ca` passed both workflows **45495719392** and **45495719482**. Its standard APK artifact is available from the workflow run page; the Epic runtime run also uploaded its ARM64 artifact.
 - Do not publish the newer interaction commit until both workflows for the exact final SHA pass. No physical Xiaomi 15T validation has occurred.
+
+
+## 2026-11-25 — Profile entry scroll correction (CI pending)
+
+- Source commit: `2e56f2f004b12f335a3294fb4256fc68b005b58b`.
+- Fixed a navigation defect in the shared storefront scroll container: opening a game profile now resets the outer scroll position to the top after the profile view is attached. Without this, opening a profile from a deeply scrolled shelf could leave the cinematic artwork/title clipped above the viewport.
+- Returning to the Library continues to restore the previously saved Library scroll offset through the existing `returnToLibraryFromProfile()` path.
+- This change does not alter Epic Bridge calls, Legendary behavior, persisted job identity, foreground install/download execution, or live progress polling.
+- The prior achievement interaction source SHA `9df83c7fed3981373cab3e661c6d249450bf77e9` passed both standard APK workflow **45502418513** and Epic runtime/ARM64 workflow **45502418476**.
+- CI for `2e56f2f` has not yet been confirmed. Do not publish until both required workflows pass for this exact SHA. No Xiaomi 15T device validation has occurred.
+- Next visual milestone remains the substantial storefront/profile composition redesign described in `docs/EPIC_STOREFRONT_FULL_REDESIGN.md`; this scroll fix is a correctness improvement, not a claim that the lost interactive demo has been reproduced.
