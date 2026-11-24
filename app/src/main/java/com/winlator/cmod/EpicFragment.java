@@ -21,6 +21,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -78,6 +79,7 @@ public final class EpicFragment extends Fragment {
     private Button storageButton;
     private Spinner containerSpinner;
     private LinearLayout gamesContainer;
+    private LinearLayout featuredContainer;
     private LinearLayout pageContainer;
     private LinearLayout navigationBar;
     private LinearLayout accountPanel;
@@ -206,7 +208,10 @@ public final class EpicFragment extends Fragment {
 
         libraryPanel = new LinearLayout(requireContext());
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
-        addHeading(libraryPanel, "Your library", "Your Windows-compatible Epic titles.");
+        addHeading(libraryPanel, "Your Library", "Your games, ready when you are.");
+        featuredContainer = new LinearLayout(requireContext());
+        featuredContainer.setOrientation(LinearLayout.VERTICAL);
+        addMargin(libraryPanel, featuredContainer, 2);
         searchField = new EditText(requireContext());
         searchField.setSingleLine(true);
         searchField.setHint("Search your games");
@@ -216,14 +221,17 @@ public final class EpicFragment extends Fragment {
         searchField.setBackground(shape(0xff171d29, 0xff303b50, 11));
         libraryPanel.addView(searchField, fullParams());
 
+        HorizontalScrollView filterScroll = new HorizontalScrollView(requireContext());
+        filterScroll.setHorizontalScrollBarEnabled(false);
+        filterScroll.setClipToPadding(false);
         LinearLayout filters = new LinearLayout(requireContext());
         filters.setOrientation(LinearLayout.HORIZONTAL);
         String[] filterNames = {"All games", "Installed", "Ready to install", "Downloading"};
         for (String filterName : filterNames) {
             Button filterButton = action(filterName, filterName.equals(libraryFilter));
-            filterButton.setTextSize(9);
-            filterButton.setMinHeight(dp(36));
-            filterButton.setPadding(dp(6), 0, dp(6), 0);
+            filterButton.setTextSize(11);
+            filterButton.setMinHeight(dp(40));
+            filterButton.setPadding(dp(13), 0, dp(13), 0);
             filterButton.setOnClickListener(v -> {
                 libraryFilter = filterName;
                 for (int i = 0; i < filters.getChildCount(); i++) {
@@ -237,9 +245,12 @@ public final class EpicFragment extends Fragment {
                 renderGameCards(searchField.getText().toString());
             });
             filterButton.setTag(filterName);
-            filters.addView(filterButton, new LinearLayout.LayoutParams(0, dp(38), 1));
+            LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-2, dp(40));
+            filterParams.rightMargin = dp(8);
+            filters.addView(filterButton, filterParams);
         }
-        addMargin(libraryPanel, filters, 9);
+        filterScroll.addView(filters);
+        addMargin(libraryPanel, filterScroll, 12);
 
         LinearLayout tools = new LinearLayout(requireContext());
         tools.setGravity(Gravity.CENTER_VERTICAL);
@@ -963,6 +974,7 @@ public final class EpicFragment extends Fragment {
     private void renderGameCards(String query) {
         if (gamesContainer == null) return;
         gamesContainer.removeAllViews();
+        renderFeaturedHero();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
         LinearLayout row = null;
         int inRow = 2;
@@ -1001,6 +1013,73 @@ public final class EpicFragment extends Fragment {
         libraryCountText.setText(count + (count == 1 ? " game" : " games"));
     }
 
+    private void renderFeaturedHero() {
+        if (featuredContainer == null || !isAdded()) return;
+        featuredContainer.removeAllViews();
+        JSONObject featured = null;
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject candidate = cachedGames.optJSONObject(i);
+            if (candidate != null && !candidate.optBoolean("is_dlc", false)) { featured = candidate; break; }
+        }
+        if (featured == null) {
+            LinearLayout empty = new LinearLayout(requireContext());
+            empty.setOrientation(LinearLayout.VERTICAL);
+            empty.setPadding(dp(18), dp(18), dp(18), dp(18));
+            empty.setBackground(shape(0xff171d29, 0xff303b50, 18));
+            empty.addView(label("YOUR NEXT ADVENTURE", 10, 0xffaaa6ff, true));
+            addMargin(empty, label(libraryLoaded ? "Your library is waiting." : "Discover your Epic library.", 20, 0xfff5f6fa, true), 8);
+            addMargin(empty, label(libraryLoaded ? "No games are available to feature yet." : "Sign in and refresh to bring your games here.", 12, 0xffaeb8c9, false), 5);
+            featuredContainer.addView(empty);
+            return;
+        }
+        String appName = featured.optString("app_name", "");
+        String title = featured.optString("title", appName);
+        boolean installed = installedApps.contains(appName);
+        FrameLayout hero = new FrameLayout(requireContext());
+        hero.setBackground(shape(0xff20283a, 0xff3a4560, 18));
+        hero.setClipToOutline(true);
+        ImageView image = new ImageView(requireContext());
+        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        GradientDrawable fallback = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{artColor(appName, 0), artColor(appName, 1), 0xff090d16});
+        image.setBackground(fallback);
+        hero.addView(image, new FrameLayout.LayoutParams(-1, -1));
+        String coverUrl = featured.optString("cover_url", "");
+        if (isTrustedEpicArtworkUrl(coverUrl)) {
+            Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(fallback).error(fallback).centerCrop().into(image);
+        }
+        View shade = new View(requireContext());
+        shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x00070a12, 0x66070a12, 0xf2070a12}));
+        hero.addView(shade, new FrameLayout.LayoutParams(-1, -1));
+        LinearLayout content = new LinearLayout(requireContext());
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.BOTTOM);
+        content.setPadding(dp(18), dp(16), dp(18), dp(16));
+        hero.addView(content, new FrameLayout.LayoutParams(-1, -1));
+        content.addView(label("FEATURED IN YOUR LIBRARY", 9, 0xffd8d4ff, true));
+        TextView name = label(title, 25, 0xffffffff, true);
+        name.setMaxLines(2);
+        name.setShadowLayer(dp(8), 0, dp(2), 0xaa000000);
+        addMargin(content, name, 6);
+        addMargin(content, label(installed ? "INSTALLED  ·  READY TO PLAY" : "EPIC GAMES STORE", 10,
+                installed ? 0xffa9f2c9 : 0xffc6c9d6, true), 4);
+        Button explore = action(installed ? "VIEW GAME  →" : "EXPLORE GAME  →", true);
+        explore.setTextSize(11);
+        explore.setMinHeight(dp(40));
+        explore.setOnClickListener(v -> showGameDetails(featured));
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-2, dp(42));
+        buttonParams.topMargin = dp(12);
+        content.addView(explore, buttonParams);
+        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(224));
+        heroParams.bottomMargin = dp(8);
+        featuredContainer.addView(hero, heroParams);
+        hero.setAlpha(0f);
+        hero.setTranslationY(dp(10));
+        hero.animate().alpha(1f).translationY(0f).setDuration(280).start();
+    }
+
     private View createGameCard(JSONObject game) {
         String appName = game.optString("app_name");
         String title = game.optString("title", appName);
@@ -1011,7 +1090,8 @@ public final class EpicFragment extends Fragment {
         LinearLayout card = new LinearLayout(requireContext());
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(9), dp(9), dp(9), dp(10));
-        card.setBackground(shape(0xff171d29, 0xff293247, 14));
+        card.setBackground(shape(0xff171d29, 0xff303b50, 16));
+        card.setElevation(dp(2));
 
         FrameLayout artwork = new FrameLayout(requireContext());
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
@@ -1042,7 +1122,7 @@ public final class EpicFragment extends Fragment {
         FrameLayout.LayoutParams tagParams = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.LEFT);
         tagParams.setMargins(dp(6), 0, 0, dp(6));
         artwork.addView(tag, tagParams);
-        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(102)));
+        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(132)));
 
         TextView name = label(title, 12, 0xfff5f6fa, true);
         name.setMaxLines(2);
@@ -1052,8 +1132,15 @@ public final class EpicFragment extends Fragment {
         card.addView(label(installed ? "Ready to play" :
                 (supported ? "Ready to install" : "Not directly installable"), 10,
                 installed ? 0xff79d6a2 : 0xff929db1, false));
+        TextView open = label("VIEW DETAILS  →", 9, 0xffc7c3ff, true);
+        open.setPadding(dp(1), dp(9), 0, 0);
+        card.addView(open);
         card.setOnClickListener(v -> showGameDetails(game));
         card.setClickable(true);
+        card.setFocusable(true);
+        card.setAlpha(0f);
+        card.setTranslationY(dp(8));
+        card.animate().alpha(1f).translationY(0f).setDuration(220).start();
         return card;
     }
 
