@@ -101,6 +101,11 @@ public final class EpicFragment extends Fragment {
     private Button gamePrimaryButton;
     private boolean gameJobActive;
     private boolean showingGameDetails;
+    // One-shot entrance motion: filtering and progress-driven re-renders must not
+    // replay the entire storefront animation on every keystroke or refresh.
+    private boolean hasRenderedGameCards;
+    private boolean animateGameCardEntrance;
+    private boolean hasAnimatedFeaturedHero;
     private String libraryFilter = "All games";
     private volatile String lastProgressLabel = "No active Epic download or installation.";
     private final List<Container> containers = new ArrayList<>();
@@ -1024,6 +1029,8 @@ public final class EpicFragment extends Fragment {
         if (gamesContainer == null || !isAdded()) return;
         gamesContainer.removeAllViews();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
+        animateGameCardEntrance = !hasRenderedGameCards && needle.isEmpty()
+                && "All games".equals(libraryFilter);
         if (needle.isEmpty() && "All games".equals(libraryFilter)) renderFeaturedHero();
 
         int count = 0;
@@ -1056,6 +1063,8 @@ public final class EpicFragment extends Fragment {
             gamesContainer.addView(empty);
         }
         libraryCountText.setText(count + (count == 1 ? " GAME" : " GAMES"));
+        if (count > 0) hasRenderedGameCards = true;
+        animateGameCardEntrance = false;
     }
 
     private int addGameShelf(String heading, String mode, String needle) {
@@ -1220,9 +1229,15 @@ public final class EpicFragment extends Fragment {
         LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(356));
         heroParams.bottomMargin = dp(8);
         featuredContainer.addView(hero, heroParams);
-        hero.setAlpha(0f);
-        hero.setTranslationY(dp(10));
-        hero.animate().alpha(1f).translationY(0f).setDuration(280).start();
+        if (!hasAnimatedFeaturedHero) {
+            hasAnimatedFeaturedHero = true;
+            hero.setAlpha(0f);
+            hero.setTranslationY(dp(10));
+            hero.animate().alpha(1f).translationY(0f).setDuration(280).start();
+        } else {
+            hero.setAlpha(1f);
+            hero.setTranslationY(0f);
+        }
     }
 
     private View createGameCard(JSONObject game) {
@@ -1311,6 +1326,8 @@ public final class EpicFragment extends Fragment {
         description.setPadding(dp(3), 0, dp(3), 0);
         card.addView(description);
 
+        card.setContentDescription(title + ". " + status.toLowerCase(java.util.Locale.ROOT)
+                + ". Open game details.");
         card.setOnClickListener(v -> {
             card.animate().scaleX(0.965f).scaleY(0.965f).setDuration(90)
                     .withEndAction(() -> {
@@ -1320,9 +1337,14 @@ public final class EpicFragment extends Fragment {
         });
         card.setClickable(true);
         card.setFocusable(true);
-        card.setAlpha(0f);
-        card.setTranslationY(dp(12));
-        card.animate().alpha(1f).translationY(0f).setDuration(300).start();
+        if (animateGameCardEntrance) {
+            card.setAlpha(0f);
+            card.setTranslationY(dp(12));
+            card.animate().alpha(1f).translationY(0f).setDuration(300).start();
+        } else {
+            card.setAlpha(1f);
+            card.setTranslationY(0f);
+        }
         return card;
     }
 
