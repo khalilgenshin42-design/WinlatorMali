@@ -2852,3 +2852,18 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This verifies compilation/runtime packaging only; it is not a Xiaomi 15T visual test and does not add achievement unlocking functionality.
 - Follow-up source commit `7f218d4fa4d775a0c03da805eb9ffbd936e479fd` changes the storefront hierarchy so the cinematic featured game leads immediately beneath the brand header, with collection heading/search/filters following it, and expands the hero from 310dp to 356dp. Its CI has not yet been observed; do not publish it until both required workflows pass.
 - The larger redesign remains in progress. No claim of reproducing the lost original demo pixel-for-pixel is made.
+
+
+## 2026-11-24 — Featured-first storefront hierarchy (CI passed; prerelease published)
+
+- Source commit: `7f218d4fa4d775a0c03da805eb9ffbd936e479fd`.
+- Moved the cinematic featured game immediately beneath the compact brand header; collection identity, search and filters now follow the hero. Increased hero height from 310dp to 356dp and tightened the collection heading/subtitle hierarchy.
+- Standard Android APK workflow **45484179285** passed on the exact source SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45484179285
+- Epic runtime/ARM64 workflow **45484179167** passed on the exact source SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45484179167. CPython 3.15.2 Android x86_64/ARM64 packaging completed successfully; the workflow also produced the ARM64 debug APK artifact.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-7f218d4fa4d7
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-7f218d4fa4d7/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-7f218d4fa4d7/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-7f218d4fa4d7/SHA256SUMS
+- GitHub asset SHA-256: host APK `11490ce5bae50211ac9ad2bd5347af0ce5cdf2e783a7a47b0b97b65cf9d2d45b`; companion APK `b34976ddc9b4fd0928d839e7257aeb1441521e84acff0a115841762a5deec7d4`.
+- Both APKs are debug-signed experimental builds. CI/runtime packaging success is not visual or functional validation on the Xiaomi 15T; do not claim the new composition has been device-tested or that it reproduces the lost demo.
+- This remains an intermediate composition milestone. Continue with a genuinely substantial launcher/profile redesign rather than more isolated spacing/color tweaks; preserve real Epic metadata and the existing persisted foreground download worker.
