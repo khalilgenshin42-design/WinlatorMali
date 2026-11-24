@@ -2770,3 +2770,20 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This changes only view composition. It continues to use the existing persisted job ID, foreground service, job monitor, cancel operation and real progress snapshots; no second worker or fabricated progress was introduced.
 - Epic workflow **45445775858** was queued for this exact source SHA when this entry was written: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45445775858. Do not describe this source revision as build-validated or publish it until both required workflows complete successfully.
 - This is a focused profile-composition step toward `docs/EPIC_STOREFRONT_FULL_REDESIGN.md`, not yet the complete storefront redesign or a recreation of the lost demo.
+
+
+## 2026-11-24 — Integrated Epic game-profile hero build passed and published
+
+- Source commit: `237b043c623b8cd9f8f07177503b33b6fe27d2e6`.
+- Profile composition now places the existing Install / Play / Cancel action and live persisted download/install progress inside the wide artwork hero; hero height increased to 430dp. No worker, progress, or cancellation semantics were replaced.
+- Standard APK workflow **45445775875** passed on this exact SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45445775875
+- Epic runtime/ARM64 workflow **45445775858** passed on the exact SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45445775858. Managed x86_64 runtime smoke, production ARM64 runtime build/audit, Epic Bridge instrumentation, APK packaging audits and prerelease publication all passed.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-237b043c623b
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-237b043c623b/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-237b043c623b/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-237b043c623b/SHA256SUMS
+- Asset SHA-256:
+  - Host APK: `f9bfc2fccdf07f5ae2287be9b716d5b580b5db18cb92fda3949012aea0214f64`
+  - Companion APK: `84629b7314550ea65fdabfb6bb8ac0643b471938ab4010a6048b5b1e02496abc`
+- Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Both debug-signed experimental builds; installation over a build signed with a different debug certificate may require uninstalling that package first.
+- These are CI-validated artifacts, not yet visually or functionally validated on the Xiaomi 15T.
