@@ -1427,6 +1427,12 @@ public final class EpicFragment extends Fragment {
         detail.setScaleY(0.985f);
         detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
                 .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+        // The Library and profile share the outer scroll container. Reset it
+        // after swapping content so a profile always opens at its cinematic
+        // artwork instead of inheriting the Library's previous scroll offset.
+        if (storefrontScroll != null) {
+            storefrontScroll.post(() -> storefrontScroll.scrollTo(0, 0));
+        }
 
         FrameLayout artwork = new FrameLayout(requireContext());
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
