@@ -2807,3 +2807,13 @@ User approved replacing the separate Library and Downloads destinations with a u
   - Companion APK: `87553aa70077fbb581157e939032ed43bcbae697252e191b65ac4d4877394a12`
 - Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Both are debug-signed experimental builds; installation over a build signed with a different debug certificate may require uninstalling that package first.
 - CI validation passed; this does not establish visual or functional validation on the Xiaomi 15T. The larger immersive storefront/profile redesign remains the next implementation task.
+
+
+## 2026-11-24 — Actionable featured hero and preserved animated profile navigation (CI pending)
+
+- Source commit: `2b5b945ce5c4dcdd8296badf246b426ac0eaaa39`.
+- The storefront featured hero now uses the actual game state for its primary action: Play for installed titles, Install when supported and storage is ready, View Progress for an active job, and profile/details when installation cannot safely start from the home screen.
+- Opening a profile now captures the storefront scroll position. Returning through the profile back control animates the profile out, restores the library at its previous vertical position, and animates the storefront back in.
+- Profile entrance motion now uses a coordinated fade, vertical translation, and subtle scale with a decelerating interpolator. The existing account, library, Epic Bridge, Legendary worker, persisted job ID, and progress paths are unchanged.
+- This is a navigation/interaction improvement, not yet the complete approved premium visual redesign. The larger storefront/profile composition remains in progress.
+- Standard APK and Epic runtime/ARM64 CI results are pending for this source revision. Do not publish until both pass; no Xiaomi 15T validation has occurred.
