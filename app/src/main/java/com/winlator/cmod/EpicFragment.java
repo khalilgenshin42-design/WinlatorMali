@@ -1167,7 +1167,8 @@ public final class EpicFragment extends Fragment {
                 new int[]{artColor(appName, 0), artColor(appName, 1), 0xff090d16});
         image.setBackground(fallback);
         hero.addView(image, new FrameLayout.LayoutParams(-1, -1));
-        String coverUrl = featuredGame.optString("cover_url", "");
+        String coverUrl = featuredGame.optString("hero_url",
+                featuredGame.optString("cover_url", ""));
         if (isTrustedEpicArtworkUrl(coverUrl)) {
             Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .placeholder(fallback).error(fallback).centerCrop().into(image);
@@ -1231,7 +1232,8 @@ public final class EpicFragment extends Fragment {
                 new int[]{artColor(appName, 0), artColor(appName, 1), 0xff0b101b});
         cover.setBackground(fallback);
         artwork.addView(cover, new FrameLayout.LayoutParams(-1, -1));
-        String coverUrl = game.optString("cover_url", "");
+        String coverUrl = game.optString("hero_url",
+                game.optString("cover_url", ""));
         if (isTrustedEpicArtworkUrl(coverUrl)) {
             Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .placeholder(fallback).error(fallback).centerCrop().into(cover);
