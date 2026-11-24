@@ -389,6 +389,11 @@ public final class EpicFragment extends Fragment {
             }
         }
         if (pageContainer == null) return;
+        // A destination can be detached while another screen is shown; record its
+        // live offset before detaching so Account/Library round-trips stay stable.
+        if (storefrontScroll != null && storefrontScroll.getParent() == pageContainer) {
+            storefrontScrollY = storefrontScroll.getScrollY();
+        }
         pageContainer.removeAllViews();
         if ("account".equals(section)) {
             showingGameDetails = false;
@@ -1429,6 +1434,10 @@ public final class EpicFragment extends Fragment {
 
     private void showGameDetails(JSONObject game) {
         if (game == null || pageContainer == null) return;
+        // Library refreshes may rebuild the visible profile after installed-state
+        // reconciliation; preserve the reader's position in that case.
+        final int previousProfileScrollY = showingGameDetails && profileScroll != null
+                ? profileScroll.getScrollY() : 0;
         selectedGame = game;
         showingGameDetails = true;
         String appName = game.optString("app_name", "");
@@ -1458,8 +1467,11 @@ public final class EpicFragment extends Fragment {
         detail.setScaleY(0.985f);
         detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
                 .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
-        // Profile navigation starts at the artwork without disturbing the Library offset.
-        if (profileScroll != null) profileScroll.post(() -> profileScroll.scrollTo(0, 0));
+        // A newly opened profile starts at its artwork; background reconciliation
+        // keeps the existing profile position instead of jumping the user to the top.
+        if (profileScroll != null) {
+            profileScroll.post(() -> profileScroll.scrollTo(0, Math.max(0, previousProfileScrollY)));
+        }
 
         FrameLayout artwork = new FrameLayout(requireContext());
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
