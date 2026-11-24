@@ -1096,7 +1096,7 @@ public final class EpicFragment extends Fragment {
     }
 
     private View createGameCard(JSONObject game) {
-        String appName = game.optString("app_name");
+        String appName = game.optString("app_name", "");
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
         android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
@@ -1108,59 +1108,87 @@ public final class EpicFragment extends Fragment {
 
         LinearLayout card = new LinearLayout(requireContext());
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(9), dp(9), dp(9), dp(10));
-        card.setBackground(shape(0xff171d29, 0xff303b50, 16));
-        card.setElevation(dp(2));
+        card.setPadding(dp(8), dp(8), dp(8), dp(10));
+        card.setBackground(shape(0xff151b28, 0xff35415a, 16));
+        card.setElevation(dp(3));
+        card.setClipToOutline(true);
 
         FrameLayout artwork = new FrameLayout(requireContext());
-        GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{artColor(appName, 0), artColor(appName, 1), 0xff111827});
-        art.setCornerRadius(dp(9));
+        artwork.setBackground(shape(0xff20283a, 0xff20283a, 11));
+        artwork.setClipToOutline(true);
         ImageView cover = new ImageView(requireContext());
         cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        cover.setBackground(art);
+        GradientDrawable fallback = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{artColor(appName, 0), artColor(appName, 1), 0xff0b101b});
+        cover.setBackground(fallback);
         artwork.addView(cover, new FrameLayout.LayoutParams(-1, -1));
         String coverUrl = game.optString("cover_url", "");
         if (isTrustedEpicArtworkUrl(coverUrl)) {
-            Glide.with(this)
-                    .load(coverUrl)
-                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                    .placeholder(art)
-                    .error(art)
-                    .centerCrop()
-                    .into(cover);
+            Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(fallback).error(fallback).centerCrop().into(cover);
         } else {
-            TextView initials = label(gameMonogram(title), 28, 0xfff5f6fa, true);
+            TextView initials = label(gameMonogram(title), 30, 0xfff5f6fa, true);
             initials.setGravity(Gravity.CENTER);
             artwork.addView(initials, new FrameLayout.LayoutParams(-1, -1));
         }
-        TextView tag = label(downloading ? "DOWNLOADING" : (installed ? "INSTALLED" : "EPIC LIBRARY"), 8,
-                downloading ? 0xffffd18a : (installed ? 0xffb9f3d1 : 0xffd3d0ff), true);
-        tag.setPadding(dp(6), dp(4), dp(6), dp(4));
-        tag.setBackground(shape(0x8830394f, 0x8830394f, 5));
-        FrameLayout.LayoutParams tagParams = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.LEFT);
-        tagParams.setMargins(dp(6), 0, 0, dp(6));
+
+        View shade = new View(requireContext());
+        shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x22060a12, 0x00060a12, 0xd9060a12}));
+        artwork.addView(shade, new FrameLayout.LayoutParams(-1, -1));
+
+        String status = downloading ? "DOWNLOADING" : (installed ? "INSTALLED" :
+                (supported ? "READY TO INSTALL" : "EPIC LIBRARY"));
+        int statusColor = downloading ? 0xffffd18a :
+                (installed ? 0xffa9f2c9 : 0xffe0dcff);
+        TextView tag = label(status, 8, statusColor, true);
+        tag.setLetterSpacing(0.04f);
+        tag.setPadding(dp(8), dp(5), dp(8), dp(5));
+        tag.setBackground(shape(0xe51a2232, 0xe5515d77, 7));
+        FrameLayout.LayoutParams tagParams = new FrameLayout.LayoutParams(-2, -2,
+                Gravity.TOP | Gravity.LEFT);
+        tagParams.setMargins(dp(7), dp(7), 0, 0);
         artwork.addView(tag, tagParams);
-        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(132)));
+
+        TextView open = label("VIEW  ›", 8, 0xffffffff, true);
+        open.setLetterSpacing(0.05f);
+        open.setPadding(dp(8), dp(5), dp(8), dp(5));
+        open.setBackground(shape(0xb8101520, 0x775e6a84, 7));
+        FrameLayout.LayoutParams openParams = new FrameLayout.LayoutParams(-2, -2,
+                Gravity.BOTTOM | Gravity.RIGHT);
+        openParams.setMargins(0, 0, dp(7), dp(7));
+        artwork.addView(open, openParams);
+        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(148)));
 
         TextView name = label(title, 12, 0xfff5f6fa, true);
         name.setMaxLines(2);
         name.setMinLines(2);
-        name.setPadding(dp(1), dp(8), dp(1), dp(3));
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        name.setPadding(dp(2), dp(9), dp(2), dp(3));
         card.addView(name);
-        card.addView(label(downloading ? "Download or installation in progress" :
+
+        TextView description = label(downloading ? "Download or installation in progress" :
                 (installed ? "Ready to play" :
-                (supported ? "Ready to install" : "Not directly installable")), 10,
-                downloading ? 0xffffd18a : (installed ? 0xff79d6a2 : 0xff929db1), false));
-        TextView open = label("VIEW DETAILS  →", 9, 0xffc7c3ff, true);
-        open.setPadding(dp(1), dp(9), 0, 0);
-        card.addView(open);
-        card.setOnClickListener(v -> showGameDetails(game));
+                (supported ? "Available in your Epic library" : "Not directly installable")),
+                9, downloading ? 0xffffd18a :
+                        (installed ? 0xff83dfad : 0xff9ca8bd), false);
+        description.setMaxLines(1);
+        description.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        description.setPadding(dp(2), 0, dp(2), 0);
+        card.addView(description);
+
+        card.setOnClickListener(v -> {
+            card.animate().scaleX(0.975f).scaleY(0.975f).setDuration(75)
+                    .withEndAction(() -> {
+                        card.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
+                        showGameDetails(game);
+                    }).start();
+        });
         card.setClickable(true);
         card.setFocusable(true);
         card.setAlpha(0f);
-        card.setTranslationY(dp(8));
-        card.animate().alpha(1f).translationY(0f).setDuration(220).start();
+        card.setTranslationY(dp(9));
+        card.animate().alpha(1f).translationY(0f).setDuration(230).start();
         return card;
     }
 
