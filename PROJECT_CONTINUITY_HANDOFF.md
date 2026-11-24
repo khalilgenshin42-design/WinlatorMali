@@ -2867,3 +2867,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 - GitHub asset SHA-256: host APK `11490ce5bae50211ac9ad2bd5347af0ce5cdf2e783a7a47b0b97b65cf9d2d45b`; companion APK `b34976ddc9b4fd0928d839e7257aeb1441521e84acff0a115841762a5deec7d4`.
 - Both APKs are debug-signed experimental builds. CI/runtime packaging success is not visual or functional validation on the Xiaomi 15T; do not claim the new composition has been device-tested or that it reproduces the lost demo.
 - This remains an intermediate composition milestone. Continue with a genuinely substantial launcher/profile redesign rather than more isolated spacing/color tweaks; preserve real Epic metadata and the existing persisted foreground download worker.
+
+
+## 2026-11-24 — Storefront motion and accessibility refinement (validation pending)
+
+- Source commit: `698661a3a4343c09996a2267c840f36b1ee5030d`.
+- Added one-shot entrance animation state for the featured hero and game cards. Search/filter re-renders no longer replay the entire card entrance sequence; subsequent renders place cards directly in their final visual state.
+- Added a concise TalkBack content description to each clickable game card, including its real install/download status and the action to open details.
+- Reviewed the exact GitHub commit diff and confirmed only `EpicFragment.java` changed. The source branch head is this commit.
+- No CI runs were created for this commit at the time of this handoff update. The latest published build remains the prior validated source SHA `7f218d4fa4d775a0c03da805eb9ffbd936e479fd`; do not install/publish the new source revision until both standard APK and Epic runtime/ARM64 workflows validate it.
+- Next: obtain CI validation for `698661a`, then continue the larger composition work. Do not treat the animation/accessibility refinement as the complete visual redesign.
