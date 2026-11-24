@@ -993,13 +993,18 @@ public final class EpicFragment extends Fragment {
             String title = game.optString("title", game.optString("app_name"));
             String appName = game.optString("app_name", "");
             boolean isInstalled = installedApps.contains(appName);
+            boolean isSupported = game.optString("version", "").length() > 0
+                    && game.optString("third_party_store", "").isEmpty();
             android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
                     .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
             boolean isDownloading = !jobPrefs.getString(JOB_ID_KEY, "").isEmpty()
                     && appName.equals(jobPrefs.getString(ACTIVE_JOB_APP_KEY, ""));
             if (!needle.isEmpty() && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
             if ("Installed".equals(libraryFilter) && !isInstalled) continue;
-            if ("Ready to install".equals(libraryFilter) && (isInstalled || isDownloading)) continue;
+            // "Ready to install" must not include catalog entries that the
+            // Epic bridge cannot install (for example, third-party store titles).
+            if ("Ready to install".equals(libraryFilter)
+                    && (isInstalled || isDownloading || !isSupported)) continue;
             if ("Downloading".equals(libraryFilter) && !isDownloading) continue;
             if (inRow == 2) {
                 row = new LinearLayout(requireContext());
@@ -1016,7 +1021,21 @@ public final class EpicFragment extends Fragment {
             count++;
         }
         if (count == 0) {
-            gamesContainer.addView(label(needle.isEmpty() ? "No Windows games found in this Epic library." : "No games match your search.", 12, 0xff929db1, false));
+            String emptyMessage;
+            if (!needle.isEmpty()) {
+                emptyMessage = "No games match your search.";
+            } else if ("Installed".equals(libraryFilter)) {
+                emptyMessage = "No installed games yet.";
+            } else if ("Ready to install".equals(libraryFilter)) {
+                emptyMessage = "No games are currently ready to install.";
+            } else if ("Downloading".equals(libraryFilter)) {
+                emptyMessage = "No active Epic downloads or installations.";
+            } else {
+                emptyMessage = "No Windows games found in this Epic library.";
+            }
+            TextView emptyState = label(emptyMessage, 12, 0xff929db1, false);
+            emptyState.setPadding(dp(4), dp(8), dp(4), dp(8));
+            gamesContainer.addView(emptyState);
         }
         libraryCountText.setText(count + (count == 1 ? " game" : " games"));
     }
