@@ -2910,3 +2910,16 @@ User approved replacing the separate Library and Downloads destinations with a u
 - The prior achievement interaction source SHA `9df83c7fed3981373cab3e661c6d249450bf77e9` passed both standard APK workflow **45502418513** and Epic runtime/ARM64 workflow **45502418476**.
 - CI for `2e56f2f` has not yet been confirmed. Do not publish until both required workflows pass for this exact SHA. No Xiaomi 15T device validation has occurred.
 - Next visual milestone remains the substantial storefront/profile composition redesign described in `docs/EPIC_STOREFRONT_FULL_REDESIGN.md`; this scroll fix is a correctness improvement, not a claim that the lost interactive demo has been reproduced.
+
+
+## 2026-11-25 — Profile scroll correction validated; storefront hero/shelf refinement (new CI pending)
+
+- Profile scroll correction source SHA `2e56f2f004b12f335a3294fb4256fc68b005b58b` passed both required checks:
+  - Standard APK workflow **45506270195**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45506270195
+  - Epic runtime/ARM64 workflow **45506270200**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45506270200
+- Follow-up source commit: `b40b890b8e53f7cdf05a537ff966902e4d9a3f50`.
+- Featured hero now exposes two clear actions: a state-aware primary Play/Install/View Progress action and a separate Game Details action. Previously users had to tap the hero CTA or artwork to reach the profile; the dedicated secondary action makes the distinction explicit.
+- Increased game shelf cards from 158dp to 174dp wide and portrait artwork from 206dp to 232dp high to make the game-cover rail more prominent on phone screens.
+- Existing actual job state, install support checks, worker, persisted job identity, and progress polling are unchanged. This is a presentation/layout improvement, not new download functionality.
+- Standard APK workflow **45508732700** and Epic runtime/ARM64 workflow **45508732689** are queued/running for the exact new source SHA. Do not publish until both pass. No Xiaomi 15T validation has occurred.
+- The dedicated storefront/profile composition redesign remains ongoing; these incremental improvements do not claim parity with the unavailable original demo.
