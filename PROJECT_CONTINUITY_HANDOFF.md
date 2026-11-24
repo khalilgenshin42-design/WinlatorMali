@@ -2722,3 +2722,22 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Important build caveat: the current running workflows checked out `11ca680`, not the later card/profile URL correction `f545189`. The final correction still needs a fresh standard + Epic workflow validation before any APK from it is described as tested or published.
 - No new release link is published for these changes yet. Do not ask for physical device review until a build containing the final source commit is published.
 - Next: finish the active Epic workflow, add regression coverage for artwork selection, trigger both workflows against the final branch head, verify the published release/checksums, then append the completed milestone here. This remains an intermediate storefront milestone, not a claim of recreating the lost interactive demo.
+
+## 2026-11-24 — Epic artwork runtime regression fixed and prerelease published
+
+- Final source commit: `56c195db66d3a1e9255fc1f8bb5d042d189988ed`.
+- Root cause of the prior Epic runtime/ARM64 workflow failure: the artwork refactor replaced the old `_cover_image()` helper with `_artwork_images()`, but the embedded Android runtime self-test still called the removed helper. That NameError was surfaced by the bridge as a generic `EPIC_OPERATION_FAILED`.
+- Fix commit `db170da71ae10ee0336db2636e05d08e66e61438` updated the runtime self-test to validate independent portrait-cover and wide-hero selection and reject non-HTTPS artwork URLs.
+- Regression-test commit `56c195db66d3a1e9255fc1f8bb5d042d189988ed` adds host-side tests for independent portrait/landscape selection, rejection of non-HTTPS and oversized URLs, and safe empty output for missing or malformed catalog artwork. Tests were added; none were disabled.
+- Standard Android APK workflow **45418865343** passed on the exact final source SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45418865343
+- Epic runtime/ARM64 workflow **45418865213** passed on the exact final source SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45418865213. The workflow validates managed x86_64 runtime behavior, Android JNI instrumentation, CPython 3.15.2 Android ARM64 packaging, APK assembly, package/signature/ABI/assets/ELF dependency closure, and embedded companion checks.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-56c195db66d3
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-56c195db66d3/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-56c195db66d3/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-56c195db66d3/SHA256SUMS
+- Host APK SHA-256: `44344aa3156fc5afa7d44d637c20d53c9312e90e5fc1081aec7cb83022d2e311`.
+- Companion APK SHA-256: `860f5143d8e40a83da543047835c256fe4c0fa42cf8d3135963d49b752909042`.
+- Host package `com.maliwinlator.app` versionCode 24; companion package `com.maliwinlator.epicbridge` versionCode 2. These are debug-signed test APKs.
+- GitHub release API confirms the prerelease is published and contains both APKs and `SHA256SUMS`. The standard workflow artifact and Epic ARM64 workflow artifact were also produced from the same source SHA.
+- CI/managed-runtime success is not physical-device validation. The new build has not yet been visually or functionally validated on the Xiaomi 15T.
+- This is an intermediate shelves/artwork/runtime milestone, not a recreation of the lost interactive demo. Do not claim visual parity. Continue with a substantial structural storefront redesign, using real Epic metadata and the existing download worker; do not invent playtime, cloud-save sync, or progress.
