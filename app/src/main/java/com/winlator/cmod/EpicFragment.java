@@ -1032,8 +1032,9 @@ public final class EpicFragment extends Fragment {
             featuredContainer.addView(empty);
             return;
         }
-        String appName = featured.optString("app_name", "");
-        String title = featured.optString("title", appName);
+        final JSONObject featuredGame = featured;
+        String appName = featuredGame.optString("app_name", "");
+        String title = featuredGame.optString("title", appName);
         boolean installed = installedApps.contains(appName);
         FrameLayout hero = new FrameLayout(requireContext());
         hero.setBackground(shape(0xff20283a, 0xff3a4560, 18));
@@ -1044,7 +1045,7 @@ public final class EpicFragment extends Fragment {
                 new int[]{artColor(appName, 0), artColor(appName, 1), 0xff090d16});
         image.setBackground(fallback);
         hero.addView(image, new FrameLayout.LayoutParams(-1, -1));
-        String coverUrl = featured.optString("cover_url", "");
+        String coverUrl = featuredGame.optString("cover_url", "");
         if (isTrustedEpicArtworkUrl(coverUrl)) {
             Glide.with(this).load(coverUrl).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .placeholder(fallback).error(fallback).centerCrop().into(image);
@@ -1068,7 +1069,7 @@ public final class EpicFragment extends Fragment {
         Button explore = action(installed ? "VIEW GAME  →" : "EXPLORE GAME  →", true);
         explore.setTextSize(11);
         explore.setMinHeight(dp(40));
-        explore.setOnClickListener(v -> showGameDetails(featured));
+        explore.setOnClickListener(v -> showGameDetails(featuredGame));
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-2, dp(42));
         buttonParams.topMargin = dp(12);
         content.addView(explore, buttonParams);
@@ -1175,6 +1176,9 @@ public final class EpicFragment extends Fragment {
         LinearLayout detail = new LinearLayout(requireContext());
         detail.setOrientation(LinearLayout.VERTICAL);
         pageContainer.addView(detail);
+        detail.setAlpha(0f);
+        detail.setTranslationY(dp(12));
+        detail.animate().alpha(1f).translationY(0f).setDuration(240).start();
 
         Button back = action("←  Back to library", false);
         back.setOnClickListener(v -> showSection("library"));
