@@ -1304,23 +1304,42 @@ public final class EpicFragment extends Fragment {
         addMargin(progressCard, gameProgressBar, 10);
         addMargin(detail, progressCard, 12);
 
-        LinearLayout info = new LinearLayout(requireContext());
-        info.setOrientation(LinearLayout.VERTICAL);
-        info.setPadding(dp(14), dp(14), dp(14), dp(14));
-        info.setBackground(shape(0xff171d29, 0xff293247, 13));
-        addMargin(info, label("GAME INFORMATION", 10, 0xffaaa6ff, true), 0);
-        addMargin(info, label("Achievements", 13, 0xfff5f6fa, true), 10);
-        TextView achievementsValue = label("Checking Epic achievement data...", 11, 0xff929db1, false);
-        info.addView(achievementsValue);
+        // Keep player-facing metadata in separate cards so each feature has a
+        // clear status and can grow independently without one dense information panel.
+        LinearLayout achievementsCard = new LinearLayout(requireContext());
+        achievementsCard.setOrientation(LinearLayout.VERTICAL);
+        achievementsCard.setPadding(dp(14), dp(14), dp(14), dp(14));
+        achievementsCard.setBackground(shape(0xff171d29, 0xff35415a, 13));
+        achievementsCard.addView(label("ACHIEVEMENTS", 10, 0xffaaa6ff, true));
+        addMargin(achievementsCard, label("Your Epic progress", 15, 0xfff5f6fa, true), 7);
+        TextView achievementsValue = label("Checking Epic achievement data...", 11, 0xffaeb8cb, false);
+        addMargin(achievementsCard, achievementsValue, 4);
         LinearLayout achievementsList = new LinearLayout(requireContext());
         achievementsList.setOrientation(LinearLayout.VERTICAL);
-        addMargin(info, achievementsList, 8);
-        addMargin(info, label("Playtime", 13, 0xfff5f6fa, true), 12);
-        info.addView(label("Not currently provided by the Epic library response.", 11, 0xff929db1, false));
-        addMargin(info, label("Cloud saves", 13, 0xfff5f6fa, true), 12);
+        addMargin(achievementsCard, achievementsList, 10);
+        addMargin(detail, achievementsCard, 12);
+
+        LinearLayout playtimeCard = new LinearLayout(requireContext());
+        playtimeCard.setOrientation(LinearLayout.VERTICAL);
+        playtimeCard.setPadding(dp(14), dp(13), dp(14), dp(13));
+        playtimeCard.setBackground(shape(0xff171d29, 0xff293247, 13));
+        playtimeCard.addView(label("PLAYTIME", 10, 0xffaaa6ff, true));
+        addMargin(playtimeCard, label("Time played", 14, 0xfff5f6fa, true), 6);
+        addMargin(playtimeCard, label("Playtime is not currently provided by the Epic library response.", 11,
+                0xff929db1, false), 4);
+        addMargin(detail, playtimeCard, 9);
+
+        LinearLayout cloudSavesCard = new LinearLayout(requireContext());
+        cloudSavesCard.setOrientation(LinearLayout.VERTICAL);
+        cloudSavesCard.setPadding(dp(14), dp(13), dp(14), dp(13));
+        cloudSavesCard.setBackground(shape(0xff171d29, 0xff293247, 13));
+        cloudSavesCard.addView(label("CLOUD SAVES", 10, 0xffaaa6ff, true));
+        addMargin(cloudSavesCard, label("Windows save support", 14, 0xfff5f6fa, true), 6);
         TextView cloudSavesValue = label("Checking Windows cloud-save support...", 11, 0xff929db1, false);
-        info.addView(cloudSavesValue);
-        addMargin(detail, info, 12);
+        addMargin(cloudSavesCard, cloudSavesValue, 4);
+        addMargin(cloudSavesCard, label("Status only — save synchronization is not enabled.", 10,
+                0xff929db1, false), 8);
+        addMargin(detail, cloudSavesCard, 9);
 
         if (installed) {
             Button manage = action("Update / Uninstall", false);
