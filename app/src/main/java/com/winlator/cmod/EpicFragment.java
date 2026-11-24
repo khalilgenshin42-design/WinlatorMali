@@ -808,9 +808,20 @@ public final class EpicFragment extends Fragment {
 
     private void publishJobStatusLabel(String label) {
         lastProgressLabel = label;
+        android.content.Context context = getContext();
+        String activeAppName = "";
+        if (context != null) {
+            android.content.SharedPreferences prefs = context.getApplicationContext()
+                    .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+            activeAppName = prefs.getString(ACTIVE_JOB_APP_KEY, "");
+        }
+        final String jobAppName = activeAppName;
         mainHandler.post(() -> {
             if (downloadsStatusText != null) downloadsStatusText.setText(label);
-            if (gameProgressText != null) gameProgressText.setText(label);
+            if (!jobAppName.isEmpty() && jobAppName.equals(selectedGameAppName)
+                    && gameProgressText != null) {
+                gameProgressText.setText(label);
+            }
             if (statusText != null && jobPolling) statusText.setText(label);
         });
     }
