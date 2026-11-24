@@ -2760,3 +2760,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 - CI success is not physical Xiaomi 15T validation. The portrait/hero composition still requires visual review on-device; do not claim that this change recreates the lost interactive demo.
 - Existing capability boundaries remain: achievements display returned Epic metadata and are unlocked by games through supported Epic/EOS integration; playtime is unavailable; cloud saves remain support metadata only with no upload/download/sync.
 - Next engineering task: proceed beyond the intermediate artwork correction to implement the structural storefront/profile composition in `docs/EPIC_STOREFRONT_FULL_REDESIGN.md`. Keep real Epic catalog data and the existing persisted install/download worker; do not add mock progress or imply unavailable services.
+
+
+## 2026-11-24 — Game profile hero now owns its primary action and live progress (CI pending)
+
+- Source commit: `237b043c623b8cd9f8f07177503b33b6fe27d2e6`.
+- Re-composed the profile's top section so Install / Play / Cancel and the existing live download/install progress card sit inside the cinematic artwork hero instead of appearing as detached panels beneath it.
+- Increased the profile hero height from 340dp to 430dp to accommodate title, status, action and progress while retaining the existing game artwork and gradient treatment.
+- This changes only view composition. It continues to use the existing persisted job ID, foreground service, job monitor, cancel operation and real progress snapshots; no second worker or fabricated progress was introduced.
+- Epic workflow **45445775858** was queued for this exact source SHA when this entry was written: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45445775858. Do not describe this source revision as build-validated or publish it until both required workflows complete successfully.
+- This is a focused profile-composition step toward `docs/EPIC_STOREFRONT_FULL_REDESIGN.md`, not yet the complete storefront redesign or a recreation of the lost demo.
