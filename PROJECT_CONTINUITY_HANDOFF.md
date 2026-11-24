@@ -2682,3 +2682,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - CI and managed-emulator success do not establish physical Xiaomi 15T visual validation. User review is required for the storefront appearance, artwork coverage, navigation, and active-download progress.
 - Known feature boundaries remain: playtime unavailable; cloud saves are support metadata only with no upload/download/sync; achievements display real returned Epic metadata and are unlocked by games through their supported Epic/EOS integration, not by launcher UI.
 - Next: get user's visual review of this build, then refine the hero/card/detail composition based on the actual result. Keep all download/install actions connected to the existing worker and never fake metadata or progress.
+
+
+## 2026-11-24 — Full Epic storefront redesign target recorded
+
+- User feedback: the published storefront is still far from the previously approved interactive demo. Do not characterize the current visual changes as recreating that experience.
+- Source audit finding: `EpicFragment` remains a vertically stacked programmatic form; the featured hero is fixed-height and selects the first non-DLC result; game cards are generic horizontal-rail tiles; details remain a stack of generic metadata panels; connection/setup status and navigation still frame the library as a settings page. Small color/size/animation changes are insufficient.
+- Added `docs/EPIC_STOREFRONT_FULL_REDESIGN.md` (commit `1228cb0399cc5762be2c5fc85950b4ca6754a74e`) defining the new target: a dedicated premium storefront, deterministic featured selection, real-data shelves, immersive game profiles, integrated live job state, coordinated transitions, and accessibility/responsive requirements.
+- This is a design/engineering specification commit only; no APK was built or published from it. Next source milestone must implement a structural screen-composition/state redesign while preserving Epic Bridge/Legendary and foreground job behavior.
+- No screenshot of the lost demo is currently available in the project context. If the user supplies one, use it as the visual reference; do not block the redesign on it.
