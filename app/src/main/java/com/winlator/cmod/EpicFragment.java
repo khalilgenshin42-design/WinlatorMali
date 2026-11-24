@@ -1531,6 +1531,11 @@ public final class EpicFragment extends Fragment {
         addMargin(achievementsCard, label("Your Epic progress", 15, 0xfff5f6fa, true), 7);
         TextView achievementsValue = label("Checking Epic achievement data...", 11, 0xffaeb8cb, false);
         addMargin(achievementsCard, achievementsValue, 4);
+        ProgressBar achievementsCompletion = new ProgressBar(requireContext(), null,
+                android.R.attr.progressBarStyleHorizontal);
+        achievementsCompletion.setMax(100);
+        achievementsCompletion.setProgress(0);
+        addMargin(achievementsCard, achievementsCompletion, 9);
         HorizontalScrollView achievementsRail = new HorizontalScrollView(requireContext());
         achievementsRail.setHorizontalScrollBarEnabled(false);
         achievementsRail.setClipToPadding(false);
@@ -1612,6 +1617,8 @@ public final class EpicFragment extends Fragment {
                 int totalXp = achievements.optInt("total_product_xp", 0);
                 achievementsValue.setText("Unlocked " + unlocked + " / " + total + " • "
                         + xp + " / " + totalXp + " XP");
+                achievementsCompletion.setProgress(total > 0
+                        ? Math.max(0, Math.min(100, Math.round(unlocked * 100f / total))) : 0);
                 org.json.JSONArray items = achievements.optJSONArray("items");
                 if (items != null) {
                     int shown = Math.min(items.length(), 30);
@@ -1624,8 +1631,37 @@ public final class EpicFragment extends Fragment {
                         achievementCard.setOrientation(LinearLayout.VERTICAL);
                         achievementCard.setPadding(dp(10), dp(9), dp(10), dp(9));
                         achievementCard.setBackground(shape(0xff202838, 0xff303b50, 10));
+                        LinearLayout achievementHeading = new LinearLayout(requireContext());
+                        achievementHeading.setOrientation(LinearLayout.HORIZONTAL);
+                        achievementHeading.setGravity(Gravity.CENTER_VERTICAL);
+                        FrameLayout iconFrame = new FrameLayout(requireContext());
+                        iconFrame.setBackground(shape(0xff30394b, 0xff46536b, 9));
+                        iconFrame.setClipToOutline(true);
+                        ImageView achievementIcon = new ImageView(requireContext());
+                        achievementIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                        iconFrame.addView(achievementIcon, new FrameLayout.LayoutParams(-1, -1));
+                        String iconUrl = item.optString("icon_link", "");
+                        if (isTrustedEpicArtworkUrl(iconUrl)) {
+                            Glide.with(this).load(iconUrl)
+                                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                    .placeholder(shape(0xff30394b, 0xff46536b, 9))
+                                    .error(shape(0xff30394b, 0xff46536b, 9))
+                                    .centerCrop().into(achievementIcon);
+                        } else {
+                            TextView iconFallback = label("✦", 19, 0xffd8d4ff, true);
+                            iconFallback.setGravity(Gravity.CENTER);
+                            iconFrame.addView(iconFallback,
+                                    new FrameLayout.LayoutParams(-1, -1));
+                        }
+                        achievementHeading.addView(iconFrame,
+                                new LinearLayout.LayoutParams(dp(42), dp(42)));
                         TextView achievementTitle = label(name, 12, 0xfff5f6fa, true);
-                        achievementCard.addView(achievementTitle);
+                        achievementTitle.setMaxLines(2);
+                        LinearLayout.LayoutParams achievementTitleParams =
+                                new LinearLayout.LayoutParams(0, -2, 1f);
+                        achievementTitleParams.leftMargin = dp(9);
+                        achievementHeading.addView(achievementTitle, achievementTitleParams);
+                        achievementCard.addView(achievementHeading);
                         String description = item.optString("description", "");
                         if (!description.isEmpty()) {
                             TextView achievementDescription = label(description, 10, 0xffaeb8c9, false);
