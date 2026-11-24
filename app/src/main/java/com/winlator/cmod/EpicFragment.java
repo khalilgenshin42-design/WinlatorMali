@@ -82,6 +82,8 @@ public final class EpicFragment extends Fragment {
     private LinearLayout featuredContainer;
     private LinearLayout pageContainer;
     private ScrollView storefrontScroll;
+    private ScrollView accountScroll;
+    private ScrollView profileScroll;
     private int storefrontScrollY;
     private LinearLayout navigationBar;
     private View brandHeader;
@@ -134,14 +136,11 @@ public final class EpicFragment extends Fragment {
         installedApps.addAll(libraryState.getInstalledApps());
         installedPaths.putAll(libraryState.getInstalledPaths());
 
-        ScrollView scroll = new ScrollView(requireContext());
-        storefrontScroll = scroll;
-        scroll.setFillViewport(true);
-        scroll.setBackgroundColor(0xff0a0c12);
+        // Fixed header plus independent scroll viewports for each destination.
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(14), dp(12), dp(14), dp(36));
-        scroll.addView(root);
+        root.setPadding(dp(14), dp(12), dp(14), dp(18));
+        root.setBackgroundColor(0xff0a0c12);
 
         LinearLayout brand = new LinearLayout(requireContext());
         brandHeader = brand;
@@ -182,7 +181,9 @@ public final class EpicFragment extends Fragment {
 
         pageContainer = new LinearLayout(requireContext());
         pageContainer.setOrientation(LinearLayout.VERTICAL);
-        addMargin(root, pageContainer, 18);
+        LinearLayout.LayoutParams pageParams = new LinearLayout.LayoutParams(-1, 0, 1f);
+        pageParams.topMargin = dp(18);
+        root.addView(pageContainer, pageParams);
 
         accountPanel = new LinearLayout(requireContext());
         accountPanel.setOrientation(LinearLayout.VERTICAL);
@@ -221,6 +222,10 @@ public final class EpicFragment extends Fragment {
         containerSpinner = new Spinner(requireContext());
         accountPanel.addView(containerSpinner, fullParams());
         loadContainers();
+        accountScroll = new ScrollView(requireContext());
+        accountScroll.setFillViewport(true);
+        accountScroll.setClipToPadding(false);
+        accountScroll.addView(accountPanel);
 
         libraryPanel = new LinearLayout(requireContext());
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
@@ -290,6 +295,10 @@ public final class EpicFragment extends Fragment {
         gamesContainer = new LinearLayout(requireContext());
         gamesContainer.setOrientation(LinearLayout.VERTICAL);
         addMargin(libraryPanel, gamesContainer, 10);
+        storefrontScroll = new ScrollView(requireContext());
+        storefrontScroll.setFillViewport(true);
+        storefrontScroll.setClipToPadding(false);
+        storefrontScroll.addView(libraryPanel);
         searchField.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -309,7 +318,7 @@ public final class EpicFragment extends Fragment {
         cancelJobButton.setVisibility(View.GONE);
 
         showSection(activeSection);
-        return scroll;
+        return root;
     }
 
     private int dp(float value) {
@@ -383,10 +392,12 @@ public final class EpicFragment extends Fragment {
         pageContainer.removeAllViews();
         if ("account".equals(section)) {
             showingGameDetails = false;
-            pageContainer.addView(accountPanel);
+            if (accountScroll.getParent() != null) ((ViewGroup) accountScroll.getParent()).removeView(accountScroll);
+            pageContainer.addView(accountScroll, new LinearLayout.LayoutParams(-1, -1));
         } else {
             showingGameDetails = false;
-            pageContainer.addView(libraryPanel);
+            if (storefrontScroll.getParent() != null) ((ViewGroup) storefrontScroll.getParent()).removeView(storefrontScroll);
+            pageContainer.addView(storefrontScroll, new LinearLayout.LayoutParams(-1, -1));
             if (storefrontScroll != null) {
                 storefrontScroll.post(() -> storefrontScroll.scrollTo(0, Math.max(0, storefrontScrollY)));
             }
@@ -1436,19 +1447,19 @@ public final class EpicFragment extends Fragment {
         pageContainer.removeAllViews();
         LinearLayout detail = new LinearLayout(requireContext());
         detail.setOrientation(LinearLayout.VERTICAL);
-        pageContainer.addView(detail);
+        profileScroll = new ScrollView(requireContext());
+        profileScroll.setFillViewport(true);
+        profileScroll.setClipToPadding(false);
+        profileScroll.addView(detail);
+        pageContainer.addView(profileScroll, new LinearLayout.LayoutParams(-1, -1));
         detail.setAlpha(0f);
         detail.setTranslationY(dp(22));
         detail.setScaleX(0.985f);
         detail.setScaleY(0.985f);
         detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
                 .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
-        // The Library and profile share the outer scroll container. Reset it
-        // after swapping content so a profile always opens at its cinematic
-        // artwork instead of inheriting the Library's previous scroll offset.
-        if (storefrontScroll != null) {
-            storefrontScroll.post(() -> storefrontScroll.scrollTo(0, 0));
-        }
+        // Profile navigation starts at the artwork without disturbing the Library offset.
+        if (profileScroll != null) profileScroll.post(() -> profileScroll.scrollTo(0, 0));
 
         FrameLayout artwork = new FrameLayout(requireContext());
         GradientDrawable art = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
