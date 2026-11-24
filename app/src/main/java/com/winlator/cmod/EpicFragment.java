@@ -1718,13 +1718,14 @@ public final class EpicFragment extends Fragment {
                             achievementDetails.append("\\nProgress: ")
                                     .append(Math.round(progress * 100.0)).append("%");
                         }
+                        final String achievementDialogTitle = name;
                         achievementCard.setClickable(true);
                         achievementCard.setFocusable(true);
-                        achievementCard.setContentDescription(name + ". " + state
+                        achievementCard.setContentDescription(achievementDialogTitle + ". " + state
                                 + ". Tap for achievement details.");
                         achievementCard.setOnClickListener(v ->
                                 new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                                        .setTitle(name)
+                                        .setTitle(achievementDialogTitle)
                                         .setMessage(achievementDetails.toString())
                                         .setPositiveButton("Close", null)
                                         .show());
