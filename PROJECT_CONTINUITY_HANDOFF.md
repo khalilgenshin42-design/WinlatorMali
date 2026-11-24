@@ -2817,3 +2817,28 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Profile entrance motion now uses a coordinated fade, vertical translation, and subtle scale with a decelerating interpolator. The existing account, library, Epic Bridge, Legendary worker, persisted job ID, and progress paths are unchanged.
 - This is a navigation/interaction improvement, not yet the complete approved premium visual redesign. The larger storefront/profile composition remains in progress.
 - Standard APK and Epic runtime/ARM64 CI results are pending for this source revision. Do not publish until both pass; no Xiaomi 15T validation has occurred.
+
+
+## 2026-11-24 — Actionable featured hero and animated profile navigation (CI passed; prerelease published)
+
+- Source commit: `2b5b945ce5c4dcdd8296badf246b426ac0eaaa39`.
+- The featured hero now chooses Play, Install, View Progress, or View Details from actual install/job/storage state. Profile navigation preserves the storefront scroll position and uses coordinated entrance/return animations.
+- Standard APK workflow **45469607954** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45469607954
+- Epic runtime/ARM64 workflow **45469607855** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45469607855. Managed x86_64 runtime smoke, Epic Bridge instrumentation, production ARM64 runtime audit and APK packaging completed successfully.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-2b5b945ce5c4
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-2b5b945ce5c4/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-2b5b945ce5c4/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-2b5b945ce5c4/SHA256SUMS
+- Asset SHA-256:
+  - Host APK: `87e39fb156865a1b7d3c888d4343415f0d3db040e508bdb88996d28fdc1e17ac`
+  - Companion APK: `fb4255e06fdbaaa2d7415ffead04ad34d818a3bc8f5b10ddd9d4f2779d261b67`
+- Both packages are debug-signed experimental builds. CI success is not physical Xiaomi 15T validation.
+
+## 2026-11-24 — Game profile metadata redesigned into compact paired cards (CI pending)
+
+- Source commit: `3322ff8103257b12b1287c54004dca849984c39f`.
+- Replaced the vertically stacked playtime and cloud-save panels with a paired two-column metadata row beneath the achievements section. This gives the profile a clearer hierarchy and reduces repeated full-width settings-style panels.
+- Playtime remains explicitly unavailable because Epic library responses do not provide it. Cloud-save metadata remains status-only; no save upload/download/sync is implied or performed.
+- Epic runtime/ARM64 workflow **45472430840** is running: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45472430840
+- Standard APK workflow has not yet appeared in the run list. Do not publish this source revision until both required workflows pass.
+- No Xiaomi 15T visual validation has occurred.
