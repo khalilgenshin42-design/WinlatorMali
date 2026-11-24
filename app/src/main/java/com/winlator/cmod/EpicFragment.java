@@ -136,8 +136,16 @@ public final class EpicFragment extends Fragment {
 
         LinearLayout brand = new LinearLayout(requireContext());
         brand.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout brandCopy = new LinearLayout(requireContext());
+        brandCopy.setOrientation(LinearLayout.VERTICAL);
         TextView logo = label("EPIC GAMES", 20, 0xfff5f6fa, true);
-        brand.addView(logo, new LinearLayout.LayoutParams(0, -2, 1));
+        brandCopy.addView(logo);
+        TextView brandSubtitle = label("YOUR PC GAME COLLECTION", 8, 0xff8995ad, true);
+        brandSubtitle.setLetterSpacing(0.12f);
+        LinearLayout.LayoutParams brandSubtitleParams = new LinearLayout.LayoutParams(-2, -2);
+        brandSubtitleParams.topMargin = dp(2);
+        brandCopy.addView(brandSubtitle, brandSubtitleParams);
+        brand.addView(brandCopy, new LinearLayout.LayoutParams(0, -2, 1));
         TextView edition = label("MALIWINLATOR", 10, 0xffaeb8cb, true);
         edition.setPadding(dp(10), dp(6), dp(10), dp(6));
         edition.setBackground(shape(0xff20283a, 0xff20283a, 30));
@@ -974,8 +982,8 @@ public final class EpicFragment extends Fragment {
     private void renderGameCards(String query) {
         if (gamesContainer == null) return;
         gamesContainer.removeAllViews();
-        renderFeaturedHero();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
+        if (needle.isEmpty()) renderFeaturedHero();
         LinearLayout row = null;
         int inRow = 2;
         int count = 0;
@@ -1180,7 +1188,8 @@ public final class EpicFragment extends Fragment {
         detail.setTranslationY(dp(12));
         detail.animate().alpha(1f).translationY(0f).setDuration(240).start();
 
-        Button back = action("←  Back to library", false);
+        Button back = action("‹  YOUR LIBRARY", false);
+        back.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
         back.setOnClickListener(v -> showSection("library"));
         addMargin(detail, back, 0);
 
@@ -1201,12 +1210,21 @@ public final class EpicFragment extends Fragment {
             initials.setGravity(Gravity.CENTER);
             artwork.addView(initials, new FrameLayout.LayoutParams(-1, -1));
         }
-        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(190));
+        View detailShade = new View(requireContext());
+        detailShade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x00070a12, 0x33070a12, 0xe6070a12}));
+        artwork.addView(detailShade, new FrameLayout.LayoutParams(-1, -1));
+        TextView artworkCaption = label("EPIC GAMES LIBRARY", 9, 0xffdedbff, true);
+        FrameLayout.LayoutParams captionParams = new FrameLayout.LayoutParams(-2, -2,
+                Gravity.BOTTOM | Gravity.LEFT);
+        captionParams.setMargins(dp(16), 0, dp(16), dp(14));
+        artwork.addView(artworkCaption, captionParams);
+        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(224));
         artParams.topMargin = dp(14);
         detail.addView(artwork, artParams);
 
-        TextView heading = label(title, 24, 0xfff5f6fa, true);
-        heading.setPadding(0, dp(14), 0, dp(4));
+        TextView heading = label(title, 26, 0xfff5f6fa, true);
+        heading.setPadding(0, dp(16), 0, dp(5));
         detail.addView(heading);
         detail.addView(label(installed ? "INSTALLED  •  Ready to play" :
                 (supported ? "IN YOUR EPIC LIBRARY  •  Ready to install" : "IN YOUR EPIC LIBRARY"),
