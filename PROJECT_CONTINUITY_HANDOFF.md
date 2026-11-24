@@ -2691,3 +2691,22 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Added `docs/EPIC_STOREFRONT_FULL_REDESIGN.md` (commit `1228cb0399cc5762be2c5fc85950b4ca6754a74e`) defining the new target: a dedicated premium storefront, deterministic featured selection, real-data shelves, immersive game profiles, integrated live job state, coordinated transitions, and accessibility/responsive requirements.
 - This is a design/engineering specification commit only; no APK was built or published from it. Next source milestone must implement a structural screen-composition/state redesign while preserving Epic Bridge/Legendary and foreground job behavior.
 - No screenshot of the lost demo is currently available in the project context. If the user supplies one, use it as the visual reference; do not block the redesign on it.
+
+
+## 2026-11-24 — Epic storefront structural UI milestone (published)
+
+- Source commit: `36362097b5380d8a5b8df09e3b34b83cb6398cb9`.
+- Moved Epic Bridge connection/diagnostic status out of the player-facing Library and into Account & setup. Library now has a clearer player-focused heading and spacing.
+- Featured selection now prefers the last opened title, then an installed non-DLC title, then the first available non-DLC title. Last-opened selection is persisted in app preferences.
+- Game detail profile artwork header increased to 340dp with an overlaid Library back action. Detail view hides storefront brand header and main navigation to create a more focused profile presentation; returning to a section restores them.
+- Standard workflow **45395285653** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45395285653
+- Epic runtime/ARM64 workflow **45395285682** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45395285682
+- Workflow-published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-36362097b538
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-36362097b538/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-36362097b538/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-36362097b538/SHA256SUMS
+- Host APK SHA-256: `d9be53ef3c24341f513de0f010a02f2b96603ab631cb72fa5f3d9dffbf56dd06`.
+- Companion APK SHA-256: `00dac092f115cab38808f81dd7d5b08cf10b554ff5405ff8684bc6ed5c6149f4`.
+- Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2.
+- Automated workflow checks passed; this is not physical Xiaomi 15T validation. No visual claims beyond source changes should be made until device review.
+- This is an intermediate structural milestone, not a recreation of the lost demo. Next work should continue replacing the generic profile/library composition with a more intentional, artwork-led launcher experience while retaining real job state and worker integration. Avoid cosmetic-only commits.
