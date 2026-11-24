@@ -1409,14 +1409,16 @@ public final class EpicFragment extends Fragment {
                 Gravity.BOTTOM | Gravity.LEFT);
         captionParams.setMargins(dp(16), 0, dp(16), dp(14));
         artwork.addView(artworkCaption, new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM));
-        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(340));
+        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(430));
         artParams.topMargin = dp(4);
         detail.addView(artwork, artParams);
 
 
         gamePrimaryButton = action(gameJobForThisTitle ? "Cancel download" :
                 (installed ? "Play game" : (supported ? "Install" : "Unavailable")), true);
-        addMargin(detail, gamePrimaryButton, 16);
+        // Keep the primary action inside the cinematic profile hero, so the game's
+        // install/play/cancel state is visible without a detached settings-style row.
+        addMargin(artworkCaption, gamePrimaryButton, 12);
         gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobForThisTitle);
         gamePrimaryButton.setOnClickListener(v -> {
             gamePrimaryButton.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
@@ -1447,7 +1449,9 @@ public final class EpicFragment extends Fragment {
         gameProgressBar.setIndeterminate(gameJobForThisTitle);
         gameProgressBar.setProgress(0);
         addMargin(progressCard, gameProgressBar, 10);
-        addMargin(detail, progressCard, 12);
+        // Live worker progress is part of the hero action area, not a separate
+        // panel below the artwork. The same persisted job observer still drives it.
+        addMargin(artworkCaption, progressCard, 9);
 
         // Keep player-facing metadata in separate cards so each feature has a
         // clear status and can grow independently without one dense information panel.
