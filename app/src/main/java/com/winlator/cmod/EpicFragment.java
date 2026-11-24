@@ -1018,45 +1018,23 @@ public final class EpicFragment extends Fragment {
         if (gamesContainer == null || !isAdded()) return;
         gamesContainer.removeAllViews();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
-        if (needle.isEmpty()) renderFeaturedHero();
-
-        HorizontalScrollView rail = new HorizontalScrollView(requireContext());
-        rail.setHorizontalScrollBarEnabled(false);
-        rail.setClipToPadding(false);
-        rail.setFillViewport(false);
-        rail.setPadding(dp(1), dp(3), dp(4), dp(12));
-        LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        rail.addView(row, new HorizontalScrollView.LayoutParams(-2, -2));
+        if (needle.isEmpty() && "All".equals(libraryFilter)) renderFeaturedHero();
 
         int count = 0;
-        android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
-                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
-        String activeJobId = jobPrefs.getString(JOB_ID_KEY, "");
-        String activeJobApp = jobPrefs.getString(ACTIVE_JOB_APP_KEY, "");
-        for (int i = 0; i < cachedGames.length(); i++) {
-            JSONObject game = cachedGames.optJSONObject(i);
-            if (game == null || game.optBoolean("is_dlc", false)) continue;
-            String title = game.optString("title", game.optString("app_name"));
-            String appName = game.optString("app_name", "");
-            boolean isInstalled = installedApps.contains(appName);
-            boolean isSupported = isGameInstallSupported(game);
-            boolean isDownloading = !activeJobId.isEmpty() && appName.equals(activeJobApp);
-            if (!needle.isEmpty() && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
-            if ("Installed".equals(libraryFilter) && !isInstalled) continue;
-            if ("Ready to install".equals(libraryFilter)
-                    && (isInstalled || isDownloading || !isSupported)) continue;
-            if ("Downloading".equals(libraryFilter) && !isDownloading) continue;
-
-            View card = createGameCard(game);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(224), -2);
-            params.rightMargin = dp(12);
-            row.addView(card, params);
-            count++;
-        }
-        if (count > 0) {
-            gamesContainer.addView(rail, new LinearLayout.LayoutParams(-1, -2));
+        if ("Downloading".equals(libraryFilter)) {
+            count += addGameShelf("IN PROGRESS", "downloading", needle);
+        } else if ("Installed".equals(libraryFilter)) {
+            count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
+        } else if ("Ready to install".equals(libraryFilter)) {
+            count += addGameShelf("READY FOR INSTALLATION", "ready", needle);
         } else {
+            count += addGameShelf("RECENTLY OPENED", "recent", needle);
+            count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
+            count += addGameShelf("READY TO PLAY", "downloading", needle);
+            count += addGameShelf("READY TO INSTALL", "ready", needle);
+            count += addGameShelf("YOUR EPIC COLLECTION", "all", needle);
+        }
+        if (count == 0) {
             String emptyMessage;
             if (!needle.isEmpty()) emptyMessage = "No games match your search.";
             else if ("Installed".equals(libraryFilter)) emptyMessage = "No installed games yet.";
@@ -1065,13 +1043,64 @@ public final class EpicFragment extends Fragment {
             else emptyMessage = "No Windows games found in this Epic library.";
             LinearLayout empty = new LinearLayout(requireContext());
             empty.setOrientation(LinearLayout.VERTICAL);
-            empty.setPadding(dp(16), dp(18), dp(16), dp(18));
-            empty.setBackground(shape(0xff151b28, 0xff303b50, 14));
+            empty.setPadding(dp(18), dp(20), dp(18), dp(20));
+            empty.setBackground(shape(0xff151b28, 0xff303b50, 16));
             empty.addView(label("NOTHING HERE YET", 9, 0xffaaa6ff, true));
             addMargin(empty, label(emptyMessage, 13, 0xffdce3f2, true), 7);
             gamesContainer.addView(empty);
         }
         libraryCountText.setText(count + (count == 1 ? " GAME" : " GAMES"));
+    }
+
+    private int addGameShelf(String heading, String mode, String needle) {
+        if (gamesContainer == null || cachedGames == null) return 0;
+        android.content.SharedPreferences jobPrefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        String activeJobId = jobPrefs.getString(JOB_ID_KEY, "");
+        String activeJobApp = jobPrefs.getString(ACTIVE_JOB_APP_KEY, "");
+        String lastOpened = requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE)
+                .getString("last_opened_app", "");
+        LinearLayout shelf = new LinearLayout(requireContext());
+        shelf.setOrientation(LinearLayout.VERTICAL);
+        TextView shelfTitle = label(heading, 10, 0xffc9c5ff, true);
+        shelfTitle.setLetterSpacing(0.10f);
+        shelfTitle.setPadding(dp(1), dp(13), 0, dp(9));
+        shelf.addView(shelfTitle);
+        HorizontalScrollView rail = new HorizontalScrollView(requireContext());
+        rail.setHorizontalScrollBarEnabled(false);
+        rail.setClipToPadding(false);
+        rail.setFillViewport(false);
+        rail.setPadding(dp(1), dp(2), dp(4), dp(12));
+        LinearLayout row = new LinearLayout(requireContext());
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        rail.addView(row, new HorizontalScrollView.LayoutParams(-2, -2));
+        int count = 0;
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject game = cachedGames.optJSONObject(i);
+            if (game == null || game.optBoolean("is_dlc", false)) continue;
+            String appName = game.optString("app_name", "");
+            String title = game.optString("title", appName);
+            boolean installed = installedApps.contains(appName);
+            boolean supported = isGameInstallSupported(game);
+            boolean downloading = !activeJobId.isEmpty() && appName.equals(activeJobApp);
+            if (!needle.isEmpty() && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
+            if ("recent".equals(mode) && (lastOpened.isEmpty() || !lastOpened.equals(appName))) continue;
+            if ("installed".equals(mode) && !installed) continue;
+            if ("ready".equals(mode) && (installed || downloading || !supported)) continue;
+            if ("downloading".equals(mode) && !downloading) continue;
+            if ("all".equals(mode) && (installed || downloading || supported)) continue;
+            View card = createGameCard(game);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(224), -2);
+            params.rightMargin = dp(12);
+            row.addView(card, params);
+            count++;
+        }
+        if (count > 0) {
+            shelf.addView(rail, new LinearLayout.LayoutParams(-1, -2));
+            gamesContainer.addView(shelf, new LinearLayout.LayoutParams(-1, -2));
+        }
+        return count;
     }
 
     private void renderFeaturedHero() {
