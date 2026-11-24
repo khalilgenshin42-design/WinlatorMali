@@ -2598,3 +2598,23 @@ User approved replacing the separate Library and Downloads destinations with a u
 - The CI status file was automatically updated by the Epic workflow. CI success is not physical-device validation; no screenshot comparison or Xiaomi 15T test of this storefront commit has yet been performed.
 - Cloud-save integration remains read-only metadata; no save upload/download/sync is enabled. Playtime remains unavailable. Achievement UI displays only returned and normalized data.
 - Next: continue visual hierarchy/card/detail polish without replacing the working Epic download engine, then run both workflows. After a validated build is ready, request device testing of the storefront and the previously problematic navigation during active download and active installation.
+
+
+## 2026-11-24 — Epic storefront artwork/card refinement validated and published
+
+- Application source commit: `676eb49e1d3b7b985dddc72e895a5b989c3c7b6d`.
+- Updated library cards with larger artwork, gradient shading, clearer status pills, stronger title hierarchy and animated press feedback. Trusted Epic artwork URLs are used when available; missing/invalid artwork retains the designed fallback rather than fabricated game art.
+- Standard APK workflow **45300733132** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45300733132
+- Epic runtime/ARM64 workflow **45300733162** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45300733162
+- Epic workflow completed managed x86_64 runtime prerequisite smoke tests, Android JNI instrumentation, ARM64 runtime/APK packaging and package/signature/ABI/assets/ELF dependency closure audits.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-676eb49e1d3b
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-676eb49e1d3b/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-676eb49e1d3b/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-676eb49e1d3b/SHA256SUMS
+- SHA-256:
+  - `013b0861988f59034a3f3daa828a46ea95e67ad2569957d4887dda51e5682966` — host APK
+  - `77d2fd5669eed7445e1841621e18ccff947bece6153c9bf162e175657128a2af` — companion APK
+- Host package: `com.maliwinlator.app`, versionCode 24. Companion: `com.maliwinlator.epicbridge`, versionCode 2. Both are debug-signed test builds.
+- CI success does not establish physical Xiaomi 15T validation. This build still needs device testing of the storefront, game details, achievements, and navigation during active downloads and installations.
+- Cloud saves remain read-only support metadata; no upload/download/sync is enabled. Playtime remains unavailable.
+- Next UI task: split the current single GAME INFORMATION panel into visually distinct achievements, playtime and cloud-save sections. Keep achievements sourced only from Epic; do not invent playtime or claim cloud-save synchronization.
