@@ -2842,3 +2842,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Epic runtime/ARM64 workflow **45472430840** is running: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45472430840
 - Standard APK workflow has not yet appeared in the run list. Do not publish this source revision until both required workflows pass.
 - No Xiaomi 15T visual validation has occurred.
+
+## 2026-11-24 — Achievement rail and storefront hierarchy work
+
+- Achievement cards in the game profile now form a horizontal rail instead of a long vertical list. The existing read-only Epic achievement fields, XP/tier/unlock/progress rendering, 30-card cap, and truncation notice are retained.
+- Source commit: `9d4dbca79e284e1713e90c57ba57d1e8d1d3faa2`.
+- Standard APK workflow **45477399053** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45477399053
+- Epic runtime/ARM64 workflow **45477398998** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45477398998
+- This verifies compilation/runtime packaging only; it is not a Xiaomi 15T visual test and does not add achievement unlocking functionality.
+- Follow-up source commit `7f218d4fa4d775a0c03da805eb9ffbd936e479fd` changes the storefront hierarchy so the cinematic featured game leads immediately beneath the brand header, with collection heading/search/filters following it, and expands the hero from 310dp to 356dp. Its CI has not yet been observed; do not publish it until both required workflows pass.
+- The larger redesign remains in progress. No claim of reproducing the lost original demo pixel-for-pixel is made.
