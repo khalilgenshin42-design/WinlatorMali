@@ -1106,7 +1106,9 @@ public final class EpicFragment extends Fragment {
             if ("downloading".equals(mode) && !downloading) continue;
             if ("all".equals(mode) && (installed || downloading || supported)) continue;
             View card = createGameCard(game);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(158), -2);
+            // Wider artwork cards give the shelf more of a storefront-cover
+            // feel while keeping a useful number of titles reachable by swipe.
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(174), -2);
             params.rightMargin = dp(12);
             row.addView(card, params);
             count++;
@@ -1221,9 +1223,23 @@ public final class EpicFragment extends Fragment {
                 showGameDetails(featuredGame);
             }
         });
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-2, dp(42));
+        Button details = action("GAME DETAILS", false);
+        details.setTextSize(10);
+        details.setMinHeight(dp(42));
+        details.setOnClickListener(v -> showGameDetails(featuredGame));
+        LinearLayout heroActions = new LinearLayout(requireContext());
+        heroActions.setOrientation(LinearLayout.HORIZONTAL);
+        heroActions.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams primaryActionParams =
+                new LinearLayout.LayoutParams(0, dp(42), 1f);
+        primaryActionParams.rightMargin = dp(8);
+        heroActions.addView(explore, primaryActionParams);
+        LinearLayout.LayoutParams detailsActionParams =
+                new LinearLayout.LayoutParams(-2, dp(42));
+        heroActions.addView(details, detailsActionParams);
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-1, dp(42));
         buttonParams.topMargin = dp(12);
-        content.addView(explore, buttonParams);
+        content.addView(heroActions, buttonParams);
         // Give the featured title enough vertical room to feel like the
         // storefront's primary destination on a phone-sized display.
         LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(356));
@@ -1307,7 +1323,7 @@ public final class EpicFragment extends Fragment {
         artwork.addView(open, openParams);
         // Epic box art is portrait-oriented (roughly 2:3); avoid cropping it
         // into the old landscape tile shape.
-        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(206)));
+        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(232)));
 
         TextView name = label(title, 13, 0xfff5f6fa, true);
         name.setMaxLines(2);
