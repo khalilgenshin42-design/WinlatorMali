@@ -2640,3 +2640,23 @@ User approved replacing the separate Library and Downloads destinations with a u
 - CI status file was automatically updated by the successful Epic workflow. CI/managed-emulator verification does not establish physical Xiaomi 15T validation. The new profile sections and storefront still require device review; also recheck navigation away/back during active downloads and active installations.
 - Cloud saves remain read-only support metadata; no upload/download/sync is enabled. Playtime remains unavailable. Achievements display only returned Epic data.
 - Next: continue the storefront/profile UI audit against the desired polished Epic launcher experience, keeping persisted job state and the existing download/install engine intact. Only add controls when their backend actions are genuinely implemented. After the next published build, request a focused device validation pass.
+
+
+## 2026-11-24 — Epic library install-ready filter correction (published)
+
+- Source commit: `e7a2080ea4135c4a5dfe5916d6ae249891cc8ee9`.
+- EpicFragment.renderGameCards(...) now excludes catalog entries unsupported by the Epic bridge from the **Ready to install** filter. Existing installed and active-job exclusions remain in place. Filter-specific empty-state copy now distinguishes Installed, Ready to install, Downloading and search-no-results states.
+- No download/install worker or IPC behavior changed.
+- Standard APK workflow **45309341133** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45309341133
+- Epic runtime/ARM64 workflow **45309341058** passed: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45309341058
+- Epic workflow completed successfully, including managed x86_64 runtime smoke, Android JNI instrumentation, CPython 3.15.2 x86_64/ARM64 runtime packaging, ARM64 APK assembly, package/signature/ABI/assets/ELF dependency closure and embedded-companion audits.
+- Published debug prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-e7a2080ea413
+  - Host APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7a2080ea413/app-standard-debug.apk
+  - Companion APK: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7a2080ea413/epicbridge-debug.apk
+  - Checksums: https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-e7a2080ea413/SHA256SUMS
+- APK SHA-256 (from the workflow-published PROJECT_EPIC_CI_STATUS.md):
+  - `a50f75d041eddf81ec7274b627843981dc6cefd96333c8e16c67c9a8ea22b896` — host APK
+  - `c4f4fa7f6e936b207d02a0ab35731c63e908b7071c38353f3cc9974e7e621e32` — companion APK
+- Host package `com.maliwinlator.app` versionCode 24; companion `com.maliwinlator.epicbridge` versionCode 2. Debug-signed test build.
+- CI success does not prove physical Xiaomi 15T validation. Device review still needed for Ready to install filter contents/empty states and existing active-download/install navigation responsiveness.
+- Prior PROJECT_EPIC_CI_STATUS.md was automatically updated by workflow run 45309341058 and records the above hashes and release URL.
