@@ -1122,9 +1122,43 @@ public final class EpicFragment extends Fragment {
             addMargin(empty, label(emptyMessage, 13, 0xffdce3f2, true), 7);
             gamesContainer.addView(empty);
         }
-        libraryCountText.setText(count + (count == 1 ? " GAME" : " GAMES"));
+        int uniqueVisibleGames = countUniqueVisibleGames(needle);
+        libraryCountText.setText(uniqueVisibleGames
+                + (uniqueVisibleGames == 1 ? " GAME" : " GAMES"));
         if (count > 0) hasRenderedGameCards = true;
         animateGameCardEntrance = false;
+    }
+
+    /**
+     * Count catalog entries, not shelf placements. In the All games view an
+     * installed title may intentionally appear in Continue Playing, Installed,
+     * and the full collection; those are three placements but still one game.
+     */
+    private int countUniqueVisibleGames(String needle) {
+        if (cachedGames == null) return 0;
+        android.content.SharedPreferences prefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        String activeJobId = prefs.getString(JOB_ID_KEY, "");
+        String activeJobApp = prefs.getString(ACTIVE_JOB_APP_KEY, "");
+        java.util.Set<String> visible = new java.util.HashSet<>();
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject game = cachedGames.optJSONObject(i);
+            if (game == null || game.optBoolean("is_dlc", false)) continue;
+            String appName = game.optString("app_name", "");
+            if (appName.isEmpty()) continue;
+            String title = game.optString("title", appName);
+            if (!needle.isEmpty()
+                    && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
+            boolean installed = installedApps.contains(appName);
+            boolean downloading = !activeJobId.isEmpty() && appName.equals(activeJobApp);
+            boolean supported = isGameInstallSupported(game);
+            if ("Installed".equals(libraryFilter) && !installed) continue;
+            if ("Ready to install".equals(libraryFilter)
+                    && (installed || downloading || !supported)) continue;
+            if ("Downloading".equals(libraryFilter) && !downloading) continue;
+            visible.add(appName);
+        }
+        return visible.size();
     }
 
     /** Keep filter labels synchronized with the real catalog and local job state. */
