@@ -3179,3 +3179,6 @@ Replace the current largely linear home-page composition with a more deliberate 
 - No synthetic download entries, simulated progress, new worker, Legendary command, provider API, or storage behavior was introduced. The Downloads screen is a view over the existing single active Epic operation.
 - Both standard Android APK and Epic ARM64 runtime workflows must pass for this exact source SHA before publishing a new APK. Previous source `9f1d2a98f5b44968648a2876d6be371bf5612496` passed both workflows (45669164878 and 45669164854).
 - No physical Xiaomi 15T validation has occurred. This is a navigation/Downloads implementation milestone, not a claim of exact pixel parity with the unavailable original demo.
+
+- Follow-up source commit `7cb04db15d61f049fc9e8d62d851fd13858f6a13` expands the destination bar to Library, Discover, Downloads, and Settings. Discover deliberately opens the official Epic Games Store website rather than fabricating a storefront catalog or pretending the owned-library API provides store-discovery data. Settings routes to the existing Account & setup screen.
+- Fresh standard APK and Epic ARM64 workflow results are required for this follow-up SHA; the previous source commit `84b41a819405e1359f19639fc18685f32512a43f` had both workflows running at the time of this note.
