@@ -2945,3 +2945,16 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Standard Android APK workflow **45516661167** queued: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661167
 - Epic runtime/ARM64 workflow **45516661544** queued: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661544
 - Previous source SHA `24da555340fb28920733dfea7548540ede3135c4` passed both workflows. The new SHA is not validated until its two runs pass. No Xiaomi 15T device validation has occurred.
+
+
+## 2026-11-25 — Continue-playing history uses actual launches (validation pending)
+
+- Source commits: `08c4c945111696e777afcc248d04f629ad3a3848` and follow-up correctness fix `cec05d21e3e5c7ba50e1e58e34f28d7176028fd4`.
+- Renamed the recent shelf to CONTINUE PLAYING and replaced the previous single “last opened” marker with a local, newest-first history of up to eight distinct Epic app names.
+- History is recorded only after the validated launch path reaches `startActivity()`. Opening a game profile no longer counts as playing it. The shelf is ordered by actual launches and only displays titles still installed on this device; the featured hero prefers the newest launched title only when it remains installed.
+- History is local presentation state only. It is not Epic playtime, cloud data, or an assertion that a game session completed.
+- The previous filter-count source SHA `6ff9e33e41f7e124ed148d5ae06aa9ef1f4f8433` passed both required workflows:
+  - Standard APK workflow **45516661167**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661167
+  - Epic runtime/ARM64 workflow **45516661544**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661544
+- The new launch-history source SHA `cec05d21e3e5c7ba50e1e58e34f28d7176028fd4` is not yet validated. Do not publish/install it until both standard APK and Epic runtime/ARM64 workflows pass for this exact source SHA.
+- No Xiaomi 15T physical validation has occurred for this change. Continue the substantial storefront redesign; this is a behavioral correctness improvement, not a claim of reproducing the lost original demo.
