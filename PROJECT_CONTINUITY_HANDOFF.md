@@ -3124,3 +3124,13 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Returning to the unfiltered All games view restores the hero and metrics. Search, filter counts, shelf membership, catalog selection, and the persisted Epic download/install worker contract are unchanged.
 - Standard APK and Epic runtime / ARM64 workflows were triggered by this source commit; do not publish until both pass for the exact source SHA.
 - This is a navigation hierarchy correction within the larger storefront redesign. No physical Xiaomi 15T validation has occurred.
+
+
+## Engineering step log — 2026-11-25: complete collection leads the storefront
+
+- Source commit: `13994022c5cb7d2257e8b2c8a7c5aa3dcac11c25`.
+- Reordered the unfiltered Library so the complete Epic collection is the first and primary cover-art shelf. Continue Playing, Installed, Active Downloads & Installs, and Ready to Install follow as secondary shortcuts.
+- Corrected the collection shelf semantics: it now includes every non-DLC catalog entry, including installed and installable games. Previously the shelf labelled "YOUR EPIC COLLECTION" excluded installed, downloading, and supported titles, so it was only showing the residual catalog subset.
+- The same game may appear in the complete collection and a relevant shortcut shelf by design. Unique library summary counts remain based on catalog entries, not shelf placements. Search/filter behavior and the foreground worker remain unchanged.
+- The preceding source revision `350ac4f7677dfcd22d418df9f8009353d6c02c63` passed standard APK CI **45631005362**; Epic runtime/ARM64 CI **45631005155** was still running at the time of this update. The new source SHA requires both workflows to pass before release.
+- No physical Xiaomi 15T validation has occurred.
