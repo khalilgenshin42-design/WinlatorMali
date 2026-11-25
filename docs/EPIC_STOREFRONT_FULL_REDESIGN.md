@@ -78,3 +78,12 @@ The primary `YOUR EPIC COLLECTION` surface is now a responsive two-column portra
 Source commit: `a61698506c412dc18de81e1d8576a9688dcfea94`
 
 The storefront header now leads with MaliWinlator identity and a compact Epic-library descriptor rather than presenting Epic Games as the app brand and MaliWinlator as a small badge. The Library hierarchy now reads as a dedicated destination: clear "Your library" title, concise supporting line, cinematic selected-game spotlight and live collection metrics, then search/filter and the full two-column catalog. Catalog cards have tighter, more consistent framing and spacing. This is a coherent visual-system pass built on the two-column grid; it is not a claim of pixel-exact reproduction of the unavailable original demo. The Epic Bridge, Legendary job engine, persisted progress and account workflow are unchanged.
+
+
+## Approved interactive concept — implementation target (2026-11-25)
+The user explicitly approved the interactive concept rendered in chat and requires it to guide the next GitHub build. Treat its visible composition and interaction hierarchy as the target: compact MALIWINLATOR / EPIC GAMES header with account access; Your Library title; cinematic featured title; search; Installed / Ready to install / Downloading filters; two-column portrait game-card grid; and a cohesive game-detail surface with context-aware Install / Cancel / Play / Update / Uninstall and real in-page worker progress.
+
+### First implementation pass
+Commit `faa678cdf7834fa3aef56f75a83da70c3f75cba2` removes the repeated secondary rails from the default All games view. The home now keeps the featured spotlight and complete two-column catalog as the primary browsing composition. Filtered categories remain backed by actual catalog and install/job state.
+
+The chat prototype's titles and progress were illustrative. Production UI must use the user's real Epic catalog and real worker status only. Do not fabricate games, progress, ETA, achievements, playtime, cloud-save sync, or DRM compatibility. This pass is not yet a 1:1 completion claim; continue the redesign and validate the APK workflows.
