@@ -1442,6 +1442,22 @@ public final class EpicFragment extends Fragment {
                 Gravity.BOTTOM | Gravity.RIGHT);
         openParams.setMargins(0, 0, dp(8), dp(8));
         artwork.addView(open, openParams);
+
+        // Active installs remain visually identifiable while the user browses
+        // other shelves. This is intentionally indeterminate: exact percentage
+        // belongs to the persisted worker snapshot and is shown on the profile,
+        // not fabricated or inferred from elapsed time.
+        if (downloading) {
+            ProgressBar activity = new ProgressBar(requireContext(), null,
+                    android.R.attr.progressBarStyleHorizontal);
+            activity.setIndeterminate(true);
+            activity.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(0xffaaa6ff));
+            FrameLayout.LayoutParams activityParams = new FrameLayout.LayoutParams(
+                    -1, dp(3), Gravity.BOTTOM);
+            activityParams.setMargins(dp(8), 0, dp(8), dp(7));
+            artwork.addView(activity, activityParams);
+        }
+
         // Epic box art is portrait-oriented (roughly 2:3); avoid cropping it
         // into the old landscape tile shape.
         card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(232)));
