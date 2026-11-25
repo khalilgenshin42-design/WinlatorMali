@@ -109,6 +109,7 @@ public final class EpicFragment extends Fragment {
     private boolean animateGameCardEntrance;
     private boolean hasAnimatedFeaturedHero;
     private String libraryFilter = "All games";
+    private final java.util.Map<String, Button> libraryFilterButtons = new java.util.LinkedHashMap<>();
     private volatile String lastProgressLabel = "No active Epic download or installation.";
     private final List<Container> containers = new ArrayList<>();
     private final Set<String> installedApps = new HashSet<>();
@@ -276,6 +277,8 @@ public final class EpicFragment extends Fragment {
                 renderGameCards(searchField.getText().toString());
             });
             filterButton.setTag(filterName);
+            libraryFilterButtons.put(filterName, filterButton);
+            filterButton.setContentDescription(filterName + " filter");
             LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-2, dp(36));
             filterParams.rightMargin = dp(8);
             filters.addView(filterButton, filterParams);
@@ -1044,6 +1047,7 @@ public final class EpicFragment extends Fragment {
     private void renderGameCards(String query) {
         if (gamesContainer == null || !isAdded()) return;
         gamesContainer.removeAllViews();
+        updateLibraryFilterCounts();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
         animateGameCardEntrance = !hasRenderedGameCards && needle.isEmpty()
                 && "All games".equals(libraryFilter);
@@ -1084,6 +1088,44 @@ public final class EpicFragment extends Fragment {
         libraryCountText.setText(count + (count == 1 ? " GAME" : " GAMES"));
         if (count > 0) hasRenderedGameCards = true;
         animateGameCardEntrance = false;
+    }
+
+    /** Keep filter labels synchronized with the real catalog and local job state. */
+    private void updateLibraryFilterCounts() {
+        if (libraryFilterButtons.isEmpty() || cachedGames == null || !isAdded()) return;
+        int total = 0;
+        int installed = 0;
+        int ready = 0;
+        int downloading = 0;
+        android.content.SharedPreferences prefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        String activeJobId = prefs.getString(JOB_ID_KEY, "");
+        String activeJobApp = prefs.getString(ACTIVE_JOB_APP_KEY, "");
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject game = cachedGames.optJSONObject(i);
+            if (game == null || game.optBoolean("is_dlc", false)) continue;
+            String appName = game.optString("app_name", "");
+            total++;
+            if (!activeJobId.isEmpty() && appName.equals(activeJobApp)) {
+                downloading++;
+            } else if (installedApps.contains(appName)) {
+                installed++;
+            } else if (isGameInstallSupported(game)) {
+                ready++;
+            }
+        }
+        int[] counts = {total, installed, ready, downloading};
+        String[] names = {"All games", "Installed", "Ready to install", "Downloading"};
+        for (int i = 0; i < names.length; i++) {
+            Button button = libraryFilterButtons.get(names[i]);
+            if (button == null) continue;
+            button.setText(names[i] + "  " + counts[i]);
+            button.setContentDescription(names[i] + ", " + counts[i] + " games");
+            boolean selected = names[i].equals(libraryFilter);
+            button.setBackground(shape(selected ? 0xff5b55d9 : 0xff252f43,
+                    selected ? 0xff5b55d9 : 0xff35425a, 11));
+            button.setTextColor(selected ? 0xffffffff : 0xffd0d7e5);
+        }
     }
 
     private int addGameShelf(String heading, String mode, String needle) {
