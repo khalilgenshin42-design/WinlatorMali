@@ -1064,7 +1064,7 @@ public final class EpicFragment extends Fragment {
         } else if ("Ready to install".equals(libraryFilter)) {
             count += addGameShelf("READY FOR INSTALLATION", "ready", needle);
         } else {
-            count += addGameShelf("RECENTLY OPENED", "recent", needle);
+            count += addGameShelf("CONTINUE PLAYING", "recent", needle);
             count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
             count += addGameShelf("ACTIVE DOWNLOADS & INSTALLS", "downloading", needle);
             count += addGameShelf("READY TO INSTALL", "ready", needle);
@@ -1134,9 +1134,7 @@ public final class EpicFragment extends Fragment {
                 .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
         String activeJobId = jobPrefs.getString(JOB_ID_KEY, "");
         String activeJobApp = jobPrefs.getString(ACTIVE_JOB_APP_KEY, "");
-        String lastOpened = requireContext().getApplicationContext()
-                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE)
-                .getString("last_opened_app", "");
+        JSONArray recentlyLaunched = getRecentlyLaunchedApps();
         LinearLayout shelf = new LinearLayout(requireContext());
         shelf.setOrientation(LinearLayout.VERTICAL);
         TextView shelfTitle = label(heading, 10, 0xffc9c5ff, true);
@@ -1151,9 +1149,27 @@ public final class EpicFragment extends Fragment {
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
         rail.addView(row, new HorizontalScrollView.LayoutParams(-2, -2));
+        List<JSONObject> shelfGames = new ArrayList<>();
+        if ("recent".equals(mode)) {
+            for (int i = 0; i < recentlyLaunched.length(); i++) {
+                String recentApp = recentlyLaunched.optString(i, "");
+                for (int j = 0; j < cachedGames.length(); j++) {
+                    JSONObject candidate = cachedGames.optJSONObject(j);
+                    if (candidate != null && recentApp.equals(candidate.optString("app_name", ""))) {
+                        shelfGames.add(candidate);
+                        break;
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < cachedGames.length(); i++) {
+                JSONObject candidate = cachedGames.optJSONObject(i);
+                if (candidate != null) shelfGames.add(candidate);
+            }
+        }
         int count = 0;
-        for (int i = 0; i < cachedGames.length(); i++) {
-            JSONObject game = cachedGames.optJSONObject(i);
+        for (int i = 0; i < shelfGames.size(); i++) {
+            JSONObject game = shelfGames.get(i);
             if (game == null || game.optBoolean("is_dlc", false)) continue;
             String appName = game.optString("app_name", "");
             String title = game.optString("title", appName);
@@ -1161,7 +1177,6 @@ public final class EpicFragment extends Fragment {
             boolean supported = isGameInstallSupported(game);
             boolean downloading = !activeJobId.isEmpty() && appName.equals(activeJobApp);
             if (!needle.isEmpty() && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
-            if ("recent".equals(mode) && (lastOpened.isEmpty() || !lastOpened.equals(appName))) continue;
             if ("installed".equals(mode) && !installed) continue;
             if ("ready".equals(mode) && (installed || downloading || !supported)) continue;
             if ("downloading".equals(mode) && !downloading) continue;
@@ -1187,7 +1202,8 @@ public final class EpicFragment extends Fragment {
         JSONObject featured = null;
         android.content.SharedPreferences uiPrefs = requireContext().getApplicationContext()
                 .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE);
-        String lastOpenedApp = uiPrefs.getString("last_opened_app", "");
+        JSONArray recentlyLaunched = getRecentlyLaunchedApps();
+        String lastOpenedApp = recentlyLaunched.optString(0, "");
         // Prefer the player's last opened title; otherwise surface an installed
         // game before falling back to the stable order returned by Epic.
         for (int i = 0; i < cachedGames.length(); i++) {
@@ -1531,9 +1547,6 @@ public final class EpicFragment extends Fragment {
         showingGameDetails = true;
         String appName = game.optString("app_name", "");
         selectedGameAppName = appName;
-        requireContext().getApplicationContext()
-                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE)
-                .edit().putString("last_opened_app", appName).apply();
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
         boolean supported = isGameInstallSupported(game);
@@ -2203,7 +2216,36 @@ public final class EpicFragment extends Fragment {
             intent.putExtra("shortcut_name", title);
             intent.putExtra("epic_launch_token", token);
             startActivity(intent);
+            recordLaunchedGame(appName);
         });
+    }
+
+    /** Most recently launched Epic titles, newest first, stored locally without account data. */
+    private JSONArray getRecentlyLaunchedApps() {
+        android.content.SharedPreferences prefs = requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE);
+        try {
+            return new JSONArray(prefs.getString("recently_launched_apps_json", "[]"));
+        } catch (Exception ignored) {
+            return new JSONArray();
+        }
+    }
+
+    private void recordLaunchedGame(String appName) {
+        if (appName == null || appName.isEmpty() || getContext() == null) return;
+        JSONArray previous = getRecentlyLaunchedApps();
+        JSONArray updated = new JSONArray();
+        updated.put(appName);
+        for (int i = 0; i < previous.length() && updated.length() < 8; i++) {
+            String candidate = previous.optString(i, "");
+            if (!candidate.isEmpty() && !appName.equals(candidate)) updated.put(candidate);
+        }
+        requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE)
+                .edit().putString("recently_launched_apps_json", updated.toString()).apply();
+        if (libraryLoaded && "library".equals(activeSection) && !showingGameDetails) {
+            renderGameCards(searchField == null ? "" : searchField.getText().toString());
+        }
     }
 
     private String materializeOwnershipToken(JSONObject launch, Container container) throws Exception {
