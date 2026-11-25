@@ -1805,9 +1805,11 @@ public final class EpicFragment extends Fragment {
         gameProgressBar.setIndeterminate(gameJobForThisTitle);
         gameProgressBar.setProgress(0);
         addMargin(progressCard, gameProgressBar, 10);
-        // Live worker progress is part of the hero action area, not a separate
-        // panel below the artwork. The same persisted job observer still drives it.
-        addMargin(artworkCaption, progressCard, 9);
+        // Keep live worker progress in its own full-width section directly
+        // beneath the cinematic artwork. This prevents a long status message or
+        // progress bar from crowding the title/action overlay on short displays.
+        // The persisted worker observer remains the only source of progress.
+        addMargin(detail, progressCard, 12);
 
         // Keep player-facing metadata in separate cards so each feature has a
         // clear status and can grow independently without one dense information panel.
