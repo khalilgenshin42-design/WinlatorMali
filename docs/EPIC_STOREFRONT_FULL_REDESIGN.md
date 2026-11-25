@@ -1,11 +1,11 @@
 # Epic Storefront — Full Experience Redesign
 
-Status: implementation target, 2026-11-24  
+Status: active implementation; CI-validated build published 2026-11-25
 Branch: `development/maliwinlator-1.2.1-bootstrap`
 
 ## Why the current screen misses the approved concept
 
-The current `EpicFragment` is still a vertically stacked, programmatically assembled form. Its hero is a fixed-height 258dp panel that always features the first non-DLC catalog entry; library cards are generic 224dp horizontal-rail tiles; game details are another vertical stack of generic panels. The global connection/status banner and setup-oriented navigation remain visually prominent above the library. The existing entrance/press animations are short view fades/scales, not a cohesive navigation or launcher interaction model.
+The current `EpicFragment` has progressed beyond the original settings-form layout: the Library has a personalized wide-art hero, catalog-backed collection metrics, portrait-art shelves, filter counts, and a separate profile with persistent install controls and real worker progress. Account/setup is separated from the storefront, and provider status is kept out of the hero. The remaining weakness is that the home page is still assembled as a mostly linear vertical stack of generic shelves and panels. The current hero entrance is a one-shot cinematic reveal, but the overall navigation and shelf interactions still need a more cohesive launcher interaction model. Further artwork resizing or palette changes alone will not close that gap.
 
 Increasing artwork sizes or changing colors cannot close that gap. The next implementation must change the page composition and interaction hierarchy, not add another cosmetic pass.
 
