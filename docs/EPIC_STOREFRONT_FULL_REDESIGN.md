@@ -59,3 +59,9 @@ Increasing artwork sizes or changing colors cannot close that gap. The next impl
 ## Validation boundary
 
 CI and managed-emulator success do not prove visual fidelity on the Xiaomi 15T. Do not claim the original lost demo has been reproduced pixel-for-pixel without a reference screenshot and device review. If the user can provide a screenshot of the approved demo, use it as the visual reference; implementation must still proceed with the requirements above if no screenshot is available.
+
+## Latest implementation — interactive featured spotlight
+
+Source commit: `07b0bf6498bbe828a26685a8f11709d339e80ed5`
+
+The cinematic hero now has accessible previous/next controls when the catalog contains multiple eligible non-DLC titles. Selection is deterministic and based only on actual catalog entries; the chosen title is persisted as the featured app. Changing the spotlight uses a short, one-shot crossfade/vertical settle and does not start a timer or continuously animate the view. The existing hero action still reflects the selected game's real installed or active-job state. This is an interaction/composition improvement, not a claim that the lost original demo has been reproduced.
