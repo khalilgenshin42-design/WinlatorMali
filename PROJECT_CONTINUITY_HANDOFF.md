@@ -3114,3 +3114,13 @@ Replace the current largely linear home-page composition with a more deliberate 
 - The unique count respects the active Installed / Ready to install / Downloading filter and the current search query. DLC and empty app identifiers are excluded. Shelf contents and worker behavior are unchanged.
 - This is a display correctness fix; it does not alter Epic catalog data, install eligibility, or persisted job state.
 - Standard and Epic ARM64 workflows are triggered by the source commit; do not publish until both pass for the exact SHA.
+
+
+
+## Engineering step log — 2026-11-25: focused search and category browsing
+
+- Source commit: `350ac4f7677dfcd22d418df9f8009353d6c02c63`.
+- The personalized wide hero and its collection-stat tiles now appear only on the unfiltered `All games` home. When the player searches or selects Installed / Ready to install / Downloading, that featured-home block is hidden so the relevant results shelf is immediately the primary content rather than being pushed down by an unrelated hero.
+- Returning to the unfiltered All games view restores the hero and metrics. Search, filter counts, shelf membership, catalog selection, and the persisted Epic download/install worker contract are unchanged.
+- Standard APK and Epic runtime / ARM64 workflows were triggered by this source commit; do not publish until both pass for the exact source SHA.
+- This is a navigation hierarchy correction within the larger storefront redesign. No physical Xiaomi 15T validation has occurred.
