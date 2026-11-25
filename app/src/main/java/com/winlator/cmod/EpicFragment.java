@@ -1270,16 +1270,30 @@ public final class EpicFragment extends Fragment {
         featuredContainer.removeAllViews();
         JSONObject featured = null;
         JSONArray recentlyLaunched = getRecentlyLaunchedApps();
-        String lastOpenedApp = recentlyLaunched.optString(0, "");
-        // Prefer the player's most recently launched installed title; otherwise
-        // surface another installed game before falling back to Epic's catalog order.
+        android.content.SharedPreferences storefrontPrefs = requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE);
+        String lastOpenedApp = storefrontPrefs.getString("featured_app_name", "");
+        // Keep the last game the player deliberately opened as the featured title.
+        // If no profile has been opened yet, fall back to the most recently launched
+        // installed game, then another installed title, then stable catalog order.
         for (int i = 0; i < cachedGames.length(); i++) {
             JSONObject candidate = cachedGames.optJSONObject(i);
             if (candidate != null && !candidate.optBoolean("is_dlc", false)
-                    && installedApps.contains(candidate.optString("app_name", ""))
                     && lastOpenedApp.equals(candidate.optString("app_name", ""))) {
                 featured = candidate;
                 break;
+            }
+        }
+        if (featured == null) {
+            String lastLaunchedApp = recentlyLaunched.optString(0, "");
+            for (int i = 0; i < cachedGames.length(); i++) {
+                JSONObject candidate = cachedGames.optJSONObject(i);
+                if (candidate != null && !candidate.optBoolean("is_dlc", false)
+                        && installedApps.contains(candidate.optString("app_name", ""))
+                        && lastLaunchedApp.equals(candidate.optString("app_name", ""))) {
+                    featured = candidate;
+                    break;
+                }
             }
         }
         if (featured == null) {
@@ -1643,6 +1657,11 @@ public final class EpicFragment extends Fragment {
         selectedGame = game;
         showingGameDetails = true;
         String appName = game.optString("app_name", "");
+        // Remember the last deliberately opened title so the storefront hero
+        // remains relevant when the player returns to the Library.
+        requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE)
+                .edit().putString("featured_app_name", appName).apply();
         selectedGameAppName = appName;
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
