@@ -1407,9 +1407,27 @@ public final class EpicFragment extends Fragment {
         if (!hasAnimatedFeaturedHero) {
             hasAnimatedFeaturedHero = true;
             if (motionAnimationsEnabled()) {
+                // A restrained cover-art push-in and staggered content reveal
+                // give the first storefront visit a deliberate cinematic arrival.
+                // The one-shot guard prevents search/progress refreshes replaying it.
                 hero.setAlpha(0f);
                 hero.setTranslationY(dp(10));
-                hero.animate().alpha(1f).translationY(0f).setDuration(280).start();
+                image.setScaleX(1.055f);
+                image.setScaleY(1.055f);
+                hero.animate().alpha(1f).translationY(0f).setDuration(300)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+                image.animate().scaleX(1f).scaleY(1f).setDuration(1150)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+                for (int childIndex = 0; childIndex < content.getChildCount(); childIndex++) {
+                    View child = content.getChildAt(childIndex);
+                    child.setAlpha(0f);
+                    child.setTranslationY(dp(12));
+                    child.animate().alpha(1f).translationY(0f)
+                            .setStartDelay(90L + childIndex * 75L)
+                            .setDuration(260)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                }
             } else {
                 hero.setAlpha(1f);
                 hero.setTranslationY(0f);
