@@ -1108,11 +1108,14 @@ public final class EpicFragment extends Fragment {
         } else if ("Ready to install".equals(libraryFilter)) {
             count += addGameShelf("READY FOR INSTALLATION", "ready", needle);
         } else {
+            // Make the complete owned library the primary browsing surface.
+            // Secondary shelves add useful shortcuts below it, rather than
+            // relegating most of the collection to the bottom of the page.
+            count += addGameShelf("YOUR EPIC COLLECTION", "collection", needle);
             count += addGameShelf("CONTINUE PLAYING", "recent", needle);
             count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
             count += addGameShelf("ACTIVE DOWNLOADS & INSTALLS", "downloading", needle);
             count += addGameShelf("READY TO INSTALL", "ready", needle);
-            count += addGameShelf("YOUR EPIC COLLECTION", "all", needle);
         }
         if (count == 0) {
             String emptyMessage;
@@ -1258,7 +1261,8 @@ public final class EpicFragment extends Fragment {
             if ("installed".equals(mode) && !installed) continue;
             if ("ready".equals(mode) && (installed || downloading || !supported)) continue;
             if ("downloading".equals(mode) && !downloading) continue;
-            if ("all".equals(mode) && (installed || downloading || supported)) continue;
+            // "collection" deliberately includes every non-DLC catalog entry,
+            // regardless of local installability or current install state.
             View card = createGameCard(game);
             // Keep two comfortable portrait covers visible on phones while
             // allowing larger cards on tablets and foldables. The artwork height
