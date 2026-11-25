@@ -1177,6 +1177,7 @@ public final class EpicFragment extends Fragment {
             boolean supported = isGameInstallSupported(game);
             boolean downloading = !activeJobId.isEmpty() && appName.equals(activeJobApp);
             if (!needle.isEmpty() && !title.toLowerCase(java.util.Locale.ROOT).contains(needle)) continue;
+            if ("recent".equals(mode) && !installed) continue;
             if ("installed".equals(mode) && !installed) continue;
             if ("ready".equals(mode) && (installed || downloading || !supported)) continue;
             if ("downloading".equals(mode) && !downloading) continue;
@@ -1200,15 +1201,14 @@ public final class EpicFragment extends Fragment {
         if (featuredContainer == null || !isAdded()) return;
         featuredContainer.removeAllViews();
         JSONObject featured = null;
-        android.content.SharedPreferences uiPrefs = requireContext().getApplicationContext()
-                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE);
         JSONArray recentlyLaunched = getRecentlyLaunchedApps();
         String lastOpenedApp = recentlyLaunched.optString(0, "");
-        // Prefer the player's last opened title; otherwise surface an installed
-        // game before falling back to the stable order returned by Epic.
+        // Prefer the player's most recently launched installed title; otherwise
+        // surface another installed game before falling back to Epic's catalog order.
         for (int i = 0; i < cachedGames.length(); i++) {
             JSONObject candidate = cachedGames.optJSONObject(i);
             if (candidate != null && !candidate.optBoolean("is_dlc", false)
+                    && installedApps.contains(candidate.optString("app_name", ""))
                     && lastOpenedApp.equals(candidate.optString("app_name", ""))) {
                 featured = candidate;
                 break;
