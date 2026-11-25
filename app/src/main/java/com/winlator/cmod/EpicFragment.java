@@ -263,7 +263,8 @@ public final class EpicFragment extends Fragment {
         for (String filterName : filterNames) {
             Button filterButton = action(filterName, filterName.equals(libraryFilter));
             filterButton.setTextSize(11);
-            filterButton.setMinHeight(dp(34));
+            // Keep filter chips comfortably tappable on touch displays.
+            filterButton.setMinHeight(dp(44));
             filterButton.setPadding(dp(13), 0, dp(13), 0);
             filterButton.setOnClickListener(v -> {
                 libraryFilter = filterName;
@@ -280,7 +281,7 @@ public final class EpicFragment extends Fragment {
             filterButton.setTag(filterName);
             libraryFilterButtons.put(filterName, filterButton);
             filterButton.setContentDescription(filterName + " filter");
-            LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-2, dp(36));
+            LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-2, dp(44));
             filterParams.rightMargin = dp(8);
             filters.addView(filterButton, filterParams);
         }
@@ -1157,6 +1158,9 @@ public final class EpicFragment extends Fragment {
             button.setText(names[i] + "  " + counts[i]);
             button.setContentDescription(names[i] + ", " + counts[i] + " games");
             boolean selected = names[i].equals(libraryFilter);
+            button.setSelected(selected);
+            button.setContentDescription(names[i] + ", " + counts[i] + " games"
+                    + (selected ? ", selected" : ""));
             button.setBackground(shape(selected ? 0xff5b55d9 : 0xff252f43,
                     selected ? 0xff5b55d9 : 0xff35425a, 11));
             button.setTextColor(selected ? 0xffffffff : 0xffd0d7e5);
