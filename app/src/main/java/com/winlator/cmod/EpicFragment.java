@@ -1086,9 +1086,16 @@ public final class EpicFragment extends Fragment {
         gamesContainer.removeAllViews();
         updateLibraryFilterCounts();
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
-        animateGameCardEntrance = !hasRenderedGameCards && needle.isEmpty()
-                && "All games".equals(libraryFilter);
-        if (needle.isEmpty() && "All games".equals(libraryFilter)) {
+        boolean showPersonalizedHome = needle.isEmpty() && "All games".equals(libraryFilter);
+        animateGameCardEntrance = !hasRenderedGameCards && showPersonalizedHome;
+        // The featured hero and collection metrics belong to the unfiltered home
+        // destination. Hide them while searching or viewing a focused category so
+        // the result shelf becomes the first useful content instead of leaving a
+        // stale, unrelated featured title above the user's filtered results.
+        if (featuredContainer != null) {
+            featuredContainer.setVisibility(showPersonalizedHome ? View.VISIBLE : View.GONE);
+        }
+        if (showPersonalizedHome) {
             renderFeaturedHero();
             renderLibraryStats();
         }
