@@ -3005,3 +3005,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This completes coverage of the storefront's authored entrance and interaction animations. The Epic Bridge, foreground job worker, persisted job identity, progress/cancel logic, and cloud-save limitations remain unchanged.
 - The previous reduced-motion commit `5f85b1ab717319eda4f7ecef153531004e33de1c` triggered standard APK workflow **45529939933** and Epic runtime/ARM64 workflow **45529939923**; both were still running when checked. Those results do not validate the follow-up SHA. Confirm new workflow runs for `1c9de5a` and require both to pass before publication.
 - No Xiaomi 15T physical validation has occurred.
+
+
+## 2026-11-25 — Screen-adaptive storefront artwork (CI pending)
+
+- Source commit: `0a0c6fe1320974d1d3daead7964c59aa964edf53`.
+- Replaced fixed featured-hero and game-profile artwork heights with a shared screen-height-aware calculation. The featured hero scales to 40% of display height within 220–360dp; the profile artwork scales to 48% within 260–460dp. This keeps the cinematic artwork prominent on tall phones while reducing vertical dominance on short/landscape screens.
+- Portrait shelf card proportions remain unchanged. No game data, artwork host validation, download worker, persisted job identity, progress/cancel flow, achievements, or cloud-save behavior changed.
+- The immediately preceding source SHA `1c9de5ac51bca0affb7063361418ca1ea1d98102` passed standard APK workflow **45529990937** and Epic runtime/ARM64 workflow **45529990965**. The new source SHA `0a0c6fe1320974d1d3daead7964c59aa964edf53` must pass both workflows before publication.
+- No Xiaomi 15T physical validation has occurred; the adaptive dimensions need device review after an APK is built.
