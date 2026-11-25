@@ -3165,3 +3165,8 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Source commit `faa678cdf7834fa3aef56f75a83da70c3f75cba2` changes `EpicFragment.renderGameCards()` so the default Library presents the featured hero and one complete two-column `YOUR GAMES` collection, rather than appending repeated Continue Playing / Installed / Downloading / Ready shelves below the same grid. Focused filters still render their respective real catalog subset; search and unique catalog counts remain active.
 - Preserve real Epic backend state. Never ship sample games, synthetic progress, fake achievements/playtime, or simulated cloud-save sync from the chat prototype.
 - This is the first source pass toward the approved concept, not a claim of pixel-perfect parity or a finished build. The next build must continue through the hero/card/detail visual treatment and validate both standard APK and Epic ARM64 workflows before requesting device testing.
+
+
+### Approved concept — implementation refinement
+- Follow-up source commit `9f1d2a98f5b44968648a2876d6be371bf5612496` adds the explicit “Browse your games” heading and updates the search prompt to “Search your library...” to match the approved interactive concept's hierarchy. It also removes the live collection-stat tiles from the default featured area, leaving the cinematic hero as the main feature before browsing.
+- Build verification for this newest commit is still pending; do not distribute an APK until both required workflows report success for the same commit.
