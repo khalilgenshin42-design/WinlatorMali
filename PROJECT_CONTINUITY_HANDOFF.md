@@ -3024,3 +3024,6 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Reused the existing card renderer and Epic artwork validation/Glide path; no download, install, account, or worker behavior changed.
 - Validation for this source commit: pending new Standard Android APK and Epic runtime/ARM64 workflows. Previous source revision `0a0c6fe1320974d1d3daead7964c59aa964edf53` passed both required workflows (runs 45535706436 and 45535706360).
 - Physical Xiaomi 15T appearance/runtime validation has not been performed; CI is not a substitute for device testing.
+
+
+- CI follow-up: Standard APK workflow 45604211121 passed for source `3a387d8fd072bde1ab9e448c7ef6510b37c3d03a`. Epic runtime workflow 45604211118 failed before emulator tests could start because Maven Central returned HTTP 429 for 38 Gradle artifacts (dependency rate limiting); it was not a source compile or Epic regression failure. The failed job was re-run via GitHub Actions; retry result pending. CI automatically recorded the transient failure in `PROJECT_EPIC_CI_STATUS.md` (commit `de4d605`).
