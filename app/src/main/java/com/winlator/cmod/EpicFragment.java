@@ -84,6 +84,7 @@ public final class EpicFragment extends Fragment {
     private ScrollView storefrontScroll;
     private ScrollView accountScroll;
     private ScrollView downloadsScroll;
+    private ScrollView discoverScroll;
     private LinearLayout downloadsPanel;
     private ProgressBar downloadsProgressBar;
     private ScrollView profileScroll;
@@ -190,7 +191,8 @@ public final class EpicFragment extends Fragment {
         navigationBar.setPadding(dp(5), dp(5), dp(5), dp(5));
         navigationBar.setBackground(shape(0xff111722, 0xff283449, 14));
         String[][] destinations = {
-                {"LIBRARY", "library"}, {"DOWNLOADS", "downloads"}, {"ACCOUNT", "account"}
+                {"LIBRARY", "library"}, {"DISCOVER", "discover"},
+                {"DOWNLOADS", "downloads"}, {"SETTINGS", "account"}
         };
         for (String[] destination : destinations) {
             Button tab = action(destination[0], destination[1].equals(activeSection));
@@ -391,6 +393,35 @@ public final class EpicFragment extends Fragment {
         downloadsScroll.setClipToPadding(false);
         downloadsScroll.addView(downloadsPanel);
 
+        LinearLayout discoverPanel = new LinearLayout(requireContext());
+        discoverPanel.setOrientation(LinearLayout.VERTICAL);
+        discoverPanel.setPadding(0, dp(4), 0, dp(12));
+        addHeading(discoverPanel, "Discover", "Explore the Epic Games Store beyond your owned library.");
+        LinearLayout discoverCard = new LinearLayout(requireContext());
+        discoverCard.setOrientation(LinearLayout.VERTICAL);
+        discoverCard.setPadding(dp(18), dp(18), dp(18), dp(18));
+        discoverCard.setBackground(shape(0xff171d29, 0xff35415a, 17));
+        discoverCard.addView(label("THE EPIC GAMES STORE", 9, 0xffaaa6ff, true));
+        addMargin(discoverCard, label("Find your next game.", 23, 0xfff5f6fa, true), 9);
+        addMargin(discoverCard, label("Browse official store offers, new releases and free games. "
+                + "The store opens on Epic's website; your owned games remain available in Library.", 12,
+                0xffaeb8c9, false), 8);
+        Button openStore = action("Explore Epic Games Store  ↗", true);
+        openStore.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://store.epicgames.com/")));
+            } catch (Exception error) {
+                Toast.makeText(requireContext(), "Unable to open the Epic Games Store.", Toast.LENGTH_SHORT).show();
+            }
+        });
+        addMargin(discoverCard, openStore, 16);
+        discoverPanel.addView(discoverCard, fullParams());
+        discoverScroll = new ScrollView(requireContext());
+        discoverScroll.setFillViewport(true);
+        discoverScroll.setClipToPadding(false);
+        discoverScroll.addView(discoverPanel);
+
         showSection(activeSection);
         return root;
     }
@@ -508,6 +539,9 @@ public final class EpicFragment extends Fragment {
             refreshDownloadsPanel();
             if (downloadsScroll.getParent() != null) ((ViewGroup) downloadsScroll.getParent()).removeView(downloadsScroll);
             pageContainer.addView(downloadsScroll, new LinearLayout.LayoutParams(-1, -1));
+        } else if ("discover".equals(section)) {
+            if (discoverScroll.getParent() != null) ((ViewGroup) discoverScroll.getParent()).removeView(discoverScroll);
+            pageContainer.addView(discoverScroll, new LinearLayout.LayoutParams(-1, -1));
         } else {
             if (storefrontScroll.getParent() != null) ((ViewGroup) storefrontScroll.getParent()).removeView(storefrontScroll);
             pageContainer.addView(storefrontScroll, new LinearLayout.LayoutParams(-1, -1));
