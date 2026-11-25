@@ -101,6 +101,7 @@ public final class EpicFragment extends Fragment {
     private TextView gameProgressText;
     private ProgressBar gameProgressBar;
     private Button gamePrimaryButton;
+    private TextView gameDockStatusText;
     private boolean gameJobActive;
     private boolean showingGameDetails;
     // One-shot entrance motion: filtering and progress-driven re-renders must not
@@ -770,6 +771,15 @@ public final class EpicFragment extends Fragment {
                                         } else {
                                             gameProgressBar.setIndeterminate(true);
                                         }
+                                    }
+                                    if (gameDockStatusText != null) {
+                                        String dockState = "cancelling".equals(jobState) ? "CANCELLING..."
+                                                : "queued".equals(jobState) ? "QUEUED"
+                                                : "running".equals(jobState) ? "INSTALLATION IN PROGRESS"
+                                                : "complete".equals(jobState) ? "OPERATION COMPLETE"
+                                                : "cancelled".equals(jobState) ? "CANCELLED"
+                                                : "interrupted".equals(jobState) ? "INTERRUPTED" : "INSTALL FAILED";
+                                        gameDockStatusText.setText(dockState);
                                     }
                                     if ("running".equals(jobState) || "queued".equals(jobState)
                                             || "cancelling".equals(jobState)) {
@@ -1712,12 +1722,12 @@ public final class EpicFragment extends Fragment {
         String dockStatus = gameJobForThisTitle ? "INSTALLATION IN PROGRESS"
                 : installed ? "READY TO PLAY"
                 : supported ? "READY TO INSTALL" : "EPIC LIBRARY";
-        TextView dockSubtitle = label(dockStatus, 8,
+        gameDockStatusText = label(dockStatus, 8,
                 gameJobForThisTitle ? 0xffffd18a : installed ? 0xffa9f2c9 : 0xffaeb8c9, true);
-        dockSubtitle.setLetterSpacing(0.04f);
+        gameDockStatusText.setLetterSpacing(0.04f);
         LinearLayout.LayoutParams dockSubtitleParams = new LinearLayout.LayoutParams(-1, -2);
         dockSubtitleParams.topMargin = dp(3);
-        dockCopy.addView(dockSubtitle, dockSubtitleParams);
+        dockCopy.addView(gameDockStatusText, dockSubtitleParams);
         actionDock.addView(dockCopy, new LinearLayout.LayoutParams(0, -2, 1f));
         gamePrimaryButton.setTextSize(12);
         gamePrimaryButton.setMinHeight(dp(44));
@@ -2072,6 +2082,9 @@ public final class EpicFragment extends Fragment {
         statusText.setText((update ? "Updating " : "Installing ") + title +
                 ". The foreground download service keeps working if you leave this tab.");
         gameJobActive = true;
+        if (gameDockStatusText != null && appName.equals(selectedGameAppName)) {
+            gameDockStatusText.setText("PREPARING INSTALLATION");
+        }
         android.content.Context appContext = requireContext().getApplicationContext();
         appContext.getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE)
                 .edit().putString(ACTIVE_JOB_APP_KEY, appName).apply();
@@ -2080,6 +2093,10 @@ public final class EpicFragment extends Fragment {
         runCommand("install", payload.toString(), result -> {
             if (!result.optBoolean("pending", false)) {
                 gameJobActive = false;
+                if (gameDockStatusText != null && appName.equals(selectedGameAppName)) {
+                    gameDockStatusText.setText(installedApps.contains(appName)
+                            ? "READY TO PLAY" : "READY TO INSTALL");
+                }
                 updateGameActionButton(installedApps.contains(appName) ? "Play game" : "Install", true);
             }
             if (!result.optBoolean("ok", false)) {
