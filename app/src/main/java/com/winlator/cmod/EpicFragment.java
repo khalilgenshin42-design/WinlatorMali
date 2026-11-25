@@ -1101,10 +1101,10 @@ public final class EpicFragment extends Fragment {
         String needle = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
         boolean showPersonalizedHome = needle.isEmpty() && "All games".equals(libraryFilter);
         animateGameCardEntrance = !hasRenderedGameCards && showPersonalizedHome;
-        // The featured hero and collection metrics belong to the unfiltered home
-        // destination. Hide them while searching or viewing a focused category so
-        // the result shelf becomes the first useful content instead of leaving a
-        // stale, unrelated featured title above the user's filtered results.
+
+        // Keep the approved storefront composition focused: the cinematic
+        // spotlight, search/filter controls and one complete two-column library.
+        // Do not append repeated horizontal shelves beneath the same collection.
         if (featuredContainer != null) {
             featuredContainer.setVisibility(showPersonalizedHome ? View.VISIBLE : View.GONE);
         }
@@ -1113,23 +1113,17 @@ public final class EpicFragment extends Fragment {
             renderLibraryStats();
         }
 
-        int count = 0;
+        int count;
         if ("Downloading".equals(libraryFilter)) {
-            count += addGameShelf("IN PROGRESS", "downloading", needle);
+            count = addGameShelf("DOWNLOADING", "downloading", needle);
         } else if ("Installed".equals(libraryFilter)) {
-            count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
+            count = addGameShelf("INSTALLED GAMES", "installed", needle);
         } else if ("Ready to install".equals(libraryFilter)) {
-            count += addGameShelf("READY FOR INSTALLATION", "ready", needle);
+            count = addGameShelf("READY TO INSTALL", "ready", needle);
         } else {
-            // Make the complete owned library the primary browsing surface.
-            // Secondary shelves add useful shortcuts below it, rather than
-            // relegating most of the collection to the bottom of the page.
-            count += addGameShelf("YOUR EPIC COLLECTION", "collection", needle);
-            count += addGameShelf("CONTINUE PLAYING", "recent", needle);
-            count += addGameShelf("INSTALLED ON THIS DEVICE", "installed", needle);
-            count += addGameShelf("ACTIVE DOWNLOADS & INSTALLS", "downloading", needle);
-            count += addGameShelf("READY TO INSTALL", "ready", needle);
+            count = addGameShelf("YOUR GAMES", "collection", needle);
         }
+
         if (count == 0) {
             String emptyMessage;
             if (!needle.isEmpty()) emptyMessage = "No games match your search.";
@@ -1139,10 +1133,11 @@ public final class EpicFragment extends Fragment {
             else emptyMessage = "No Windows games found in this Epic library.";
             LinearLayout empty = new LinearLayout(requireContext());
             empty.setOrientation(LinearLayout.VERTICAL);
-            empty.setPadding(dp(18), dp(20), dp(18), dp(20));
+            empty.setGravity(Gravity.CENTER);
+            empty.setPadding(dp(18), dp(28), dp(18), dp(28));
             empty.setBackground(shape(0xff151b28, 0xff303b50, 16));
-            empty.addView(label("NOTHING HERE YET", 9, 0xffaaa6ff, true));
-            addMargin(empty, label(emptyMessage, 13, 0xffdce3f2, true), 7);
+            empty.addView(label("YOUR LIBRARY IS WAITING", 10, 0xffaaa6ff, true));
+            addMargin(empty, label(emptyMessage, 13, 0xffdce3f2, false), 8);
             gamesContainer.addView(empty);
         }
         int uniqueVisibleGames = countUniqueVisibleGames(needle);
