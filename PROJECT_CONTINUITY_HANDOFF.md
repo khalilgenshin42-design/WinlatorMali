@@ -2996,3 +2996,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This is an accessibility and motion-preference improvement. It does not change the Epic catalog, achievement data, download worker, persisted job identity, progress polling, install/cancel operations, or cloud-save capabilities.
 - The immediately preceding source SHA `e468bbe0aa0bc534adc95c2a4c7e9d2046b7dab8` passed both required workflows: standard APK **45527807716** and Epic runtime/ARM64 **45527807803**. The new source SHA `5f85b1ab717319eda4f7ecef153531004e33de1c` must pass both workflows before publication.
 - No Xiaomi 15T physical validation has occurred. Continue the substantial storefront redesign; do not claim pixel-perfect reproduction of the lost interactive demo.
+
+
+## 2026-11-25 — Reduced-motion press feedback follow-up (CI pending)
+
+- Follow-up source commit: `1c9de5ac51bca0affb7063361418ca1ea1d98102`.
+- Extended the reduced-motion guard to game-card press feedback and the persistent profile action button. With Android animations disabled, selecting a card opens its profile immediately and Play/Install/Cancel actions execute without scale animation.
+- This completes coverage of the storefront's authored entrance and interaction animations. The Epic Bridge, foreground job worker, persisted job identity, progress/cancel logic, and cloud-save limitations remain unchanged.
+- The previous reduced-motion commit `5f85b1ab717319eda4f7ecef153531004e33de1c` triggered standard APK workflow **45529939933** and Epic runtime/ARM64 workflow **45529939923**; both were still running when checked. Those results do not validate the follow-up SHA. Confirm new workflow runs for `1c9de5a` and require both to pass before publication.
+- No Xiaomi 15T physical validation has occurred.
