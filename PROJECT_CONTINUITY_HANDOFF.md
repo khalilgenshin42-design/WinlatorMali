@@ -3170,3 +3170,12 @@ Replace the current largely linear home-page composition with a more deliberate 
 ### Approved concept — implementation refinement
 - Follow-up source commit `9f1d2a98f5b44968648a2876d6be371bf5612496` adds the explicit “Browse your games” heading and updates the search prompt to “Search your library...” to match the approved interactive concept's hierarchy. It also removes the live collection-stat tiles from the default featured area, leaving the cinematic hero as the main feature before browsing.
 - Build verification for this newest commit is still pending; do not distribute an APK until both required workflows report success for the same commit.
+
+## 2026-11-25 — Persistent storefront navigation and Downloads destination
+
+- Source commit: `84b41a819405e1359f19639fc18685f32512a43f`.
+- Added a persistent in-app destination bar for Library, Downloads, and Account beneath the compact MaliWinlator identity header. The selected destination receives a visible active state; the game profile remains immersive and hides the global header/navigation until the player returns to Library.
+- Implemented a dedicated Downloads screen using the existing persisted Epic job identity and foreground worker observer. It displays the active title when it can be resolved from the real catalog, the worker's latest status label, a progress indicator that becomes determinate only when the worker reports a percentage, and the existing cancel action.
+- No synthetic download entries, simulated progress, new worker, Legendary command, provider API, or storage behavior was introduced. The Downloads screen is a view over the existing single active Epic operation.
+- Both standard Android APK and Epic ARM64 runtime workflows must pass for this exact source SHA before publishing a new APK. Previous source `9f1d2a98f5b44968648a2876d6be371bf5612496` passed both workflows (45669164878 and 45669164854).
+- No physical Xiaomi 15T validation has occurred. This is a navigation/Downloads implementation milestone, not a claim of exact pixel parity with the unavailable original demo.
