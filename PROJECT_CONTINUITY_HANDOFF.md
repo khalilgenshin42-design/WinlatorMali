@@ -2969,3 +2969,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Added a thin indeterminate activity indicator along the bottom edge of a game cover while that title owns the persisted active Epic job. It communicates that work is ongoing without inventing a percentage; exact progress remains sourced from the worker and shown on the selected game's profile.
 - No changes to the foreground worker, job identity, progress polling, cancel behavior, or Epic Bridge contract.
 - New source SHA is not validated until both standard APK and Epic runtime/ARM64 workflows pass for this exact commit. No physical Xiaomi 15T validation has occurred.
+
+
+## 2026-11-25 — Actionable collection shelf headers (CI pending)
+
+- Source commit: `233e76b5f2e19c314bb66a44603998216904f652`.
+- Each non-empty Library shelf now has a compact header with a live count derived from the same filtered game list and a `SEE ALL` action. The action switches to the corresponding real Library filter (Installed for Continue Playing, Downloading, Ready to install, or All games) and scrolls to the collection area. Empty shelves remain omitted.
+- This adds useful navigation and collection hierarchy without changing Epic catalog parsing, install eligibility, persisted job identity, worker/IPC, or progress polling. Counts do not represent fabricated download percentages.
+- The previous source SHA `9bcea22de0684c5f415c660fa7804b21badee78f` passed standard APK workflow **45522859040** and Epic runtime/ARM64 workflow **45522858904**. The new source SHA must pass both required workflows before it is published.
+- CI for `233e76b` is pending. No Xiaomi 15T device validation has occurred; the lost original demo has not been claimed as pixel-perfectly reproduced.
