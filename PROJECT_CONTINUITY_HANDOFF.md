@@ -1,6 +1,6 @@
 # MaliWinlator — Project Continuity Handoff
 
-Last updated: 2026-11-23
+Last updated: 2026-11-25
 Active branch: `development/maliwinlator-1.2.1-bootstrap`
 Repository: https://github.com/khalilgenshin42-design/WinlatorMali
 
@@ -3074,3 +3074,23 @@ User approved replacing the separate Library and Downloads destinations with a u
 - The animation remains gated by Android's system animator/reduced-motion setting. No timers, background work, artwork URLs, install state, or worker behavior changed.
 - The immediately preceding source revision `1ea088a54ca296ffa928098e428aab4528e909c5` passed standard APK workflow **45610978708** and Epic runtime/ARM64 workflow **45610978644**, and was published at [the 1.2.1 Epic prerelease](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-1ea088a54ca2). The new animation commit requires fresh passing workflows before any replacement build is published.
 - No physical Xiaomi 15T test has been performed. This is a focused motion refinement, not a claim of exact lost-demo reproduction.
+
+
+## Engineering step log — 2026-11-25: cinematic featured-hero motion and validated release
+
+- Source revision: `b1257c6e4e283a0b33d995c347ade9823c1e37fc`.
+- Added a coordinated first-visit featured-hero entrance in `EpicFragment`: the hero surface fades/slides into place, the wide artwork settles from a restrained 1.055 scale, and the hero copy/actions reveal in a short stagger. It is one-shot per Fragment render lifecycle and respects Android's reduced-motion/animator setting. Filtering and worker progress refreshes do not replay it.
+- Standard APK workflow **45613837910** passed for the exact source SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45613837910
+- Epic runtime / ARM64 workflow **45613837929** passed for the same source SHA: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45613837929
+- GitHub prerelease published: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-b1257c6e4e28
+- Assets: `app-standard-debug.apk`, `epicbridge-debug.apk`, and `SHA256SUMS`.
+- Direct APKs:
+  - https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b1257c6e4e28/app-standard-debug.apk
+  - https://github.com/khalilgenshin42-design/WinlatorMali/releases/download/maliwinlator-1.2.1-epic-b1257c6e4e28/epicbridge-debug.apk
+- The release is CI-validated only. No Xiaomi 15T visual/performance test has been performed for this revision, and no claim is made that it reproduces the unavailable original demo.
+- The storefront remains in active redesign. Existing implemented pieces include a deterministic personalized hero, portrait-art shelves, real catalog/install/job counts, filters, persistent worker progress, dedicated game profile, and reduced-motion-aware entrance transitions. The remaining gap is overall composition and interaction depth, not merely artwork sizing or color.
+- Preserve the existing Legendary/foreground-service architecture. Do not fabricate achievements, playtime, cloud-save transfer, or download progress.
+
+### Next implementation focus
+
+Replace the current largely linear home-page composition with a more deliberate launcher hierarchy while retaining the real data and job contracts: make the hero and collection navigation feel like one cohesive surface, improve shelf grouping and focus/selection feedback, and ensure signed-out/loading/empty/error states are intentional. Continue to keep provider/network work off the UI thread and run both CI workflows before publishing another APK.
