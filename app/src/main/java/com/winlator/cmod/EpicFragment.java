@@ -325,6 +325,13 @@ public final class EpicFragment extends Fragment {
         return root;
     }
 
+    private int adaptiveArtworkHeight(float screenFraction, int minDp, int maxDp) {
+        float density = getResources().getDisplayMetrics().density;
+        int screenHeightDp = Math.round(getResources().getDisplayMetrics().heightPixels / density);
+        int heightDp = Math.round(screenHeightDp * screenFraction);
+        return dp(Math.max(minDp, Math.min(maxDp, heightDp)));
+    }
+
     private boolean motionAnimationsEnabled() {
         // Respect Android's system-wide animator/reduced-motion setting. Static
         // layouts remain fully usable when animations are disabled.
@@ -1363,7 +1370,7 @@ public final class EpicFragment extends Fragment {
         content.addView(heroActions, buttonParams);
         // Give the featured title enough vertical room to feel like the
         // storefront's primary destination on a phone-sized display.
-        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, dp(356));
+        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, adaptiveArtworkHeight(0.40f, 220, 360));
         heroParams.bottomMargin = dp(8);
         featuredContainer.addView(hero, heroParams);
         if (!hasAnimatedFeaturedHero) {
@@ -1709,7 +1716,7 @@ public final class EpicFragment extends Fragment {
                 Gravity.BOTTOM | Gravity.LEFT);
         captionParams.setMargins(dp(16), 0, dp(16), dp(14));
         artwork.addView(artworkCaption, new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM));
-        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, dp(430));
+        LinearLayout.LayoutParams artParams = new LinearLayout.LayoutParams(-1, adaptiveArtworkHeight(0.48f, 260, 460));
         artParams.topMargin = dp(4);
         detail.addView(artwork, artParams);
 
