@@ -65,3 +65,9 @@ CI and managed-emulator success do not prove visual fidelity on the Xiaomi 15T. 
 Source commit: `07b0bf6498bbe828a26685a8f11709d339e80ed5`
 
 The cinematic hero now has accessible previous/next controls when the catalog contains multiple eligible non-DLC titles. Selection is deterministic and based only on actual catalog entries; the chosen title is persisted as the featured app. Changing the spotlight uses a short, one-shot crossfade/vertical settle and does not start a timer or continuously animate the view. The existing hero action still reflects the selected game's real installed or active-job state. This is an interaction/composition improvement, not a claim that the lost original demo has been reproduced.
+
+## Structural storefront change — primary catalog grid
+
+Source commit: `7a1e791fdc4316e035ee71c866ddfeb55fb6001a`
+
+The primary `YOUR EPIC COLLECTION` surface is now a responsive two-column portrait-art grid instead of a horizontal carousel. Each real non-DLC catalog title occupies a full-width grid cell with its existing status, artwork fallback, click-to-profile behavior, and accessibility description. Continue Playing, Installed, Active Downloads, and Ready to Install remain secondary horizontal shortcut rails. The grid uses half-width cells and 3:4 artwork sizing so both columns fit phone layouts. This intentionally changes the page composition rather than just changing card styling.
