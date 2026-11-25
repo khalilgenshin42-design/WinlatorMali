@@ -3158,3 +3158,10 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Standard APK workflow: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45666017688. Epic ARM64 runtime workflow: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45666017709. Both were running when this handoff was written; do not publish this source revision until both pass.
 - The previous two-column grid source 7a1e791fdc4316e035ee71e866ddfeb55fb6001a passed both CI workflows (45663018664 and 45663018854), but the latest visual pass must be validated independently.
 - Visual target is the recovered premium dark storefront concept. Exact pixel parity with the unavailable demo cannot be asserted. No physical Xiaomi 15T validation has occurred.
+
+
+### Approved interactive concept implementation — 2026-11-25
+- The user explicitly designated the interactive dark storefront concept shown in chat as the next GitHub build target, with a strict 1:1 visual/interaction intent.
+- Source commit `faa678cdf7834fa3aef56f75a83da70c3f75cba2` changes `EpicFragment.renderGameCards()` so the default Library presents the featured hero and one complete two-column `YOUR GAMES` collection, rather than appending repeated Continue Playing / Installed / Downloading / Ready shelves below the same grid. Focused filters still render their respective real catalog subset; search and unique catalog counts remain active.
+- Preserve real Epic backend state. Never ship sample games, synthetic progress, fake achievements/playtime, or simulated cloud-save sync from the chat prototype.
+- This is the first source pass toward the approved concept, not a claim of pixel-perfect parity or a finished build. The next build must continue through the hero/card/detail visual treatment and validate both standard APK and Epic ARM64 workflows before requesting device testing.
