@@ -83,6 +83,9 @@ public final class EpicFragment extends Fragment {
     private LinearLayout pageContainer;
     private ScrollView storefrontScroll;
     private ScrollView accountScroll;
+    private ScrollView downloadsScroll;
+    private LinearLayout downloadsPanel;
+    private ProgressBar downloadsProgressBar;
     private ScrollView profileScroll;
     private int storefrontScrollY;
     private LinearLayout navigationBar;
@@ -178,6 +181,32 @@ public final class EpicFragment extends Fragment {
         accountShortcut.setOnClickListener(v -> showSection("account"));
         brand.addView(accountShortcut, new LinearLayout.LayoutParams(-2, dp(36)));
         root.addView(brand);
+
+        // Persistent destination navigation mirrors the approved launcher concept.
+        // Keep the account entry reachable without taking space inside the Library.
+        navigationBar = new LinearLayout(requireContext());
+        navigationBar.setOrientation(LinearLayout.HORIZONTAL);
+        navigationBar.setGravity(Gravity.CENTER_VERTICAL);
+        navigationBar.setPadding(dp(5), dp(5), dp(5), dp(5));
+        navigationBar.setBackground(shape(0xff111722, 0xff283449, 14));
+        String[][] destinations = {
+                {"LIBRARY", "library"}, {"DOWNLOADS", "downloads"}, {"ACCOUNT", "account"}
+        };
+        for (String[] destination : destinations) {
+            Button tab = action(destination[0], destination[1].equals(activeSection));
+            tab.setTextSize(10);
+            tab.setMinHeight(dp(38));
+            tab.setPadding(dp(7), 0, dp(7), 0);
+            tab.setTag(destination[1]);
+            tab.setOnClickListener(v -> showSection(destination[1]));
+            LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(0, dp(40), 1f);
+            tabParams.leftMargin = dp(3);
+            tabParams.rightMargin = dp(3);
+            navigationBar.addView(tab, tabParams);
+        }
+        LinearLayout.LayoutParams navigationParams = new LinearLayout.LayoutParams(-1, -2);
+        navigationParams.topMargin = dp(10);
+        root.addView(navigationBar, navigationParams);
 
         // Runtime diagnostics belong to Account, not the player-facing storefront.
         statusText = label("Connecting to Epic Bridge...", 12, 0xffb8c2d5, false);
@@ -332,6 +361,36 @@ public final class EpicFragment extends Fragment {
         cancelJobButton.setOnClickListener(v -> cancelActiveJob());
         cancelJobButton.setVisibility(View.GONE);
 
+        downloadsPanel = new LinearLayout(requireContext());
+        downloadsPanel.setOrientation(LinearLayout.VERTICAL);
+        downloadsPanel.setPadding(0, dp(4), 0, dp(12));
+        addHeading(downloadsPanel, "Downloads", "Track the active Epic download or installation.");
+        LinearLayout downloadCard = new LinearLayout(requireContext());
+        downloadCard.setOrientation(LinearLayout.VERTICAL);
+        downloadCard.setPadding(dp(16), dp(16), dp(16), dp(16));
+        downloadCard.setBackground(shape(0xff171d29, 0xff35415a, 16));
+        downloadCard.addView(label("ACTIVE DOWNLOAD / INSTALL", 9, 0xffaaa6ff, true));
+        addMargin(downloadCard, downloadsStatusText, 10);
+        downloadsProgressBar = new ProgressBar(requireContext(), null,
+                android.R.attr.progressBarStyleHorizontal);
+        downloadsProgressBar.setMax(100);
+        downloadsProgressBar.setIndeterminate(true);
+        addMargin(downloadCard, downloadsProgressBar, 12);
+        addMargin(downloadCard, cancelJobButton, 12);
+        downloadsPanel.addView(downloadCard, fullParams());
+        LinearLayout downloadsHint = new LinearLayout(requireContext());
+        downloadsHint.setOrientation(LinearLayout.VERTICAL);
+        downloadsHint.setPadding(dp(16), dp(15), dp(16), dp(15));
+        downloadsHint.setBackground(shape(0xff111722, 0xff283449, 14));
+        addMargin(downloadsHint, label("Progress is reported by the Epic background worker. "
+                + "When no job is active, this page shows the last known operation state.", 11,
+                0xff9ca8bd, false), 0);
+        addMargin(downloadsPanel, downloadsHint, 12);
+        downloadsScroll = new ScrollView(requireContext());
+        downloadsScroll.setFillViewport(true);
+        downloadsScroll.setClipToPadding(false);
+        downloadsScroll.addView(downloadsPanel);
+
         showSection(activeSection);
         return root;
     }
@@ -432,28 +491,55 @@ public final class EpicFragment extends Fragment {
                     tab.setBackground(shape(selected ? 0xff5b55d9 : 0xff151a25,
                             selected ? 0xff5b55d9 : 0xff151a25, 10));
                     tab.setTextColor(selected ? 0xffffffff : 0xffaab3c5);
+                    tab.setSelected(selected);
                 }
             }
         }
         if (pageContainer == null) return;
-        // A destination can be detached while another screen is shown; record its
-        // live offset before detaching so Account/Library round-trips stay stable.
         if (storefrontScroll != null && storefrontScroll.getParent() == pageContainer) {
             storefrontScrollY = storefrontScroll.getScrollY();
         }
         pageContainer.removeAllViews();
+        showingGameDetails = false;
         if ("account".equals(section)) {
-            showingGameDetails = false;
             if (accountScroll.getParent() != null) ((ViewGroup) accountScroll.getParent()).removeView(accountScroll);
             pageContainer.addView(accountScroll, new LinearLayout.LayoutParams(-1, -1));
+        } else if ("downloads".equals(section)) {
+            refreshDownloadsPanel();
+            if (downloadsScroll.getParent() != null) ((ViewGroup) downloadsScroll.getParent()).removeView(downloadsScroll);
+            pageContainer.addView(downloadsScroll, new LinearLayout.LayoutParams(-1, -1));
         } else {
-            showingGameDetails = false;
             if (storefrontScroll.getParent() != null) ((ViewGroup) storefrontScroll.getParent()).removeView(storefrontScroll);
             pageContainer.addView(storefrontScroll, new LinearLayout.LayoutParams(-1, -1));
             if (storefrontScroll != null) {
                 storefrontScroll.post(() -> storefrontScroll.scrollTo(0, Math.max(0, storefrontScrollY)));
             }
             if (!libraryLoaded) refreshLibrary();
+        }
+    }
+
+    /** Reconcile the Downloads destination with the persisted worker identity. */
+    private void refreshDownloadsPanel() {
+        if (downloadsStatusText == null || getContext() == null) return;
+        android.content.SharedPreferences prefs = requireContext().getApplicationContext()
+                .getSharedPreferences(JOB_PREFS, android.content.Context.MODE_PRIVATE);
+        String jobId = prefs.getString(JOB_ID_KEY, "");
+        String appName = prefs.getString(ACTIVE_JOB_APP_KEY, "");
+        boolean active = !jobId.isEmpty();
+        JSONObject game = findCachedGame(appName);
+        String title = game == null ? "" : game.optString("title", appName);
+        if (active) {
+            downloadsStatusText.setText((title.isEmpty() ? "Epic operation in progress" : title)
+                    + "\n" + lastProgressLabel);
+            if (downloadsProgressBar != null) downloadsProgressBar.setIndeterminate(true);
+            setCancelButtonVisible(true);
+        } else {
+            downloadsStatusText.setText(lastProgressLabel);
+            if (downloadsProgressBar != null) {
+                downloadsProgressBar.setIndeterminate(false);
+                downloadsProgressBar.setProgress(0);
+            }
+            setCancelButtonVisible(false);
         }
     }
 
@@ -800,7 +886,18 @@ public final class EpicFragment extends Fragment {
                                 if (statusText != null && jobPolling) {
                                     statusText.setText(progressLabel);
                                 }
-                                if (downloadsStatusText != null) downloadsStatusText.setText(progressLabel);
+                                if (downloadsStatusText != null) {
+                                    downloadsStatusText.setText(progressLabel);
+                                    if (downloadsProgressBar != null) {
+                                        if (displayPercent >= 0) {
+                                            downloadsProgressBar.setIndeterminate(false);
+                                            downloadsProgressBar.setProgress((int) Math.max(0,
+                                                    Math.min(100, Math.round(displayPercent))));
+                                        } else {
+                                            downloadsProgressBar.setIndeterminate(true);
+                                        }
+                                    }
+                                }
                                 // A single Epic job may run while the user browses other
                                 // game profiles. Keep its progress and cancel action scoped
                                 // to the title that actually owns the persisted job.
@@ -867,6 +964,11 @@ public final class EpicFragment extends Fragment {
                     lastProgressLabel = "Epic operation " + jobState + ".";
                     mainHandler.post(() -> {
                         if (downloadsStatusText != null) downloadsStatusText.setText(lastProgressLabel);
+                        if (downloadsProgressBar != null) {
+                            downloadsProgressBar.setIndeterminate(false);
+                            downloadsProgressBar.setProgress(0);
+                        }
+                        setCancelButtonVisible(false);
                     });
                     if ("interrupted".equals(jobState)) {
                         try {
@@ -913,6 +1015,7 @@ public final class EpicFragment extends Fragment {
         final String jobAppName = activeAppName;
         mainHandler.post(() -> {
             if (downloadsStatusText != null) downloadsStatusText.setText(label);
+            if (downloadsScroll != null && activeSection.equals("downloads")) refreshDownloadsPanel();
             if (!jobAppName.isEmpty() && jobAppName.equals(selectedGameAppName)
                     && gameProgressText != null) {
                 gameProgressText.setText(label);
