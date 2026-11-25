@@ -71,3 +71,10 @@ The cinematic hero now has accessible previous/next controls when the catalog co
 Source commit: `7a1e791fdc4316e035ee71c866ddfeb55fb6001a`
 
 The primary `YOUR EPIC COLLECTION` surface is now a responsive two-column portrait-art grid instead of a horizontal carousel. Each real non-DLC catalog title occupies a full-width grid cell with its existing status, artwork fallback, click-to-profile behavior, and accessibility description. Continue Playing, Installed, Active Downloads, and Ready to Install remain secondary horizontal shortcut rails. The grid uses half-width cells and 3:4 artwork sizing so both columns fit phone layouts. This intentionally changes the page composition rather than just changing card styling.
+
+
+## Visual direction — premium launcher pass
+
+Source commit: `a61698506c412dc18de81e1d8576a9688dcfea94`
+
+The storefront header now leads with MaliWinlator identity and a compact Epic-library descriptor rather than presenting Epic Games as the app brand and MaliWinlator as a small badge. The Library hierarchy now reads as a dedicated destination: clear "Your library" title, concise supporting line, cinematic selected-game spotlight and live collection metrics, then search/filter and the full two-column catalog. Catalog cards have tighter, more consistent framing and spacing. This is a coherent visual-system pass built on the two-column grid; it is not a claim of pixel-exact reproduction of the unavailable original demo. The Epic Bridge, Legendary job engine, persisted progress and account workflow are unchanged.
