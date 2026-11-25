@@ -1137,10 +1137,6 @@ public final class EpicFragment extends Fragment {
         JSONArray recentlyLaunched = getRecentlyLaunchedApps();
         LinearLayout shelf = new LinearLayout(requireContext());
         shelf.setOrientation(LinearLayout.VERTICAL);
-        TextView shelfTitle = label(heading, 10, 0xffc9c5ff, true);
-        shelfTitle.setLetterSpacing(0.10f);
-        shelfTitle.setPadding(dp(1), dp(13), 0, dp(9));
-        shelf.addView(shelfTitle);
         HorizontalScrollView rail = new HorizontalScrollView(requireContext());
         rail.setHorizontalScrollBarEnabled(false);
         rail.setClipToPadding(false);
@@ -1191,6 +1187,38 @@ public final class EpicFragment extends Fragment {
             count++;
         }
         if (count > 0) {
+            LinearLayout shelfHeader = new LinearLayout(requireContext());
+            shelfHeader.setOrientation(LinearLayout.HORIZONTAL);
+            shelfHeader.setGravity(Gravity.CENTER_VERTICAL);
+            shelfHeader.setPadding(dp(1), dp(13), dp(1), dp(9));
+            TextView shelfTitle = label(heading, 10, 0xffc9c5ff, true);
+            shelfTitle.setLetterSpacing(0.10f);
+            shelfHeader.addView(shelfTitle, new LinearLayout.LayoutParams(0, -2, 1f));
+            TextView itemCount = label(String.valueOf(count), 9, 0xffaeb8cc, true);
+            itemCount.setGravity(Gravity.CENTER);
+            itemCount.setPadding(dp(8), dp(4), dp(8), dp(4));
+            itemCount.setBackground(shape(0xff20283a, 0xff35425a, 20));
+            itemCount.setContentDescription(count + (count == 1 ? " game" : " games"));
+            shelfHeader.addView(itemCount);
+            String destinationFilter = "downloading".equals(mode) ? "Downloading"
+                    : ("installed".equals(mode) || "recent".equals(mode)) ? "Installed"
+                    : "ready".equals(mode) ? "Ready to install" : "All games";
+            TextView seeAll = label("SEE ALL  →", 8, 0xffd9d5ff, true);
+            seeAll.setGravity(Gravity.CENTER);
+            seeAll.setPadding(dp(10), dp(8), dp(2), dp(8));
+            seeAll.setFocusable(true);
+            seeAll.setClickable(true);
+            seeAll.setContentDescription("See all " + heading.toLowerCase(java.util.Locale.ROOT));
+            seeAll.setOnClickListener(v -> {
+                libraryFilter = destinationFilter;
+                renderGameCards(searchField == null ? "" : searchField.getText().toString());
+                if (storefrontScroll != null) storefrontScroll.post(() -> {
+                    View target = gamesContainer;
+                    if (target != null) storefrontScroll.smoothScrollTo(0, target.getTop());
+                });
+            });
+            shelfHeader.addView(seeAll);
+            shelf.addView(shelfHeader);
             shelf.addView(rail, new LinearLayout.LayoutParams(-1, -2));
             gamesContainer.addView(shelf, new LinearLayout.LayoutParams(-1, -2));
         }
