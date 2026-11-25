@@ -3046,3 +3046,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - The card continues to use the existing persisted Epic job monitor and exact worker progress; no new progress source, download engine, IPC, cancellation, install, or cloud-save behavior was introduced.
 - The previous source SHA `961ce75be4e89edad9376c35b16dc09cf2c3c544` passed standard APK workflow **45607048562**. Its Epic runtime workflow **45607048560** failed before the managed emulator test started because Maven Central returned HTTP 429 while Gradle resolved dependencies (38 artifacts affected). This was dependency rate limiting, not an application compile or Epic smoke-test failure; a failed-job retry was requested. The new source SHA requires both workflows to pass before publication.
 - No physical Xiaomi 15T validation has occurred. This is a focused profile hierarchy correction, not a claim of reproducing the lost demo pixel-for-pixel.
+
+
+## 2026-11-25 — Remember the last opened game in the featured hero (CI pending)
+
+- Follow-up source commit: `1ea088a54ca296ffa928098e428aab4528e909c5`.
+- The storefront now persists the app name of the last game whose profile the player deliberately opened and prefers that title for the Library featured hero. If no remembered title is available in the current catalog, selection falls back to the most recently launched installed game, another installed game, then stable catalog order. DLC entries remain excluded.
+- This uses a small dedicated UI preference and does not alter launch history, Epic catalog data, game installation, worker state, or network behavior. It makes the hero respond to the player's actual browsing rather than repeatedly choosing the first installed/catalog result.
+- The immediately preceding source commit `84b18249716e4b49ccfac1862ffa3ca0df12f54f` triggered standard APK workflow **45610880274** and Epic runtime/ARM64 workflow **45610880208**; they were still running/pending at the time of the follow-up. The latest source SHA must pass both workflows before publication. The earlier Epic 429 failure/retry is recorded above and is not a code validation result.
+- No physical Xiaomi 15T validation has occurred. This is a data-backed storefront behavior improvement, not a claim of reproducing the lost demo pixel-for-pixel.
