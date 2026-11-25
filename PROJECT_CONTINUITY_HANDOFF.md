@@ -3014,3 +3014,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Portrait shelf card proportions remain unchanged. No game data, artwork host validation, download worker, persisted job identity, progress/cancel flow, achievements, or cloud-save behavior changed.
 - The immediately preceding source SHA `1c9de5ac51bca0affb7063361418ca1ea1d98102` passed standard APK workflow **45529990937** and Epic runtime/ARM64 workflow **45529990965**. The new source SHA `0a0c6fe1320974d1d3daead7964c59aa964edf53` must pass both workflows before publication.
 - No Xiaomi 15T physical validation has occurred; the adaptive dimensions need device review after an APK is built.
+
+
+## 2026-11-25 storefront responsive-card follow-up
+
+- Source commit: `3a387d8fd072bde1ab9e448c7ef6510b37c3d03a`.
+- Added display-width-aware Epic library cover sizing: portrait shelf cards remain at least 174dp on phones and scale up to 240dp on wider displays; artwork height tracks a consistent 3:4 portrait ratio.
+- This specifically avoids leaving narrow phone-sized cards on tablets/foldables while preserving the existing phone baseline and horizontal-shelf interaction.
+- Reused the existing card renderer and Epic artwork validation/Glide path; no download, install, account, or worker behavior changed.
+- Validation for this source commit: pending new Standard Android APK and Epic runtime/ARM64 workflows. Previous source revision `0a0c6fe1320974d1d3daead7964c59aa964edf53` passed both required workflows (runs 45535706436 and 45535706360).
+- Physical Xiaomi 15T appearance/runtime validation has not been performed; CI is not a substitute for device testing.
