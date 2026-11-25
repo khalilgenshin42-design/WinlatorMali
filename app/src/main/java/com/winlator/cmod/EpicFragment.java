@@ -1605,8 +1605,13 @@ public final class EpicFragment extends Fragment {
         profileScroll = new ScrollView(requireContext());
         profileScroll.setFillViewport(true);
         profileScroll.setClipToPadding(false);
+        // Reserve space for the persistent profile action dock so the final
+        // metadata cards can scroll fully above it instead of disappearing behind it.
+        profileScroll.setPadding(0, 0, 0, dp(82));
         profileScroll.addView(detail);
-        pageContainer.addView(profileScroll, new LinearLayout.LayoutParams(-1, -1));
+        FrameLayout profileRoot = new FrameLayout(requireContext());
+        profileRoot.addView(profileScroll, new FrameLayout.LayoutParams(-1, -1));
+        pageContainer.addView(profileRoot, new LinearLayout.LayoutParams(-1, -1));
         detail.setAlpha(0f);
         detail.setTranslationY(dp(22));
         detail.setScaleX(0.985f);
@@ -1675,9 +1680,8 @@ public final class EpicFragment extends Fragment {
 
         gamePrimaryButton = action(gameJobForThisTitle ? "Cancel download" :
                 (installed ? "Play game" : (supported ? "Install" : "Unavailable")), true);
-        // Keep the primary action inside the cinematic profile hero, so the game's
-        // install/play/cancel state is visible without a detached settings-style row.
-        addMargin(artworkCaption, gamePrimaryButton, 12);
+        // The primary action is moved into a persistent bottom dock below. It
+        // remains reachable while achievements and account metadata are scrolled.
         gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobForThisTitle);
         gamePrimaryButton.setOnClickListener(v -> {
             gamePrimaryButton.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
@@ -1692,6 +1696,37 @@ public final class EpicFragment extends Fragment {
                 installGame(appName, title);
             }
         });
+
+        LinearLayout actionDock = new LinearLayout(requireContext());
+        actionDock.setOrientation(LinearLayout.HORIZONTAL);
+        actionDock.setGravity(Gravity.CENTER_VERTICAL);
+        actionDock.setPadding(dp(14), dp(10), dp(14), dp(10));
+        actionDock.setBackground(shape(0xf0141b29, 0xff35415a, 0));
+        LinearLayout dockCopy = new LinearLayout(requireContext());
+        dockCopy.setOrientation(LinearLayout.VERTICAL);
+        dockCopy.setGravity(Gravity.CENTER_VERTICAL);
+        TextView dockTitle = label(title, 12, 0xfff5f6fa, true);
+        dockTitle.setMaxLines(1);
+        dockTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        dockCopy.addView(dockTitle);
+        String dockStatus = gameJobForThisTitle ? "INSTALLATION IN PROGRESS"
+                : installed ? "READY TO PLAY"
+                : supported ? "READY TO INSTALL" : "EPIC LIBRARY";
+        TextView dockSubtitle = label(dockStatus, 8,
+                gameJobForThisTitle ? 0xffffd18a : installed ? 0xffa9f2c9 : 0xffaeb8c9, true);
+        dockSubtitle.setLetterSpacing(0.04f);
+        LinearLayout.LayoutParams dockSubtitleParams = new LinearLayout.LayoutParams(-1, -2);
+        dockSubtitleParams.topMargin = dp(3);
+        dockCopy.addView(dockSubtitle, dockSubtitleParams);
+        actionDock.addView(dockCopy, new LinearLayout.LayoutParams(0, -2, 1f));
+        gamePrimaryButton.setTextSize(12);
+        gamePrimaryButton.setMinHeight(dp(44));
+        LinearLayout.LayoutParams dockButtonParams = new LinearLayout.LayoutParams(dp(142), dp(46));
+        dockButtonParams.leftMargin = dp(10);
+        actionDock.addView(gamePrimaryButton, dockButtonParams);
+        FrameLayout.LayoutParams dockParams = new FrameLayout.LayoutParams(-1, -2,
+                Gravity.BOTTOM);
+        profileRoot.addView(actionDock, dockParams);
 
         LinearLayout progressCard = new LinearLayout(requireContext());
         progressCard.setOrientation(LinearLayout.VERTICAL);
