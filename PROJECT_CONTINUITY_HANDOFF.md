@@ -3065,3 +3065,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - GitHub prerelease published: [MaliWinlator 1.2.1 Epic test build](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-1ea088a54ca2). Assets: `app-standard-debug.apk`, `epicbridge-debug.apk`, and `SHA256SUMS`.
 - Workflow artifact bundle also contains the ARM64 Epic runtime debug package and CPython 3.15.2 Android ARM64 POC.
 - Validation is CI only. No physical Xiaomi 15T / Android 16 installation or game-download test has been performed for this revision. Do not describe CI as device validation.
+
+
+## 2026-11-25 — Cinematic first-visit featured hero entrance (CI pending)
+
+- Source commit: `b1257c6e4e283a0b33d995c347ade9823c1e37fc`.
+- On the first featured hero render only, the cover art now uses a restrained 1.055x-to-1.0 scale settle while the hero container fades/slides into place; its eyebrow, title, status and action row reveal in a short stagger. The existing one-shot guard prevents search, job-progress and ordinary catalog refreshes from replaying the animation.
+- The animation remains gated by Android's system animator/reduced-motion setting. No timers, background work, artwork URLs, install state, or worker behavior changed.
+- The immediately preceding source revision `1ea088a54ca296ffa928098e428aab4528e909c5` passed standard APK workflow **45610978708** and Epic runtime/ARM64 workflow **45610978644**, and was published at [the 1.2.1 Epic prerelease](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-1ea088a54ca2). The new animation commit requires fresh passing workflows before any replacement build is published.
+- No physical Xiaomi 15T test has been performed. This is a focused motion refinement, not a claim of exact lost-demo reproduction.
