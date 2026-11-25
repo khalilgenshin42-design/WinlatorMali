@@ -342,6 +342,13 @@ public final class EpicFragment extends Fragment {
         return Math.max(174, Math.min(240, Math.round(screenWidthDp * 0.44f)));
     }
 
+    /** Exact half-width catalog tile after page gutters and the center gutter. */
+    private int collectionGridCardWidthDp() {
+        float density = getResources().getDisplayMetrics().density;
+        int screenWidthDp = Math.round(getResources().getDisplayMetrics().widthPixels / density);
+        return Math.max(140, (screenWidthDp - 28 - 12) / 2);
+    }
+
     /** Epic portrait artwork uses a consistent 3:4 card proportion. */
     private int libraryCardArtworkHeightDp() {
         return Math.round(libraryCardWidthDp() * 4f / 3f);
@@ -1222,14 +1229,26 @@ public final class EpicFragment extends Fragment {
         JSONArray recentlyLaunched = getRecentlyLaunchedApps();
         LinearLayout shelf = new LinearLayout(requireContext());
         shelf.setOrientation(LinearLayout.VERTICAL);
-        HorizontalScrollView rail = new HorizontalScrollView(requireContext());
-        rail.setHorizontalScrollBarEnabled(false);
-        rail.setClipToPadding(false);
-        rail.setFillViewport(false);
-        rail.setPadding(dp(1), dp(2), dp(4), dp(12));
-        LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        rail.addView(row, new HorizontalScrollView.LayoutParams(-2, -2));
+        boolean collectionGrid = "collection".equals(mode);
+        HorizontalScrollView rail = null;
+        LinearLayout grid = null;
+        LinearLayout row = null;
+        if (collectionGrid) {
+            // The primary library is a real two-column catalog grid, not another
+            // horizontal carousel. Secondary shelves remain compact horizontal rails.
+            grid = new LinearLayout(requireContext());
+            grid.setOrientation(LinearLayout.VERTICAL);
+            grid.setPadding(0, dp(2), 0, dp(12));
+        } else {
+            rail = new HorizontalScrollView(requireContext());
+            rail.setHorizontalScrollBarEnabled(false);
+            rail.setClipToPadding(false);
+            rail.setFillViewport(false);
+            rail.setPadding(dp(1), dp(2), dp(4), dp(12));
+            row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            rail.addView(row, new HorizontalScrollView.LayoutParams(-2, -2));
+        }
         List<JSONObject> shelfGames = new ArrayList<>();
         if ("recent".equals(mode)) {
             for (int i = 0; i < recentlyLaunched.length(); i++) {
@@ -1264,13 +1283,29 @@ public final class EpicFragment extends Fragment {
             if ("downloading".equals(mode) && !downloading) continue;
             // "collection" deliberately includes every non-DLC catalog entry,
             // regardless of local installability or current install state.
-            View card = createGameCard(game);
-            // Keep two comfortable portrait covers visible on phones while
-            // allowing larger cards on tablets and foldables. The artwork height
-            // follows the same 3:4 ratio inside createGameCard().
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(libraryCardWidthDp()), -2);
-            params.rightMargin = dp(12);
-            row.addView(card, params);
+            View card = createGameCard(game, collectionGrid);
+            if (collectionGrid) {
+                if ((count % 2) == 0) {
+                    row = new LinearLayout(requireContext());
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    row.setGravity(Gravity.TOP);
+                    LinearLayout.LayoutParams rowParams =
+                            new LinearLayout.LayoutParams(-1, -2);
+                    rowParams.bottomMargin = dp(14);
+                    grid.addView(row, rowParams);
+                }
+                LinearLayout.LayoutParams params =
+                        new LinearLayout.LayoutParams(0, -2, 1f);
+                if ((count % 2) == 0) params.rightMargin = dp(6);
+                else params.leftMargin = dp(6);
+                row.addView(card, params);
+            } else {
+                // Secondary rails remain horizontally browsable shortcuts.
+                LinearLayout.LayoutParams params =
+                        new LinearLayout.LayoutParams(dp(libraryCardWidthDp()), -2);
+                params.rightMargin = dp(12);
+                row.addView(card, params);
+            }
             count++;
         }
         if (count > 0) {
@@ -1306,7 +1341,15 @@ public final class EpicFragment extends Fragment {
             });
             shelfHeader.addView(seeAll);
             shelf.addView(shelfHeader);
-            shelf.addView(rail, new LinearLayout.LayoutParams(-1, -2));
+            if (collectionGrid) {
+                if ((count % 2) == 1) {
+                    View balance = new View(requireContext());
+                    row.addView(balance, new LinearLayout.LayoutParams(0, 1, 1f));
+                }
+                shelf.addView(grid, new LinearLayout.LayoutParams(-1, -2));
+            } else {
+                shelf.addView(rail, new LinearLayout.LayoutParams(-1, -2));
+            }
             gamesContainer.addView(shelf, new LinearLayout.LayoutParams(-1, -2));
         }
         return count;
@@ -1597,7 +1640,7 @@ public final class EpicFragment extends Fragment {
         featuredContainer.addView(stats, statsParams);
     }
 
-    private View createGameCard(JSONObject game) {
+    private View createGameCard(JSONObject game, boolean collectionGrid) {
         String appName = game.optString("app_name", "");
         String title = game.optString("title", appName);
         boolean installed = installedApps.contains(appName);
@@ -1680,7 +1723,10 @@ public final class EpicFragment extends Fragment {
 
         // Epic box art is portrait-oriented (roughly 2:3); avoid cropping it
         // into the old landscape tile shape.
-        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(libraryCardArtworkHeightDp())));
+        int artworkHeight = collectionGrid
+                ? Math.round(collectionGridCardWidthDp() * 4f / 3f)
+                : libraryCardArtworkHeightDp();
+        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(artworkHeight)));
 
         TextView name = label(title, 13, 0xfff5f6fa, true);
         name.setMaxLines(2);
