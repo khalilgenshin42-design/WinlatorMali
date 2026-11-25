@@ -2978,3 +2978,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This adds useful navigation and collection hierarchy without changing Epic catalog parsing, install eligibility, persisted job identity, worker/IPC, or progress polling. Counts do not represent fabricated download percentages.
 - The previous source SHA `9bcea22de0684c5f415c660fa7804b21badee78f` passed standard APK workflow **45522859040** and Epic runtime/ARM64 workflow **45522858904**. The new source SHA must pass both required workflows before it is published.
 - CI for `233e76b` is pending. No Xiaomi 15T device validation has occurred; the lost original demo has not been claimed as pixel-perfectly reproduced.
+
+
+## 2026-11-25 — Persistent game-profile action dock (CI pending)
+
+- Source commits: `8866ecff1bbbf3f61f5140085eaf71f59d1c1ec5` and follow-up `e468bbe0aa0bc534adc95c2a4c7e9d2046b7dab8`.
+- Moved the selected game's primary Play/Install/Cancel action from the top artwork caption into a persistent bottom dock on the profile. The dock keeps the title and a concise install-state label visible while the user scrolls achievements and account metadata. The profile scroll viewport reserves bottom space so the final cards remain reachable above the dock.
+- Follow-up keeps the dock state label synchronized with the existing persisted worker monitor (queued, running, cancelling, complete, cancelled, interrupted, failed) and the install-start path. It does not create a second progress source or alter worker ownership, cancellation, Epic Bridge IPC, or cloud-save behavior.
+- Shelf-header source SHA `233e76b5f2e19c314bb66a44603998216904f652` passed standard APK workflow **45525203402** and Epic runtime/ARM64 workflow **45525203862**.
+- The current source SHA `e468bbe0aa0bc534adc95c2a4c7e9d2046b7dab8` still requires both workflows to pass before publication. No Xiaomi 15T physical validation has occurred; this is a profile navigation/interaction improvement, not a claim of reproducing the lost demo pixel-for-pixel.
