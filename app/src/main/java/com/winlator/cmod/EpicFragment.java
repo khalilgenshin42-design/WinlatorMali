@@ -109,6 +109,7 @@ public final class EpicFragment extends Fragment {
     private boolean hasRenderedGameCards;
     private boolean animateGameCardEntrance;
     private boolean hasAnimatedFeaturedHero;
+    private String lastAnimatedProfileAppName = "";
     private String libraryFilter = "All games";
     private final java.util.Map<String, Button> libraryFilterButtons = new java.util.LinkedHashMap<>();
     private volatile String lastProgressLabel = "No active Epic download or installation.";
@@ -1666,6 +1667,26 @@ public final class EpicFragment extends Fragment {
                 }).start();
     }
 
+    /** Reveal profile sections in a short stagger, once per selected title. */
+    private void animateProfileSections(LinearLayout detail, String appName) {
+        if (detail == null || !motionAnimationsEnabled()
+                || appName == null || appName.equals(lastAnimatedProfileAppName)) return;
+        lastAnimatedProfileAppName = appName;
+        detail.post(() -> {
+            if (!isAdded() || detail.getChildCount() == 0) return;
+            for (int i = 0; i < detail.getChildCount(); i++) {
+                View section = detail.getChildAt(i);
+                section.setAlpha(0f);
+                section.setTranslationY(dp(12));
+                section.animate().alpha(1f).translationY(0f)
+                        .setStartDelay(Math.min(220L, i * 55L))
+                        .setDuration(230)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
+            }
+        });
+    }
+
     private void showGameDetails(JSONObject game) {
         if (game == null || pageContainer == null) return;
         // Library refreshes may rebuild the visible profile after installed-state
@@ -1702,19 +1723,14 @@ public final class EpicFragment extends Fragment {
         FrameLayout profileRoot = new FrameLayout(requireContext());
         profileRoot.addView(profileScroll, new FrameLayout.LayoutParams(-1, -1));
         pageContainer.addView(profileRoot, new LinearLayout.LayoutParams(-1, -1));
-        if (motionAnimationsEnabled()) {
-            detail.setAlpha(0f);
-            detail.setTranslationY(dp(22));
-            detail.setScaleX(0.985f);
-            detail.setScaleY(0.985f);
-            detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
-                    .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
-        } else {
-            detail.setAlpha(1f);
-            detail.setTranslationY(0f);
-            detail.setScaleX(1f);
-            detail.setScaleY(1f);
-        }
+        // The profile's sections reveal independently after the complete view
+        // hierarchy is assembled. This avoids animating an empty parent while
+        // child cards are still being added and gives the screen a deliberate
+        // editorial rhythm rather than one simultaneous fade.
+        detail.setAlpha(1f);
+        detail.setTranslationY(0f);
+        detail.setScaleX(1f);
+        detail.setScaleY(1f);
         // A newly opened profile starts at its artwork; background reconciliation
         // keeps the existing profile position instead of jumping the user to the top.
         if (profileScroll != null) {
@@ -1919,6 +1935,8 @@ public final class EpicFragment extends Fragment {
             TextView permission = label("Grant storage access in Account & setup before installing.", 11, 0xffffc978, false);
             addMargin(detail, permission, 9);
         }
+
+        animateProfileSections(detail, appName);
 
         JSONObject detailsPayload = new JSONObject();
         try { detailsPayload.put("app_name", appName); } catch (Exception ignored) {}
