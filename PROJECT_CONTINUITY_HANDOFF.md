@@ -3134,3 +3134,9 @@ Replace the current largely linear home-page composition with a more deliberate 
 - The same game may appear in the complete collection and a relevant shortcut shelf by design. Unique library summary counts remain based on catalog entries, not shelf placements. Search/filter behavior and the foreground worker remain unchanged.
 - The preceding source revision `350ac4f7677dfcd22d418df9f8009353d6c02c63` passed standard APK CI **45631005362**; Epic runtime/ARM64 CI **45631005155** was still running at the time of this update. The new source SHA requires both workflows to pass before release.
 - No physical Xiaomi 15T validation has occurred.
+
+## 2026-11-25 — Featured spotlight carousel
+
+- Published CI-validated prerelease for source `13994022c5cb7d2257e8b2c8a7c5aa3dcac11c25`: [maliwinlator-1.2.1-epic-13994022c5cb](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-13994022c5cb). Standard Android and Epic ARM64 runtime workflows both passed on that exact SHA. APKs: `app-standard-debug.apk` and `epicbridge-debug.apk`; this is CI validation, not physical-device validation.
+- New source commit `07b0bf6498bbe828a26685a8f11709d339e80ed5` adds previous/next controls to the featured hero when multiple non-DLC catalog entries exist. The chosen title is persisted in storefront UI preferences, and a short one-shot transition is used when changing the spotlight. No fabricated titles or artwork are introduced; existing action state continues to use installed/job state.
+- Next: run both workflows for `07b0bf6498bbe828a26685a8f11709d339e80ed5`, inspect failures, and publish only after both pass. Continue toward a purpose-built launcher composition; this carousel is one real interaction step, not full visual parity with the unavailable original demo.
