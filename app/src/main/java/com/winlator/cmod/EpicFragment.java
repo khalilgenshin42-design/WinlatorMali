@@ -325,6 +325,12 @@ public final class EpicFragment extends Fragment {
         return root;
     }
 
+    private boolean motionAnimationsEnabled() {
+        // Respect Android's system-wide animator/reduced-motion setting. Static
+        // layouts remain fully usable when animations are disabled.
+        return Build.VERSION.SDK_INT < 26 || android.animation.ValueAnimator.areAnimatorsEnabled();
+    }
+
     private int dp(float value) {
         return (int)(value * getResources().getDisplayMetrics().density + 0.5f);
     }
@@ -1362,9 +1368,14 @@ public final class EpicFragment extends Fragment {
         featuredContainer.addView(hero, heroParams);
         if (!hasAnimatedFeaturedHero) {
             hasAnimatedFeaturedHero = true;
-            hero.setAlpha(0f);
-            hero.setTranslationY(dp(10));
-            hero.animate().alpha(1f).translationY(0f).setDuration(280).start();
+            if (motionAnimationsEnabled()) {
+                hero.setAlpha(0f);
+                hero.setTranslationY(dp(10));
+                hero.animate().alpha(1f).translationY(0f).setDuration(280).start();
+            } else {
+                hero.setAlpha(1f);
+                hero.setTranslationY(0f);
+            }
         } else {
             hero.setAlpha(1f);
             hero.setTranslationY(0f);
@@ -1528,7 +1539,7 @@ public final class EpicFragment extends Fragment {
         });
         card.setClickable(true);
         card.setFocusable(true);
-        if (animateGameCardEntrance) {
+        if (animateGameCardEntrance && motionAnimationsEnabled()) {
             card.setAlpha(0f);
             card.setTranslationY(dp(12));
             card.animate().alpha(1f).translationY(0f).setDuration(300).start();
@@ -1578,6 +1589,10 @@ public final class EpicFragment extends Fragment {
             showSection("library");
             return;
         }
+        if (!motionAnimationsEnabled()) {
+            showSection("library");
+            return;
+        }
         current.animate().alpha(0f).translationY(dp(12)).setDuration(130)
                 .setInterpolator(new android.view.animation.AccelerateInterpolator())
                 .withEndAction(() -> {
@@ -1622,12 +1637,19 @@ public final class EpicFragment extends Fragment {
         FrameLayout profileRoot = new FrameLayout(requireContext());
         profileRoot.addView(profileScroll, new FrameLayout.LayoutParams(-1, -1));
         pageContainer.addView(profileRoot, new LinearLayout.LayoutParams(-1, -1));
-        detail.setAlpha(0f);
-        detail.setTranslationY(dp(22));
-        detail.setScaleX(0.985f);
-        detail.setScaleY(0.985f);
-        detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
-                .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+        if (motionAnimationsEnabled()) {
+            detail.setAlpha(0f);
+            detail.setTranslationY(dp(22));
+            detail.setScaleX(0.985f);
+            detail.setScaleY(0.985f);
+            detail.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                    .setDuration(280).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+        } else {
+            detail.setAlpha(1f);
+            detail.setTranslationY(0f);
+            detail.setScaleX(1f);
+            detail.setScaleY(1f);
+        }
         // A newly opened profile starts at its artwork; background reconciliation
         // keeps the existing profile position instead of jumping the user to the top.
         if (profileScroll != null) {
