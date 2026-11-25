@@ -332,6 +332,18 @@ public final class EpicFragment extends Fragment {
         return dp(Math.max(minDp, Math.min(maxDp, heightDp)));
     }
 
+    /** Scale portrait shelf cards up on tablets without shrinking the phone layout. */
+    private int libraryCardWidthDp() {
+        float density = getResources().getDisplayMetrics().density;
+        int screenWidthDp = Math.round(getResources().getDisplayMetrics().widthPixels / density);
+        return Math.max(174, Math.min(240, Math.round(screenWidthDp * 0.44f)));
+    }
+
+    /** Epic portrait artwork uses a consistent 3:4 card proportion. */
+    private int libraryCardArtworkHeightDp() {
+        return Math.round(libraryCardWidthDp() * 4f / 3f);
+    }
+
     private boolean motionAnimationsEnabled() {
         // Respect Android's system-wide animator/reduced-motion setting. Static
         // layouts remain fully usable when animations are disabled.
@@ -1202,9 +1214,10 @@ public final class EpicFragment extends Fragment {
             if ("downloading".equals(mode) && !downloading) continue;
             if ("all".equals(mode) && (installed || downloading || supported)) continue;
             View card = createGameCard(game);
-            // Wider artwork cards give the shelf more of a storefront-cover
-            // feel while keeping a useful number of titles reachable by swipe.
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(174), -2);
+            // Keep two comfortable portrait covers visible on phones while
+            // allowing larger cards on tablets and foldables. The artwork height
+            // follows the same 3:4 ratio inside createGameCard().
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(libraryCardWidthDp()), -2);
             params.rightMargin = dp(12);
             row.addView(card, params);
             count++;
@@ -1516,7 +1529,7 @@ public final class EpicFragment extends Fragment {
 
         // Epic box art is portrait-oriented (roughly 2:3); avoid cropping it
         // into the old landscape tile shape.
-        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(232)));
+        card.addView(artwork, new LinearLayout.LayoutParams(-1, dp(libraryCardArtworkHeightDp())));
 
         TextView name = label(title, 13, 0xfff5f6fa, true);
         name.setMaxLines(2);
