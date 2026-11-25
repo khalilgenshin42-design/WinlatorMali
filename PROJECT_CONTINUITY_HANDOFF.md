@@ -2987,3 +2987,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Follow-up keeps the dock state label synchronized with the existing persisted worker monitor (queued, running, cancelling, complete, cancelled, interrupted, failed) and the install-start path. It does not create a second progress source or alter worker ownership, cancellation, Epic Bridge IPC, or cloud-save behavior.
 - Shelf-header source SHA `233e76b5f2e19c314bb66a44603998216904f652` passed standard APK workflow **45525203402** and Epic runtime/ARM64 workflow **45525203862**.
 - The current source SHA `e468bbe0aa0bc534adc95c2a4c7e9d2046b7dab8` still requires both workflows to pass before publication. No Xiaomi 15T physical validation has occurred; this is a profile navigation/interaction improvement, not a claim of reproducing the lost demo pixel-for-pixel.
+
+
+## 2026-11-25 — Reduced-motion support for storefront navigation (CI pending)
+
+- Source commit: `5f85b1ab717319eda4f7ecef153531004e33de1c`.
+- Added a centralized Android animator-setting check and applied it to the featured-hero entrance, game-card entrance, game-profile entrance, and profile-to-library transition. When Android animations are disabled, these views are placed directly in their final visible state; navigation and content remain available.
+- This is an accessibility and motion-preference improvement. It does not change the Epic catalog, achievement data, download worker, persisted job identity, progress polling, install/cancel operations, or cloud-save capabilities.
+- The immediately preceding source SHA `e468bbe0aa0bc534adc95c2a4c7e9d2046b7dab8` passed both required workflows: standard APK **45527807716** and Epic runtime/ARM64 **45527807803**. The new source SHA `5f85b1ab717319eda4f7ecef153531004e33de1c` must pass both workflows before publication.
+- No Xiaomi 15T physical validation has occurred. Continue the substantial storefront redesign; do not claim pixel-perfect reproduction of the lost interactive demo.
