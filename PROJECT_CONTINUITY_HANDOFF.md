@@ -3105,3 +3105,12 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Standard APK CI run **45616763537**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45616763537 — pending at handoff update.
 - Epic runtime / ARM64 CI run **45616763588**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45616763588 — pending at handoff update.
 - Do not publish a new APK until both workflows pass for this exact source SHA.
+
+
+## Engineering step log — 2026-11-25: unique catalog count in storefront
+
+- Source commit: `a0e40edf0baede7a6288ef88380ff43fbfebbfb5`.
+- Corrected the Library's visible game total to count unique Epic catalog entries rather than rendered shelf placements. An installed/recent title can intentionally appear in multiple shelves, but it is still one game in the summary count.
+- The unique count respects the active Installed / Ready to install / Downloading filter and the current search query. DLC and empty app identifiers are excluded. Shelf contents and worker behavior are unchanged.
+- This is a display correctness fix; it does not alter Epic catalog data, install eligibility, or persisted job state.
+- Standard and Epic ARM64 workflows are triggered by the source commit; do not publish until both pass for the exact SHA.
