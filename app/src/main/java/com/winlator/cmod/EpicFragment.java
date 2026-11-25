@@ -109,6 +109,7 @@ public final class EpicFragment extends Fragment {
     private boolean hasRenderedGameCards;
     private boolean animateGameCardEntrance;
     private boolean hasAnimatedFeaturedHero;
+    private boolean animateFeaturedSelection;
     private String lastAnimatedProfileAppName = "";
     private String libraryFilter = "All games";
     private final java.util.Map<String, Button> libraryFilterButtons = new java.util.LinkedHashMap<>();
@@ -1311,6 +1312,38 @@ public final class EpicFragment extends Fragment {
         return count;
     }
 
+    private int countEligibleFeaturedGames() {
+        int count = 0;
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject game = cachedGames.optJSONObject(i);
+            if (game != null && !game.optBoolean("is_dlc", false)
+                    && !game.optString("app_name", "").isEmpty()) count++;
+        }
+        return count;
+    }
+
+    /** Select another real catalog entry for the cinematic spotlight. */
+    private void cycleFeaturedGame(int direction) {
+        if (cachedGames == null || cachedGames.length() == 0 || direction == 0) return;
+        android.content.SharedPreferences prefs = requireContext().getApplicationContext()
+                .getSharedPreferences("epic_storefront_ui", android.content.Context.MODE_PRIVATE);
+        String current = prefs.getString("featured_app_name", "");
+        List<String> eligible = new ArrayList<>();
+        for (int i = 0; i < cachedGames.length(); i++) {
+            JSONObject game = cachedGames.optJSONObject(i);
+            if (game == null || game.optBoolean("is_dlc", false)) continue;
+            String appName = game.optString("app_name", "");
+            if (!appName.isEmpty()) eligible.add(appName);
+        }
+        if (eligible.size() < 2) return;
+        int index = eligible.indexOf(current);
+        if (index < 0) index = direction > 0 ? -1 : 0;
+        int next = (index + (direction > 0 ? 1 : -1) + eligible.size()) % eligible.size();
+        prefs.edit().putString("featured_app_name", eligible.get(next)).apply();
+        animateFeaturedSelection = true;
+        renderFeaturedHero();
+    }
+
     private void renderFeaturedHero() {
         if (featuredContainer == null || !isAdded()) return;
         featuredContainer.removeAllViews();
@@ -1450,6 +1483,42 @@ public final class EpicFragment extends Fragment {
         LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, adaptiveArtworkHeight(0.40f, 220, 360));
         heroParams.bottomMargin = dp(8);
         featuredContainer.addView(hero, heroParams);
+        if (animateFeaturedSelection && motionAnimationsEnabled()) {
+            // A short crossfade makes the spotlight controls feel like a carousel
+            // without keeping a continuously animated view alive.
+            hero.setAlpha(0f);
+            hero.setTranslationY(dp(7));
+            hero.animate().alpha(1f).translationY(0f).setDuration(220).start();
+        }
+        animateFeaturedSelection = false;
+
+        if (countEligibleFeaturedGames() > 1) {
+            LinearLayout controls = new LinearLayout(requireContext());
+            controls.setOrientation(LinearLayout.HORIZONTAL);
+            controls.setGravity(Gravity.CENTER);
+            controls.setPadding(dp(5), dp(5), dp(5), dp(5));
+            controls.setBackground(shape(0xb9161d2b, 0x665d6880, 24));
+            TextView previous = label("‹", 25, 0xffffffff, true);
+            previous.setGravity(Gravity.CENTER);
+            previous.setContentDescription("Previous featured game");
+            previous.setFocusable(true);
+            previous.setClickable(true);
+            previous.setPadding(dp(10), 0, dp(10), dp(2));
+            previous.setOnClickListener(v -> cycleFeaturedGame(-1));
+            TextView next = label("›", 25, 0xffffffff, true);
+            next.setGravity(Gravity.CENTER);
+            next.setContentDescription("Next featured game");
+            next.setFocusable(true);
+            next.setClickable(true);
+            next.setPadding(dp(10), 0, dp(10), dp(2));
+            next.setOnClickListener(v -> cycleFeaturedGame(1));
+            controls.addView(previous, new LinearLayout.LayoutParams(dp(42), dp(38)));
+            controls.addView(next, new LinearLayout.LayoutParams(dp(42), dp(38)));
+            FrameLayout.LayoutParams controlsParams = new FrameLayout.LayoutParams(
+                    -2, dp(48), Gravity.TOP | Gravity.RIGHT);
+            controlsParams.setMargins(0, dp(12), dp(12), 0);
+            hero.addView(controls, controlsParams);
+        }
         if (!hasAnimatedFeaturedHero) {
             hasAnimatedFeaturedHero = true;
             if (motionAnimationsEnabled()) {
