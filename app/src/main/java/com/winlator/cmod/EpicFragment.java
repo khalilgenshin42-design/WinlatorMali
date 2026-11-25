@@ -252,9 +252,12 @@ public final class EpicFragment extends Fragment {
         featuredContainer = new LinearLayout(requireContext());
         featuredContainer.setOrientation(LinearLayout.VERTICAL);
         addMargin(libraryPanel, featuredContainer, 2);
+        TextView browseHeading = label("Browse your games", 17, 0xfff5f6fa, true);
+        browseHeading.setPadding(0, dp(13), 0, dp(8));
+        libraryPanel.addView(browseHeading);
         searchField = new EditText(requireContext());
         searchField.setSingleLine(true);
-        searchField.setHint("Search your games");
+        searchField.setHint("Search your library...");
         searchField.setTextColor(0xfff5f6fa);
         searchField.setHintTextColor(0xff77839a);
         searchField.setPadding(dp(13), 0, dp(13), 0);
@@ -1110,7 +1113,6 @@ public final class EpicFragment extends Fragment {
         }
         if (showPersonalizedHome) {
             renderFeaturedHero();
-            renderLibraryStats();
         }
 
         int count;
