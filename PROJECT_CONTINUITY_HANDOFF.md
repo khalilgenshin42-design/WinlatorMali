@@ -3037,3 +3037,12 @@ User approved replacing the separate Library and Downloads destinations with a u
 - No Epic account, download worker, install, or runtime behavior changed.
 - Validation pending for this source revision. The previous Epic workflow attempt on `3a387d8` failed solely because Maven Central returned HTTP 429 for Gradle dependencies; GitHub retry attempt 2 is running. Standard APK workflow for `3a387d8` passed.
 - No physical Xiaomi device validation has been performed.
+
+
+## 2026-11-25 — Dedicated game-profile progress section (CI pending)
+
+- Source commit: `84b18249716e4b49ccfac1862ffa3ca0df12f54f`.
+- Moved the live download/install progress card out of the artwork caption overlay and into its own full-width section immediately below the cinematic profile artwork. Long worker status text and the progress indicator no longer compete with the game title and artwork overlay, especially on shorter displays.
+- The card continues to use the existing persisted Epic job monitor and exact worker progress; no new progress source, download engine, IPC, cancellation, install, or cloud-save behavior was introduced.
+- The previous source SHA `961ce75be4e89edad9376c35b16dc09cf2c3c544` passed standard APK workflow **45607048562**. Its Epic runtime workflow **45607048560** failed before the managed emulator test started because Maven Central returned HTTP 429 while Gradle resolved dependencies (38 artifacts affected). This was dependency rate limiting, not an application compile or Epic smoke-test failure; a failed-job retry was requested. The new source SHA requires both workflows to pass before publication.
+- No physical Xiaomi 15T validation has occurred. This is a focused profile hierarchy correction, not a claim of reproducing the lost demo pixel-for-pixel.
