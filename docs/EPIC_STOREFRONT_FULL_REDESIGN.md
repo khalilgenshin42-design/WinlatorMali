@@ -16,7 +16,7 @@ Increasing artwork sizes or changing colors cannot close that gap. The next impl
 - Use a compact brand header with account/avatar state and a clear library identity.
 - Feature a selected game in a wide cinematic hero with artwork, gradient scrim, title, real installed/download state, and one context-aware primary action.
 - The hero must not arbitrarily select the first API result. Use a deterministic featured-selection policy based only on the user's actual library (for example, retain the last opened title in saved UI state; otherwise choose a stable first eligible title).
-- Follow the hero with a prominent horizontally browsable "Your games" cover-art shelf and smaller secondary shelves only where they represent real data (Installed, Ready to install, Active download).
+- Follow the hero with a prominent horizontally browsable "Your games" cover-art shelf containing the complete non-DLC Epic catalog, including installed and installable titles; smaller secondary shelves (Continue Playing, Installed, Ready to install, Active download) act as shortcuts and may intentionally repeat titles.
 - Search and filters should be compact, accessible controls that do not dominate the screen.
 - Empty, loading, signed-out, and bridge-unavailable states must have intentional layouts rather than generic status text at the top of the page.
 
