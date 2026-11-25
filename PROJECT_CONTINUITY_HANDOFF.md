@@ -3027,3 +3027,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 
 
 - CI follow-up: Standard APK workflow 45604211121 passed for source `3a387d8fd072bde1ab9e448c7ef6510b37c3d03a`. Epic runtime workflow 45604211118 failed before emulator tests could start because Maven Central returned HTTP 429 for 38 Gradle artifacts (dependency rate limiting); it was not a source compile or Epic regression failure. The failed job was re-run via GitHub Actions; retry result pending. CI automatically recorded the transient failure in `PROJECT_EPIC_CI_STATUS.md` (commit `de4d605`).
+
+
+## 2026-11-25 library filter accessibility follow-up
+
+- Source commit: `961ce75be4e89edad9376c35b16dc09cf2c3c544`.
+- Increased the horizontal Library filter chip height/minimum touch target from 34/36dp to 44dp.
+- Filter controls now expose their selected state through Android View selection semantics and include the selected state in their accessibility description; live counts continue to be calculated from catalog/install/persisted-job state.
+- No Epic account, download worker, install, or runtime behavior changed.
+- Validation pending for this source revision. The previous Epic workflow attempt on `3a387d8` failed solely because Maven Central returned HTTP 429 for Gradle dependencies; GitHub retry attempt 2 is running. Standard APK workflow for `3a387d8` passed.
+- No physical Xiaomi device validation has been performed.
