@@ -2935,3 +2935,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 - Epic runtime/ARM64 workflow **45513947490** is queued: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45513947490
 - Do not describe this source revision as validated or publish it until both workflows pass on this exact SHA. No Xiaomi 15T device validation has occurred.
 - This is a hierarchy/data-presentation step, not the completed premium storefront redesign or a claim of reproducing the lost demo.
+
+
+## 2026-11-25 — Live counts on collection filters (CI queued)
+
+- Source commit: `6ff9e33e41f7e124ed148d5ae06aa9ef1f4f8433`.
+- Library filter chips now show live counts for All games, Installed, Ready to install, and Downloading. Counts exclude DLC and derive from the current Epic catalog, local install state, and persisted active-job identity; they do not synthesize progress.
+- Filter chips retain selected styling and expose descriptive accessibility labels. Existing filter behavior and game shelf rendering remain in place.
+- Standard Android APK workflow **45516661167** queued: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661167
+- Epic runtime/ARM64 workflow **45516661544** queued: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661544
+- Previous source SHA `24da555340fb28920733dfea7548540ede3135c4` passed both workflows. The new SHA is not validated until its two runs pass. No Xiaomi 15T device validation has occurred.
