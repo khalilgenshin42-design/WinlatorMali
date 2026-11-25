@@ -3147,3 +3147,14 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Recovered demo requirements from prior conversation context: dark polished “MALIWINLATOR (EPIC GAMES)” storefront; “Your Library” rich clickable game grid; search and Installed / Ready to install / Downloading filters; cinematic featured artwork; animated hero/card/detail transitions; in-profile Install-to-Cancel with real progress, phase, size and ETA where the worker actually reports them; Play / Update / Uninstall actions. Preserve Epic auth, download/install worker and notifications.
 - Source commit `7a1e791fdc4316e035ee71c866ddfeb55fb6001a` replaces the primary full-collection horizontal rail with a responsive two-column portrait-art grid. Secondary shelves remain shortcut rails. This is the first structural correction toward the demo, not a claim of completed parity.
 - Next: validate both standard Android and Epic ARM64 workflows for the new source; then continue the larger visual rebuild. Keep progress truthful (no fabricated size/ETA); inspect worker snapshot fields before exposing any additional metadata.
+
+
+## 2026-11-25 — premium launcher visual pass
+
+- Source commit: a61698506c412dc18de81e1d8576a9688dcfea94.
+- Reworked the storefront brand header to lead with MaliWinlator identity, a compact EPIC GAMES / YOUR LIBRARY descriptor, and an Account action. Reordered the Library introduction into a clearer destination hierarchy (Your library, supporting copy, cinematic spotlight and live collection stats, then browsing controls and catalog).
+- Tightened catalog card framing and spacing while preserving real Epic artwork, install-state labels, click-to-profile behavior and reduced-motion-safe entrance behavior.
+- No Epic Bridge, Legendary, foreground job, progress polling, notification, account or storage contract was changed.
+- Standard APK workflow: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45666017688. Epic ARM64 runtime workflow: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45666017709. Both were running when this handoff was written; do not publish this source revision until both pass.
+- The previous two-column grid source 7a1e791fdc4316e035ee71e866ddfeb55fb6001a passed both CI workflows (45663018664 and 45663018854), but the latest visual pass must be validated independently.
+- Visual target is the recovered premium dark storefront concept. Exact pixel parity with the unavailable demo cannot be asserted. No physical Xiaomi 15T validation has occurred.
