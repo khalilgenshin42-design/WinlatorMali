@@ -1531,6 +1531,10 @@ public final class EpicFragment extends Fragment {
         card.setContentDescription(title + ". " + status.toLowerCase(java.util.Locale.ROOT)
                 + ". Open game details.");
         card.setOnClickListener(v -> {
+            if (!motionAnimationsEnabled()) {
+                showGameDetails(game);
+                return;
+            }
             card.animate().scaleX(0.965f).scaleY(0.965f).setDuration(90)
                     .withEndAction(() -> {
                         card.animate().scaleX(1f).scaleY(1f).setDuration(150).start();
@@ -1716,9 +1720,11 @@ public final class EpicFragment extends Fragment {
         // remains reachable while achievements and account metadata are scrolled.
         gamePrimaryButton.setEnabled(installed || (supported && storageReady) || gameJobForThisTitle);
         gamePrimaryButton.setOnClickListener(v -> {
-            gamePrimaryButton.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
-                    .withEndAction(() -> gamePrimaryButton.animate().scaleX(1.0f).scaleY(1.0f)
-                            .setDuration(110).start()).start();
+            if (motionAnimationsEnabled()) {
+                gamePrimaryButton.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
+                        .withEndAction(() -> gamePrimaryButton.animate().scaleX(1.0f).scaleY(1.0f)
+                                .setDuration(110).start()).start();
+            }
             if (isActiveJobForGame(appName)) {
                 updateGameActionButton("Cancelling...", false);
                 cancelActiveJob();
