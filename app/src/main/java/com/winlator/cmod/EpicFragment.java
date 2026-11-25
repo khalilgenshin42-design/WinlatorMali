@@ -149,29 +149,34 @@ public final class EpicFragment extends Fragment {
         LinearLayout brand = new LinearLayout(requireContext());
         brandHeader = brand;
         brand.setGravity(Gravity.CENTER_VERTICAL);
+        brand.setPadding(dp(12), dp(10), dp(10), dp(10));
+        brand.setBackground(shape(0xff121a29, 0xff26344d, 17));
+
+        TextView brandMark = label("M", 19, 0xffffffff, true);
+        brandMark.setGravity(Gravity.CENTER);
+        brandMark.setBackground(shape(0xff655be8, 0xff8178ff, 12));
+        brandMark.setElevation(dp(3));
+        brand.addView(brandMark, new LinearLayout.LayoutParams(dp(40), dp(40)));
+
         LinearLayout brandCopy = new LinearLayout(requireContext());
         brandCopy.setOrientation(LinearLayout.VERTICAL);
-        TextView logo = label("EPIC GAMES", 22, 0xfff5f6fa, true);
+        brandCopy.setPadding(dp(11), 0, 0, 0);
+        TextView logo = label("MALIWINLATOR", 15, 0xfff5f6fa, true);
+        logo.setLetterSpacing(0.055f);
         brandCopy.addView(logo);
-        TextView brandSubtitle = label("YOUR PC GAME COLLECTION", 9, 0xff9ca8bf, true);
-        brandSubtitle.setLetterSpacing(0.12f);
+        TextView brandSubtitle = label("EPIC GAMES  •  YOUR LIBRARY", 8, 0xff9ca8bf, true);
+        brandSubtitle.setLetterSpacing(0.10f);
         LinearLayout.LayoutParams brandSubtitleParams = new LinearLayout.LayoutParams(-2, -2);
-        brandSubtitleParams.topMargin = dp(2);
+        brandSubtitleParams.topMargin = dp(3);
         brandCopy.addView(brandSubtitle, brandSubtitleParams);
         brand.addView(brandCopy, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView edition = label("MALIWINLATOR", 9, 0xffd9d5ff, true);
-        edition.setPadding(dp(10), dp(6), dp(10), dp(6));
-        edition.setBackground(shape(0xff20283a, 0xff20283a, 30));
-        brand.addView(edition);
+
         Button accountShortcut = action("ACCOUNT  ↗", false);
         accountShortcut.setTextSize(9);
         accountShortcut.setMinHeight(dp(36));
-        accountShortcut.setPadding(dp(9), 0, dp(9), 0);
+        accountShortcut.setPadding(dp(10), 0, dp(10), 0);
         accountShortcut.setOnClickListener(v -> showSection("account"));
-        LinearLayout.LayoutParams accountShortcutParams =
-                new LinearLayout.LayoutParams(-2, dp(36));
-        accountShortcutParams.leftMargin = dp(8);
-        brand.addView(accountShortcut, accountShortcutParams);
+        brand.addView(accountShortcut, new LinearLayout.LayoutParams(-2, dp(36)));
         root.addView(brand);
 
         // Runtime diagnostics belong to Account, not the player-facing storefront.
@@ -234,19 +239,19 @@ public final class EpicFragment extends Fragment {
         libraryPanel = new LinearLayout(requireContext());
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
         libraryPanel.setPadding(0, dp(3), 0, 0);
-        // Lead with the selected game's cinematic artwork. Collection controls
-        // follow the hero so the home screen reads like a game launcher, not a
-        // settings page with a featured tile appended beneath a large heading.
+        // Editorial storefront hierarchy: library identity first, then the
+        // cinematic spotlight and live collection summary, followed by browsing.
+        libraryPanel.addView(label("PLAYER LIBRARY  /  EPIC GAMES", 9, 0xffaaa6ff, true));
+        TextView libraryIntro = label("Your library", 29, 0xfff5f6fa, true);
+        libraryIntro.setLetterSpacing(-0.025f);
+        libraryIntro.setPadding(0, dp(3), 0, 0);
+        libraryPanel.addView(libraryIntro);
+        TextView librarySubtitle = label("All your PC games. Ready when you are.", 11, 0xff929db1, false);
+        librarySubtitle.setPadding(0, dp(3), 0, dp(12));
+        libraryPanel.addView(librarySubtitle);
         featuredContainer = new LinearLayout(requireContext());
         featuredContainer.setOrientation(LinearLayout.VERTICAL);
-        addMargin(libraryPanel, featuredContainer, 8);
-        libraryPanel.addView(label("YOUR COLLECTION  /  EPIC GAMES", 9, 0xffaaa6ff, true));
-        TextView libraryIntro = label("Your games.", 27, 0xfff5f6fa, true);
-        libraryIntro.setPadding(0, dp(3), 0, dp(1));
-        libraryPanel.addView(libraryIntro);
-        TextView librarySubtitle = label("Pick up where you left off, or find your next game.", 11, 0xff929db1, false);
-        librarySubtitle.setPadding(0, 0, 0, dp(12));
-        libraryPanel.addView(librarySubtitle);
+        addMargin(libraryPanel, featuredContainer, 2);
         searchField = new EditText(requireContext());
         searchField.setSingleLine(true);
         searchField.setHint("Search your games");
@@ -1652,13 +1657,13 @@ public final class EpicFragment extends Fragment {
 
         LinearLayout card = new LinearLayout(requireContext());
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(8), dp(8), dp(8), dp(11));
-        card.setBackground(shape(0xff151b28, 0xff3b4660, 17));
-        card.setElevation(dp(4));
+        card.setPadding(dp(6), dp(6), dp(6), dp(10));
+        card.setBackground(shape(0xff121a29, 0xff29364e, 17));
+        card.setElevation(dp(3));
         card.setClipToOutline(true);
 
         FrameLayout artwork = new FrameLayout(requireContext());
-        artwork.setBackground(shape(0xff20283a, 0xff20283a, 12));
+        artwork.setBackground(shape(0xff20283a, 0xff20283a, 13));
         artwork.setClipToOutline(true);
         ImageView cover = new ImageView(requireContext());
         cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -1732,7 +1737,7 @@ public final class EpicFragment extends Fragment {
         name.setMaxLines(2);
         name.setMinLines(2);
         name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        name.setPadding(dp(3), dp(11), dp(3), dp(4));
+        name.setPadding(dp(4), dp(10), dp(4), dp(4));
         card.addView(name);
 
         TextView description = label(downloading ? "Download or installation in progress" :
@@ -1742,7 +1747,7 @@ public final class EpicFragment extends Fragment {
                         (installed ? 0xff83dfad : 0xffaab5ca), false);
         description.setMaxLines(1);
         description.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        description.setPadding(dp(3), 0, dp(3), 0);
+        description.setPadding(dp(4), 0, dp(4), 0);
         card.addView(description);
 
         card.setContentDescription(title + ". " + status.toLowerCase(java.util.Locale.ROOT)
