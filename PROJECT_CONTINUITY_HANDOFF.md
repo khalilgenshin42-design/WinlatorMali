@@ -3055,3 +3055,13 @@ User approved replacing the separate Library and Downloads destinations with a u
 - This uses a small dedicated UI preference and does not alter launch history, Epic catalog data, game installation, worker state, or network behavior. It makes the hero respond to the player's actual browsing rather than repeatedly choosing the first installed/catalog result.
 - The immediately preceding source commit `84b18249716e4b49ccfac1862ffa3ca0df12f54f` triggered standard APK workflow **45610880274** and Epic runtime/ARM64 workflow **45610880208**; they were still running/pending at the time of the follow-up. The latest source SHA must pass both workflows before publication. The earlier Epic 429 failure/retry is recorded above and is not a code validation result.
 - No physical Xiaomi 15T validation has occurred. This is a data-backed storefront behavior improvement, not a claim of reproducing the lost demo pixel-for-pixel.
+
+
+## 2026-11-25 — Latest Epic storefront build validated and published
+
+- Source revision validated: `1ea088a54ca296ffa928098e428aab4528e909c5`.
+- Standard Android debug APK workflow **45610978708**: passed.
+- Epic runtime / ARM64 workflow **45610978644**: passed. The run completed successfully, including Epic Bridge x86_64 Android instrumentation tests, production ARM64 runtime build, packaged-runtime audit, and upload of installable Epic APKs.
+- GitHub prerelease published: [MaliWinlator 1.2.1 Epic test build](https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-1ea088a54ca2). Assets: `app-standard-debug.apk`, `epicbridge-debug.apk`, and `SHA256SUMS`.
+- Workflow artifact bundle also contains the ARM64 Epic runtime debug package and CPython 3.15.2 Android ARM64 POC.
+- Validation is CI only. No physical Xiaomi 15T / Android 16 installation or game-download test has been performed for this revision. Do not describe CI as device validation.
