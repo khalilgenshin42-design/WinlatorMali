@@ -2958,3 +2958,14 @@ User approved replacing the separate Library and Downloads destinations with a u
   - Epic runtime/ARM64 workflow **45516661544**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45516661544
 - The new launch-history source SHA `cec05d21e3e5c7ba50e1e58e34f28d7176028fd4` is not yet validated. Do not publish/install it until both standard APK and Epic runtime/ARM64 workflows pass for this exact source SHA.
 - No Xiaomi 15T physical validation has occurred for this change. Continue the substantial storefront redesign; this is a behavioral correctness improvement, not a claim of reproducing the lost original demo.
+
+
+## 2026-11-25 — Continue-playing history validated; active shelf motion (CI pending)
+
+- Continue-playing source SHA `cec05d21e3e5c7ba50e1e58e34f28d7176028fd4` passed both required workflows:
+  - Standard APK workflow **45519479126**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45519479126
+  - Epic runtime/ARM64 workflow **45519479305**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45519479305
+- Follow-up source commit: `9bcea22de0684c5f415c660fa7804b21badee78f`.
+- Added a thin indeterminate activity indicator along the bottom edge of a game cover while that title owns the persisted active Epic job. It communicates that work is ongoing without inventing a percentage; exact progress remains sourced from the worker and shown on the selected game's profile.
+- No changes to the foreground worker, job identity, progress polling, cancel behavior, or Epic Bridge contract.
+- New source SHA is not validated until both standard APK and Epic runtime/ARM64 workflows pass for this exact commit. No physical Xiaomi 15T validation has occurred.
