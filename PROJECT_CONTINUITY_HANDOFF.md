@@ -3094,3 +3094,14 @@ User approved replacing the separate Library and Downloads destinations with a u
 ### Next implementation focus
 
 Replace the current largely linear home-page composition with a more deliberate launcher hierarchy while retaining the real data and job contracts: make the hero and collection navigation feel like one cohesive surface, improve shelf grouping and focus/selection feedback, and ensure signed-out/loading/empty/error states are intentional. Continue to keep provider/network work off the UI thread and run both CI workflows before publishing another APK.
+
+
+## Engineering step log — 2026-11-25: staggered game-profile section reveal
+
+- Source commit: `c1776606479cf7f62603a6d71cc61bfd2ed6c2f3`.
+- Replaced the profile's single simultaneous parent fade/scale with a short staggered reveal of its completed content sections. Artwork, live progress, achievements, and metadata now enter in reading order instead of appearing as one undifferentiated block.
+- The reveal runs once per selected game title in the Fragment lifecycle, so rebuilding the same profile after catalog/worker reconciliation does not replay the entrance. It respects Android's reduced-motion/animator setting.
+- No Epic provider calls, Legendary commands, install worker behavior, persisted job identity, or progress calculation were changed.
+- Standard APK CI run **45616763537**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45616763537 — pending at handoff update.
+- Epic runtime / ARM64 CI run **45616763588**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45616763588 — pending at handoff update.
+- Do not publish a new APK until both workflows pass for this exact source SHA.
