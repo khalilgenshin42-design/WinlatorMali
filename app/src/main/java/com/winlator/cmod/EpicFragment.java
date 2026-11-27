@@ -2823,8 +2823,8 @@ public final class EpicFragment extends Fragment {
                 throw new java.io.IOException("Epic ownership token escaped the container image root");
             }
             String relativePath = targetPath.substring(imageRoot.length() + 1)
-                    .replace(File.separatorChar, '\\\\');
-            winePaths.add("Z:\\\\" + relativePath);
+                    .replace(File.separatorChar, '\\');
+            winePaths.add("Z:\\" + relativePath);
             File cleanupTarget = target;
             new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 30L * 60L * 1000L);
         }
