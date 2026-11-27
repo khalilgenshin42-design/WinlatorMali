@@ -2516,8 +2516,17 @@ public final class EpicFragment extends Fragment {
                     statusText.setText(result.optString("message"));
                     return;
                 }
-                statusText.setText((update ? "Update failed: " : "Install failed: ") +
-                        result.optString("message"));
+                if (result.optBoolean("cancelled", false)) {
+                    statusText.setText((update ? "Update cancelled: " : "Installation cancelled: ")
+                            + title + ".");
+                } else {
+                    statusText.setText((update ? "Update failed: " : "Install failed: ")
+                            + result.optString("message"));
+                }
+                // Terminal failure/cancellation clears the persisted job ID.
+                // Refresh the catalog so a card cannot remain stuck in its
+                // previous DOWNLOADING state after the operation has ended.
+                refreshLibrary();
                 return;
             }
             String installMessage = title + (update ? " updated in " : " installed in ") +
