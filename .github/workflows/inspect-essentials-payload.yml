@@ -49,9 +49,13 @@ jobs:
           done
           find extracted -type f \( -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' -o -iname '*.sh' -o -iname '*.reg' -o -iname '*.vbs' \) \
             -print > report/script-files.txt
+          tar -czf report/installer-scripts.tar.gz -T report/script-files.txt
           while IFS= read -r file; do
-            mkdir -p "report/scripts/$(dirname "$file")"
-            cp "$file" "report/scripts/$file"
+            if [[ "$file" == *"INSTALL"* || "$file" == *"install"* ]]; then
+              echo "===== $file =====" >> report/installer-scripts-readable.txt
+              cat "$file" >> report/installer-scripts-readable.txt
+              printf '\\n\\n' >> report/installer-scripts-readable.txt
+            fi
           done < report/script-files.txt
           grep -RInE 'wget|--show-progress|vcredist|DirectX|PhysX|OpenAL|wine-mono|wine-gecko|LAVFilters' extracted \
             --include='*.bat' --include='*.cmd' --include='*.sh' --include='*.ps1' \
