@@ -3335,3 +3335,9 @@ Replace the current largely linear home-page composition with a more deliberate 
 - GitHub Actions runs: `46040541549` for the initial correction (in progress when checked) and `46040612453` for the Wine-prefixed command-handler revision (pending when checked): https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46040612453. The final quote-escaping correction was pushed afterward; verify the newest run before distributing an APK.
 - Not yet proven: actual Wine `cmd.exe` behavior, the exact bundled Extras script invocation, successful wget download, or VC++ redistributable installation. The patch targets the observed command-shape failure but must not be called a complete essentials-installer fix until those checks pass.
 - Next: inspect CI result; add a regression test for representative `cmd.exe /c "Z:\\opt\\wget.exe -q ..."` and non-cmd commands; then trace the Extras script's download/install sequence and validate every component by exit code and installed-file checks. Preserve the original Wine prefix and do not silently mark failed prerequisites as installed.
+
+
+## 2026-11-27 Essentials command-parser CI correction
+- CI run 46040627601 failed at `:app:compileStandardDebugJavaWithJavac`, before APK packaging. The exact compiler error was an invalid Java character literal at `ProcessHelper.java:339`: the backslash comparison contained four source backslashes instead of the required escaped single-backslash literal.
+- Corrected the literal in commit `80e8cf913d280c05ae3d9ca67a460516c6833de3` (branch `development/maliwinlator-1.2.1-bootstrap`). This is a compile correction only; it does not establish that Wine cmd.exe correctly runs the Essentials downloader.
+- Next: verify the CI run triggered by this commit, then add parser regression coverage and inspect the bundled guest image to identify the actual Essentials installer invocation. Do not distribute until CI passes and runtime behavior is validated.
