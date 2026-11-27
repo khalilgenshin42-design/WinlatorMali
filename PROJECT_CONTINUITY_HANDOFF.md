@@ -3248,3 +3248,20 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Corrected source head: `c2a555e31b9d31ecce7b61eab20c5f548269f93f`.
 - Exact-head standard MaliWinlator 1.2.1 APK workflow **45994115520** completed successfully and uploaded artifact `maliwinlator-1.2.1-standard-debug-c2a555e31b9d31ecce7b61eab20c5f548269f93f`.
 - Exact-head Epic CPython/ARM64/instrumentation workflow **45994115678** was still running; do not call the Epic-enabled package verified until this workflow succeeds and its APK artifact is inspected.
+
+
+## Engineering step log — 2026-11-27: CPython testbed Gradle dependency failure and CI correction
+
+- Epic runtime workflow **45994115678** for source `c2a555e31b9d31ecce7b61eab20c5f548269f93f` completed with failure before ARM64 packaging. The x86_64 runtime build, Legendary patch/static validation, Epic library regression tests, and host-Python Legendary smoke all passed.
+- The failing step was CPython's managed-emulator prerequisite test. Its Gradle testbed attempted to resolve Android Gradle Plugin **9.3.1**, which pulled unresolved Kotlin **2.3.20** and JetBrains annotations dependencies from the configured repositories. This was a testbed build-tool dependency-resolution failure, not an Epic EOS/DRM runtime assertion or Java source compile failure.
+- Applied a CI-only compatibility override after checking out pinned CPython v3.15.2: change the testbed's AGP pin from **9.3.1** to **9.2.0** before invoking its managed emulator test. The Gradle wrapper remains **9.5.0**, which meets AGP 9.2's documented minimum of 9.4.1; AGP 9.2's documented Kotlin Gradle plugin baseline is 2.2.10. No CPython source/runtime code or shipped MaliWinlator Gradle configuration is changed by this override.
+- Workflow change commit: `02061dbd7fb54af56c96b498669af72fbd607d5b`.
+- New Epic runtime workflow **45995179005**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45995179005 — started for the CI-only correction; it was in progress at this handoff update. Its emulator test, ARM64 runtime build, Android instrumentation, APK assembly and artifact audits remain unverified.
+- The standard APK workflow **45994115520** for source `c2a555e31b9d31ecce7b61eab20c5f548269f93f` passed, but it is not the Epic-enabled package. Do not install or distribute it as the Epic build.
+- DRM scope remains unchanged: the current host-side fail-closed transfer covers Epic EOS exchange-code and catalog ownership-token arguments. It is not evidence that every third-party DRM launcher or anti-cheat system is supported.
+
+### Next actions
+
+1. Monitor Epic workflow `45995179005`; inspect the managed emulator smoke result first.
+2. If it passes, continue through ARM64 runtime packaging, JNI instrumentation, host APK build and embedded-companion checks; publish only after all succeed.
+3. If it fails, inspect the new failing step and fix that specific issue. Do not weaken the DRM token checks to get a green build.
