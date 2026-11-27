@@ -81,8 +81,10 @@ jobs:
           assert script.count("if errorlevel 1 goto download_failed") == 13, "Every download must be checked"
           assert script.count("call :check_installer") == 11, "Every executable/MSI installer must be checked"
           assert script.count("if errorlevel 1 goto install_failed") == 13, "Installer and registry/extraction steps must fail closed"
-          assert 'LATEST_VERSION = 22' in installer, "ImageFS version must trigger the installer patch"
-          assert 'installEssentialsInstaller(activity, rootDir)' in installer, "Installer patch must be applied after extraction"
+          assert 'LATEST_VERSION = 21' in installer, "Essentials patch must not force a global ImageFS version bump"
+          assert 'if (success && !installEssentialsInstaller' not in installer, "Essentials patch failure must not abort ImageFS setup"
+          assert 'installEssentialsInstaller(activity, imageFs.getRootDir())' in installer, "Existing ImageFS must receive the patch without reinstall"
+          assert 'Unable to update Essentials installer' in installer, "Patch failure must be logged but non-fatal"
           assert 'installer-scripts-readable' not in script
           print("Essentials static safeguards passed: 13 verified downloads, 11 checked installers, fail-closed completion.")
           PY
