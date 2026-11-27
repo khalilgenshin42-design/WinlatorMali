@@ -3358,3 +3358,12 @@ Replace the current largely linear home-page composition with a more deliberate 
 - New CI run **46041899013** was triggered for that exact commit. At the time of this update it was in progress; JVM regression tests, APK assembly, embedded Epic Bridge verification, and artifact upload have not yet completed.
 - This is a compile defect correction. Even if CI passes, it proves only parser unit behavior and APK build integrity, not successful Wine `cmd.exe` execution or installation of Essentials redistributables on the phone.
 - Next: monitor run 46041899013; if the four parser tests fail, fix their actual expectations/implementation; if they pass, inspect the APK artifact and continue tracing the bundled guest Essentials script. Do not claim end-to-end Essentials repair without device/runtime verification.
+
+
+## 2026-11-27 Parser test dependency correction
+
+- Standard APK CI run **46041899013** reached the parser JVM test task, but test compilation failed because `org.junit` was not on the app test compile classpath. The test sources were present; the JUnit dependency had not actually been included in the current `app/build.gradle` dependency block.
+- Added `testImplementation 'junit:junit:4.13.2'` in commit **3712559a83ae9e8e10637a30a3ec1199f104f491**.
+- New CI runs **46042161467** and **46042161499** were triggered from that exact source commit (the standard APK and companion/runtime workflow paths). Both were in progress at this update; no JUnit, APK, or artifact result is claimed yet.
+- Parser logic now recursively calls `CommandLineParser.split(prefix)` for any launcher prefix before `cmd.exe`; the four regression tests cover wget command-tail preservation, a Wine prefix, a built-in `echo`, and ordinary quoted executable tokenization. The tests have not yet compiled or executed successfully.
+- Next: inspect the exact CI task result. If JUnit resolves and tests pass, verify APK packaging. Then continue investigating the bundled guest Essentials installer and do not claim successful redistributable installation without runtime evidence.
