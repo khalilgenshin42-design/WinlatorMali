@@ -3239,3 +3239,12 @@ Replace the current largely linear home-page composition with a more deliberate 
   - Standard APK build: **45993780510**, running at handoff update time.
   - Epic CPython/ARM64/instrumentation workflow: **45993780576**, running at handoff update time.
 - Compatibility boundary: this verifies the Epic EOS exchange-code / catalog ownership-token path, not universal DRM compatibility. Titles that require a third-party store launcher, unsupported publisher login, kernel anti-cheat, or platform-specific services still need title-specific support and real-device validation. The app must not bypass or falsify those checks.
+
+
+## Follow-up verification — 2026-11-27: ownership-token path compile correction
+
+- The first standard APK compile for `b25a3647b294f952225662db0158b6bc1a106fbb` caught an over-escaped Java backslash literal in the new Windows token-path mapping. This was a compile-time error, not a runtime/DRM finding.
+- Corrected the Java character and string escaping in `EpicFragment.materializeOwnershipTokens()`.
+- Corrected source head: `c2a555e31b9d31ecce7b61eab20c5f548269f93f`.
+- Exact-head standard MaliWinlator 1.2.1 APK workflow **45994115520** completed successfully and uploaded artifact `maliwinlator-1.2.1-standard-debug-c2a555e31b9d31ecce7b61eab20c5f548269f93f`.
+- Exact-head Epic CPython/ARM64/instrumentation workflow **45994115678** was still running; do not call the Epic-enabled package verified until this workflow succeeds and its APK artifact is inspected.
