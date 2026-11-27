@@ -3312,3 +3312,15 @@ Replace the current largely linear home-page composition with a more deliberate 
 2. If it exits or black-screens, distinguish Epic auth failure from Wine/game prerequisites and D3D9/DXVK rendering by recording the last visible screen and the corresponding log tail.
 3. Add a prerequisite-installer workflow only after validating the exact Legendary prerequisite metadata and safe Wine invocation semantics; do not blindly run arbitrary installers or claim universal DRM support.
 4. After Borderlands 2, test a larger Epic title to exercise sustained download/install, disk space, container path handling, and longer-running process stability.
+
+
+## Essentials installer command parsing fix — 2026-11-27
+
+- User screenshot shows the bundled Winlator Extras essentials batch installer repeatedly reports:
+  `Can't recognize 'Z:\\opt\\wget.exe -q --show-progress -O ...' as an internal or external command`.
+  It then prints generic “Installing VC++” labels; those labels are not evidence that downloads or redistributable installation succeeded.
+- Root-cause audit found `ProcessHelper.splitCommand()` retained syntactic double-quote characters in each ProcessBuilder argv token. This is unsafe for `cmd.exe /c` command strings: quote delimiters must group whitespace but must not be passed through as literal argument content. The old parser also mishandled explicitly empty quoted arguments and did not reject unmatched quotes.
+- Commit `7740e7c3306ca5b4ad9fc92b6ee96e78f4541eab` replaces the parser with a quote-aware tokenizer that removes grouping quotes, preserves spaces inside quoted arguments, retains the existing backslash-escaped-space behavior, preserves empty quoted arguments, and rejects unterminated quotes.
+- Follow-up correction `7fb588353658f3685910edef10b1215e7c9be3fd` fixes the Java backslash character literal in that parser.
+- **Validation status: source patch only.** No Android build, CI run, on-device essentials installation, download verification, or successful VC++ runtime installation has yet been demonstrated. Do not tell the user the essentials installer is fixed/working until the new APK builds and the full install flow is verified.
+- Required next work: add tokenizer regression tests for quoted executable paths, quoted arguments with spaces, `cmd.exe /c` invocation, escaped spaces, empty quoted args, and unmatched quotes; build ARM64 debug APK; on device verify each redistributable download returns HTTP success, expected file size/hash where available, installer exit code is zero, and installed runtime detection succeeds. Make installer UI report per-component success/failure from actual exit codes rather than unconditional progress labels.
