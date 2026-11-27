@@ -3341,3 +3341,11 @@ Replace the current largely linear home-page composition with a more deliberate 
 - CI run 46040627601 failed at `:app:compileStandardDebugJavaWithJavac`, before APK packaging. The exact compiler error was an invalid Java character literal at `ProcessHelper.java:339`: the backslash comparison contained four source backslashes instead of the required escaped single-backslash literal.
 - Corrected the literal in commit `80e8cf913d280c05ae3d9ca67a460516c6833de3` (branch `development/maliwinlator-1.2.1-bootstrap`). This is a compile correction only; it does not establish that Wine cmd.exe correctly runs the Essentials downloader.
 - Next: verify the CI run triggered by this commit, then add parser regression coverage and inspect the bundled guest image to identify the actual Essentials installer invocation. Do not distribute until CI passes and runtime behavior is validated.
+
+
+## 2026-11-27 Parser test isolation
+- Extracted the ProcessBuilder command parser into pure-Java package-private `CommandLineParser`; `ProcessHelper.splitCommand()` delegates to it, so existing launch call sites retain their API.
+- Added JUnit 4 regression tests for (1) the quoted wget.exe Essentials-style `cmd.exe /c` tail, (2) a `wine cmd.exe /c` prefix, (3) built-in `echo`, and (4) normal quoted executable tokenization. Corrected test Java escaping so input contains literal Windows backslashes and quote delimiters.
+- Added `:app:testStandardDebugUnitTest` to CI before APK assembly. Run `46041631043` (commit `0eeaa610903376c0367747a4583e9d66d12143ed`) is currently running; no test result recorded yet.
+- Successful preceding build run `46040972776` produced artifact `maliwinlator-1.2.1-standard-debug-80e8cf913d280c05ae3d9ca67a460516c6833de3` (446,758,797 bytes; SHA-256 `a4fea1e5e93924b48a524a10d47d598bb05c735297a727202b7c561a89af7e9d`). It predates the parser extraction and tests; do not distribute it as the latest tested fix.
+- Actual guest Essentials installer scripts remain uninspected: the Winlator-Extras repository's visible source tree contains no installer scripts; the referenced runtime image is distributed as a large release asset. Do not infer VC++ package coverage or claim end-to-end repair until the guest image/script and Wine execution path are verified.
