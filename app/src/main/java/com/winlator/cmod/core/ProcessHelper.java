@@ -283,36 +283,45 @@ public abstract class ProcessHelper {
          * Preserve the command tail, and if it was wrapped as one outer quoted string,
          * move those quotes onto the executable token (the common Winlator Extras form).
          */
-        int firstStart = skipWhitespace(command, 0);
-        int firstEnd = findTokenEnd(command, firstStart);
-        if (firstEnd > firstStart) {
-            String executable = unquoteToken(command.substring(firstStart, firstEnd));
-            int secondStart = skipWhitespace(command, firstEnd);
-            int secondEnd = findTokenEnd(command, secondStart);
-            if (secondEnd > secondStart &&
-                    (executable.toLowerCase(java.util.Locale.ROOT).endsWith("cmd.exe") ||
-                     executable.equalsIgnoreCase("cmd")) &&
-                    (command.substring(secondStart, secondEnd).equalsIgnoreCase("/c") ||
-                     command.substring(secondStart, secondEnd).equalsIgnoreCase("/k"))) {
-                String tail = command.substring(skipWhitespace(command, secondEnd)).trim();
+        int scan = skipWhitespace(command, 0);
+        while (scan < command.length()) {
+            int tokenEnd = findTokenEnd(command, scan);
+            if (tokenEnd <= scan) break;
+            String token = unquoteToken(command.substring(scan, tokenEnd));
+            int switchStart = skipWhitespace(command, tokenEnd);
+            int switchEnd = findTokenEnd(command, switchStart);
+            boolean isCmd = token.toLowerCase(java.util.Locale.ROOT).endsWith("cmd.exe") ||
+                    token.equalsIgnoreCase("cmd");
+            if (isCmd && switchEnd > switchStart &&
+                    (command.substring(switchStart, switchEnd).equalsIgnoreCase("/c") ||
+                     command.substring(switchStart, switchEnd).equalsIgnoreCase("/k"))) {
+                String tail = command.substring(skipWhitespace(command, switchEnd)).trim();
                 if (tail.length() >= 2 && tail.charAt(0) == '"' &&
                         tail.charAt(tail.length() - 1) == '"' &&
                         tail.substring(1, tail.length() - 1).indexOf('"') < 0) {
                     tail = tail.substring(1, tail.length() - 1).trim();
                     int space = firstWhitespace(tail);
                     String commandName = space < 0 ? tail : tail.substring(0, space);
-                    if (!commandName.isEmpty() && !commandName.startsWith("\"") &&
+                    if (!commandName.isEmpty() && !commandName.startsWith("\\\"") &&
                             (commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".exe") ||
                              commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".com") ||
                              commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".bat") ||
                              commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".cmd"))) {
-                        tail = "\"" + commandName + "\"" +
+                        tail = "\\\"" + commandName + "\\\"" +
                                 (space < 0 ? "" : tail.substring(space));
                     }
                 }
                 if (tail.isEmpty()) throw new IllegalArgumentException("Missing command after cmd.exe /c");
-                return new String[] { executable, command.substring(secondStart, secondEnd), tail };
+                String prefix = command.substring(0, scan);
+                String[] prefixArgs = prefix.trim().isEmpty() ? new String[0] : splitCommand(prefix);
+                String[] result = new String[prefixArgs.length + 3];
+                System.arraycopy(prefixArgs, 0, result, 0, prefixArgs.length);
+                result[prefixArgs.length] = token;
+                result[prefixArgs.length + 1] = command.substring(switchStart, switchEnd);
+                result[prefixArgs.length + 2] = tail;
+                return result;
             }
+            scan = skipWhitespace(command, tokenEnd);
         }
 
         ArrayList<String> result = new ArrayList<>();
