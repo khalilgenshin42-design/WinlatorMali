@@ -3219,3 +3219,23 @@ Replace the current largely linear home-page composition with a more deliberate 
   - Standard APK build: **45987158199**, running.
   - Epic CPython/Android instrumentation/ARM64 packaging: **45987158152**, running.
 - Do not distribute an APK from the earlier `a1fd` or `aee5038` runs as the latest build; wait for the exact `d1ea963` workflows and artifact verification.
+
+
+## Engineering step log — 2026-11-27: Epic DRM / EOS launch-path audit
+
+- Audited the pinned Legendary 0.21.1 `get_launch_parameters()` implementation at commit `42f6bdeadde3a9526dc8eb713763476999ac217b`. For online Epic titles it obtains a fresh Epic game exchange token and supplies the game with `-AUTH_LOGIN=unused`, `-AUTH_PASSWORD=<exchange-code>`, `-AUTH_TYPE=exchangecode`, `-epicapp`, `-epicenv=Prod`, `-EpicPortal`, account/locale/sandbox fields, and deployment metadata when present. When the installed build declares `requires_ot`, Legendary obtains the catalog ownership token and adds `-epicovt=<temporary-file>`.
+- Verified the host currently transports the actual Epic launch parameter groups (`game_parameters`, `egl_parameters`, `user_parameters`) and environment from Python to the one-shot `EpicLaunchPayloadStore`, then to `GuestProgramLauncherComponent`. The Epic environment is applied to the game launch after Wine prefix maintenance; the launch uses `execSecure`, which suppresses command logging for the token-bearing launch.
+- Found and fixed a fail-open edge case in `EpicFragment`: an `-epicovt=__EPIC_OVT_PLACEHOLDER__` argument was silently dropped if the token path was missing. Launch now fails with a clear authentication-preparation message rather than starting a protected title without its ownership token.
+- Improved ownership-token handling to preserve all returned tokens in order instead of overwriting the path with the last token. The host checks that every placeholder has a corresponding token and that no token file is left unmatched. Token files remain bounded, app-private/container-private, owner-readable, and scheduled for cleanup.
+- Added Python regression coverage for launch metadata and authentication handoff:
+  - exact game/working-directory, game parameters, EGL parameters and user parameters are preserved;
+  - Epic environment values are preserved;
+  - multiple ownership-token files are transported in order and source temporary files are removed;
+  - missing and oversized token files fail rather than being silently ignored.
+- Source commits:
+  - `bc73cead8b33ee57fa1d16f16c05d61de84b12a1` — fail-closed, ordered ownership-token materialization in the host.
+  - `b25a3647b294f952225662db0158b6bc1a106fbb` — launch/DRM token regression tests.
+- CI for exact source head `b25a3647b294f952225662db0158b6bc1a106fbb`:
+  - Standard APK build: **45993780510**, running at handoff update time.
+  - Epic CPython/ARM64/instrumentation workflow: **45993780576**, running at handoff update time.
+- Compatibility boundary: this verifies the Epic EOS exchange-code / catalog ownership-token path, not universal DRM compatibility. Titles that require a third-party store launcher, unsupported publisher login, kernel anti-cheat, or platform-specific services still need title-specific support and real-device validation. The app must not bypass or falsify those checks.
