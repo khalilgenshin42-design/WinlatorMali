@@ -33,15 +33,10 @@ final class CommandLineParser {
                         tail.charAt(tail.length() - 1) == '"' &&
                         tail.substring(1, tail.length() - 1).indexOf('"') < 0) {
                     tail = tail.substring(1, tail.length() - 1).trim();
-                    int space = firstWhitespace(tail);
-                    String commandName = space < 0 ? tail : tail.substring(0, space);
-                    if (!commandName.isEmpty() && !commandName.startsWith("\"") &&
-                            (commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".exe") ||
-                             commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".com") ||
-                             commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".bat") ||
-                             commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".cmd"))) {
-                        tail = "\"" + commandName + "\"" +
-                                (space < 0 ? "" : tail.substring(space));
+                    int executableEnd = findExecutableEnd(tail);
+                    if (executableEnd > 0) {
+                        String commandName = tail.substring(0, executableEnd);
+                        tail = "\"" + commandName + "\"" + tail.substring(executableEnd);
                     }
                 }
                 if (tail.isEmpty()) throw new IllegalArgumentException("Missing command after cmd.exe /c");
@@ -112,11 +107,30 @@ final class CommandLineParser {
                 ? token.substring(1, token.length() - 1) : token;
     }
 
-    private static int firstWhitespace(String value) {
-        for (int i = 0; i < value.length(); i++) {
-            if (Character.isWhitespace(value.charAt(i))) return i;
+    /**
+     * Finds the end of a Windows executable/script path even when the path itself
+     * contains spaces. The command tail is wrapped in one outer quote pair by some
+     * callers, so splitting at the first whitespace corrupts paths such as
+     * "C:\\ProgramData\\...\\Start Menu\\installer.bat".
+     */
+    private static int findExecutableEnd(String value) {
+        String lower = value.toLowerCase(java.util.Locale.ROOT);
+        String[] extensions = {".exe", ".com", ".bat", ".cmd"};
+        int best = -1;
+        for (String extension : extensions) {
+            int from = 0;
+            while (true) {
+                int index = lower.indexOf(extension, from);
+                if (index < 0) break;
+                int end = index + extension.length();
+                if ((end == value.length() || Character.isWhitespace(value.charAt(end))) &&
+                        (best < 0 || end < best)) {
+                    best = end;
+                }
+                from = index + 1;
+            }
         }
-        return -1;
+        return best;
     }
 
 }
