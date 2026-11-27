@@ -265,9 +265,52 @@ public abstract class ProcessHelper {
         }
     }
 
-    /** Parse ProcessBuilder argv while preserving cmd.exe /c command-tail semantics. */
     public static String[] splitCommand(String command) {
-        return CommandLineParser.split(command);
+        ArrayList<String> result = new ArrayList<>();
+        boolean startedQuotes = false;
+        String value = "";
+        char currChar, nextChar;
+        for (int i = 0, count = command.length(); i < count; i++) {
+            currChar = command.charAt(i);
+
+            if (startedQuotes) {
+                if (currChar == '"') {
+                    startedQuotes = false;
+                    if (!value.isEmpty()) {
+                        value += '"';
+                        result.add(value);
+                        value = "";
+                    }
+                }
+                else value += currChar;
+            }
+            else if (currChar == '"') {
+                startedQuotes = true;
+                value += '"';
+            }
+            else {
+                nextChar = i < count-1 ? command.charAt(i+1) : '\0';
+                if (currChar == ' ' || (currChar == '\\' && nextChar == ' ')) {
+                    if (currChar == '\\') {
+                        value += ' ';
+                        i++;
+                    }
+                    else if (!value.isEmpty()) {
+                        result.add(value);
+                        value = "";
+                    }
+                }
+                else {
+                    value += currChar;
+                    if (i == count-1) {
+                        result.add(value);
+                        value = "";
+                    }
+                }
+            }
+        }
+
+        return result.toArray(new String[0]);
     }
 
     public static String getAffinityMaskAsHexString(String cpuList) {
