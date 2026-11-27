@@ -3265,3 +3265,32 @@ Replace the current largely linear home-page composition with a more deliberate 
 1. Monitor Epic workflow `45995179005`; inspect the managed emulator smoke result first.
 2. If it passes, continue through ARM64 runtime packaging, JNI instrumentation, host APK build and embedded-companion checks; publish only after all succeed.
 3. If it fails, inspect the new failing step and fix that specific issue. Do not weaken the DRM token checks to get a green build.
+
+
+## Engineering step log — 2026-11-27: Epic ARM64 build and instrumentation pipeline passed
+
+- Epic workflow **45995179005** completed with conclusion **success** for source commit `02061dbd7fb54af56c96b498669af72fbd607d5b`: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/45995179005
+- All workflow steps passed, including:
+  - CPython v3.15.2 x86_64 Android runtime build and managed-emulator runtime prerequisite smoke;
+  - Legendary 0.21.1 Android thread-backend patch validation and Epic library aggregation regression tests;
+  - Legendary host-Python smoke test;
+  - production Android ARM64 CPython runtime build and packaged-runtime audit;
+  - Epic Bridge x86_64 Android instrumentation tests;
+  - ARM64 Epic runtime library, optional companion fallback, and MaliWinlator host APK builds;
+  - APK upload, release publication, package/signature/ABI/assets/ELF dependency audits.
+- Published prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-02061dbd7fb5
+- Installable release assets:
+  - `app-standard-debug.apk` (main MaliWinlator host APK with embedded Epic runtime): 510,922,264 bytes; SHA-256 `2f994cdd4193c852f51ba0c9765964bc0fbc5cd9143f49a1d23f6867e395ff43`.
+  - `epicbridge-debug.apk` (optional companion fallback): 59,957,031 bytes; SHA-256 `2955111286f3c827f2459b6702a5375c017a78a49ff526c24eb996580239bc44`.
+  - `SHA256SUMS` is included in the release.
+- Workflow artifact `maliwinlator-1.2.1-epic-arm64-debug`, ID **15196033681**, SHA-256 `dfbc81345488ac2cdef27ce15f1e193630eaa44875c77e584cdfa11d8675c261`; expires 2026-12-27.
+- This is a debug-signed prerelease. It is not a production-signed release and may require uninstalling an older debug build if its signing certificate differs. The main APK is intended to work standalone; companion is optional and should not be installed unless testing fallback behavior.
+- CI success does **not** establish physical Xiaomi 15T runtime compatibility or successful login/download/launch of every DRM-protected game. Next required validation is on the user's device: install main APK only, first-launch CPython extraction/initialization, Epic account sign-in and library refresh, then test one Epic-owned title with EOS authentication and ownership-token requirement. Record title-specific result and logs without exposing secrets.
+- DRM boundary: the implemented path preserves Epic EOS exchange-code and catalog ownership-token arguments and fails closed if ownership-token handoff is incomplete. It does not bypass publisher DRM, third-party launcher requirements, or kernel anti-cheat.
+
+### Next actions
+
+1. User device test of main APK only; do not require the companion for the primary path.
+2. Verify embedded runtime readiness, Epic sign-in, owned library, install progress/cancel/retry, and launch.
+3. Test Borderlands 2 specifically only after account/library launch flow works; it remains unverified.
+4. If device testing passes, continue title-specific DRM compatibility matrix and release hardening/signing review.
