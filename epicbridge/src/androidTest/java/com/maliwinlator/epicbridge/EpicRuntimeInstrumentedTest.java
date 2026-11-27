@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
+import android.net.Uri;
+import android.os.Bundle;
 
 import java.io.File;
 
@@ -17,6 +19,27 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public final class EpicRuntimeInstrumentedTest {
+    @Test
+    public void providerPingIsCheapAndStatusRequiresSuccessfulRuntimeInitialization() {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Uri provider = Uri.parse("content://" + EpicBridgeProvider.AUTHORITY);
+
+        Bundle ping = context.getContentResolver().call(provider, "ping", null, null);
+        assertTrue(ping != null);
+        assertEquals(EpicBridgeProvider.PROTOCOL_VERSION, ping.getInt("protocol_version"));
+        assertTrue(ping.getBoolean("installed"));
+        assertEquals("provider_available", ping.getString("state"));
+        assertFalse(ping.getBoolean("runtime_ready", false));
+
+        Bundle status = context.getContentResolver().call(provider, "status", null, null);
+        assertTrue(status != null);
+        assertTrue("Runtime assets must be present before status reports readiness",
+                status.getBoolean("runtime_packaged", false));
+        assertTrue("Status must perform CPython initialization, not only inspect APK assets",
+                status.getBoolean("runtime_ready", false));
+        assertEquals("runtime_ready", status.getString("state"));
+    }
+
     @Test
     public void providerAuthorizesOnlyTheActualStandardHostPackage() {
         assertTrue(EpicBridgeProvider.isAllowedHostPackage("com.maliwinlator.app"));
