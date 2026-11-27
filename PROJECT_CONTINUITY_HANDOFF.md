@@ -3367,3 +3367,24 @@ Replace the current largely linear home-page composition with a more deliberate 
 - New CI runs **46042161467** and **46042161499** were triggered from that exact source commit (the standard APK and companion/runtime workflow paths). Both were in progress at this update; no JUnit, APK, or artifact result is claimed yet.
 - Parser logic now recursively calls `CommandLineParser.split(prefix)` for any launcher prefix before `cmd.exe`; the four regression tests cover wget command-tail preservation, a Wine prefix, a built-in `echo`, and ordinary quoted executable tokenization. The tests have not yet compiled or executed successfully.
 - Next: inspect the exact CI task result. If JUnit resolves and tests pass, verify APK packaging. Then continue investigating the bundled guest Essentials installer and do not claim successful redistributable installation without runtime evidence.
+
+
+## 2026-11-27 Essentials parser regression CI passed; new Epic prerelease published
+
+- Source head: `3712559a83ae9e8e10637a30a3ec1199f104f491` on `development/maliwinlator-1.2.1-bootstrap`.
+- Standard APK workflow **46042161499** completed successfully: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46042161499.
+  - `:app:testStandardDebugUnitTest` passed (all four CommandLineParser regression tests); APK assembly passed.
+  - Embedded Epic Bridge APK was extracted from the host APK, archive-tested, byte-compared with the companion APK, and verified to share the same signing certificate.
+  - Artifact **15220546981**, name `maliwinlator-1.2.1-standard-debug-3712559a83ae9e8e10637a30a3ec1199f104f491`, size 446,758,818 bytes; artifact ZIP SHA-256 `86aa1193ad5f9f5541a569bf2ceb9583af09b8927bf7f4a253c90e77751e7cf9`; URL https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46042161499/artifacts/15220546981. Retention 14 days.
+- Epic runtime workflow **46042161467** completed successfully: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46042161467.
+  - CPython 3.15.2 x86_64 Android managed-emulator runtime smoke passed.
+  - Legendary patch/static checks, Epic library aggregation regression tests, host-Python smoke, production ARM64 runtime build/audit, x86_64 Android Epic Bridge instrumentation, ARM64 host/companion builds and release publication passed.
+  - Runtime workflow artifact **15220408848**, `maliwinlator-1.2.1-epic-arm64-debug`, size 539,186,690 bytes, ZIP SHA-256 `e1923311aba58b6136da31be164bed44423074d9bc27acac7f2b2f6c0ea69fc6`; expires 2026-12-27.
+  - Separate CPython POC artifact **15220254125**, size 49,957,460 bytes, SHA-256 `1ff542c66b11377a996c6df7d37334f37f555118545f29e84a406bda10221232`; expires 2026-12-11.
+- New prerelease: https://github.com/khalilgenshin42-design/WinlatorMali/releases/tag/maliwinlator-1.2.1-epic-3712559a83ae.
+  - Main `app-standard-debug.apk`: 510,923,032 bytes; SHA-256 `ba3d0676a37d1e203fcae429f55f796345beadca29dfd0e762c634c0152177c3`.
+  - Optional companion `epicbridge-debug.apk`: 59,957,031 bytes; SHA-256 `b39e4ab00b658f18491b3583cd9479260db56853aab838d7d8b82277b7ecb441`.
+  - `SHA256SUMS` included. Debug-signed prerelease; main APK embeds Epic Bridge.
+- Essentials status remains **not end-to-end verified**. The four JVM tests validate tokenizer/parser behavior only; CI does not execute the bundled Extras batch file under the phone's Wine cmd.exe and does not verify downloads or redistributable installation.
+- Search of the repository's indexed source for `Essentials`, `Install Essentials`, and related strings returned no source matches. Existing handoff evidence indicates the installer script is in the large bundled guest image/release asset, not ordinary Java source. Continue by tracing the exact image asset and script through repository/release metadata; do not guess package contents.
+- Next: identify and inspect the exact bundled Extras installer and verify its command invocation semantics; then add per-component HTTP/download/hash/exit-code/installed-runtime checks and only claim completion after actual Wine/device validation. Do not ask the user to reinstall or test merely to confirm the parser unit tests.
