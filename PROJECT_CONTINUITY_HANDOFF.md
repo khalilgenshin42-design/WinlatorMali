@@ -3424,3 +3424,6 @@ Replace the current largely linear home-page composition with a more deliberate 
   - Size: 446,762,674 bytes; uploaded artifact ZIP SHA-256: `0718544f14f2c8d59e47c63e9b0f18f33462f2c6870573178b14699ec33cfab4`; retention until 2026-12-11.
 - Install main `app-standard-debug.apk`; Epic Bridge is embedded. Companion APK is optional.
 - This is a debug build and CI verification only. The Essentials script has not been executed under the Android Wine runtime on the target device. File-size validation is not cryptographic validation and installer exit codes are not post-install runtime verification. Target-device validation remains outstanding.
+
+
+- Installation caution: the latest APK is debug-signed. The Epic workflow's own log warns that debug certificates can differ between CI runs and may require uninstalling an earlier debug package. Do not uninstall an existing installation until its containers/game data are backed up; a stable persistent signing key is needed for reliable in-place upgrades across CI artifacts.
