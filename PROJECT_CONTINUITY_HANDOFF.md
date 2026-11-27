@@ -3439,3 +3439,13 @@ Replace the current largely linear home-page composition with a more deliberate 
 - During a genuine ImageFS extraction, failure to write the optional Essentials script is warning-only and cannot prevent Wine/driver installation or version-marker creation.
 - Did not modify Epic integration, ProcessHelper/CommandLineParser, or the Wine prefix-update code in this corrective patch.
 - CI must pass before sharing a new APK. Device launch validation remains required. Preserve existing containers and prefixes; no wipe/recreation.
+
+
+## 2026-11-27 user-approved container regression rollback
+
+- User explicitly requested restoration of the last known working container behavior while retaining Epic integration.
+- Created safety branch `backup/pre-container-rollback-2026-11-27` before modifying the active branch.
+- Restored these shared runtime files to the last validated app-source snapshot `3390b95a717121d41bc79903c524120d75c3717d`: `ImageFsInstaller.java`, `GuestProgramLauncherComponent.java`, and `ProcessHelper.java`.
+- Removed the custom Essentials batch asset and its dedicated payload-inspection workflow. Removed only the CI assertions that required the reverted Essentials and prefix-update behavior; Epic build/signature checks and command-parser unit tests remain.
+- Epic UI/bridge/runtime modules and Epic-related Gradle/build wiring were intentionally left in place. No container, game, prefix, or phone storage data was touched.
+- This is a source rollback, not a verified device fix. A fresh CI build and then a device launch test are required. The restored launcher matches the previously validated source snapshot, including its earlier Wine prefix-update behavior; do not claim that the underlying prefix-update weakness is fixed.
