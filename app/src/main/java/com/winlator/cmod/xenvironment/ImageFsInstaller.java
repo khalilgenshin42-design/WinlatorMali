@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class ImageFsInstaller {
-    public static final byte LATEST_VERSION = 22;
+    public static final byte LATEST_VERSION = 21;
     private static final AtomicBoolean isInstalling = new AtomicBoolean(false);
 
     private static void resetContainerImgVersions(Context context) {
@@ -128,9 +128,13 @@ public abstract class ImageFsInstaller {
                     return file;
                 });
 
-                if (success && !installEssentialsInstaller(activity, rootDir)) success = false;
-
                 if (success) {
+                    // This guest-side convenience script is optional. A failed patch must
+                    // never prevent Wine layers, graphics drivers, or the ImageFS marker
+                    // from being installed.
+                    if (!installEssentialsInstaller(activity, rootDir)) {
+                        android.util.Log.w("ImageFsInstaller", "Unable to update Essentials installer; continuing ImageFS installation");
+                    }
                     installWineFromAssets(activity);
                     installDriversFromAssets(activity);
                     imageFs.createImgVersionFile(LATEST_VERSION);
@@ -156,6 +160,12 @@ public abstract class ImageFsInstaller {
         if (!imageFs.isValid() || imageFs.getVersion() < LATEST_VERSION) {
             installFromAssets(activity);
             return true;
+        }
+
+        // Update the Start Menu installer independently of the shared ImageFS version.
+        // This touches only the script under /home and does not trigger a rootfs rebuild.
+        if (!installEssentialsInstaller(activity, imageFs.getRootDir())) {
+            android.util.Log.w("ImageFsInstaller", "Unable to update Essentials installer; existing container runtime left unchanged");
         }
         return false;
     }
