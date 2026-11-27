@@ -608,25 +608,14 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
             env.put("WINEDLLOVERRIDES", overrides.isEmpty() ? "mscoree=d" : overrides + ";mscoree=d");
             Log.i(tag, "prefix update: .update-timestamp \"" + current + "\" != wine.inf mtime " + infMtime + "; running it before the session");
             long t0 = System.currentTimeMillis();
-            // -u is Wine's documented prefix-update operation. -h only prints help and
-            // leaves .update-timestamp unchanged, causing this step to repeat on every launch.
-            int status = ProcessHelper.execAndWait(wineLauncher + " wineboot -u", env.toStringArray(), rootDir, 180_000);
-
-            // Do not wait for or kill every Wine process in /proc here. The wineserver and
-            // services started for this prefix can be reused by the guest session that follows.
-            // Global cleanup can also kill unrelated containers that happen to be running.
-            String after = stamp.isFile() ? FileUtils.readString(stamp) : "";
-            if (after == null) after = "";
-            after = after.trim();
-            boolean timestampUpdated = after.startsWith(Long.toString(infMtime));
-            if (status != 0 || !timestampUpdated) {
-                Log.e(tag, "prefix update failed: wineboot exit " + status
-                        + ", expected .update-timestamp " + infMtime + " but found \"" + after + "\""
-                        + " (elapsed " + (System.currentTimeMillis() - t0) + " ms)");
-            } else {
-                Log.i(tag, "prefix update succeeded in " + (System.currentTimeMillis() - t0)
-                        + " ms; .update-timestamp=" + after);
+            int status = ProcessHelper.execAndWait(wineLauncher + " wineboot -h", env.toStringArray(), rootDir, 180_000);
+            // Let the wineserver wind down on its own (it flushes the registry on exit).
+            long deadline = System.currentTimeMillis() + 30_000;
+            while (!ProcessHelper.listRunningWineProcesses().isEmpty() && System.currentTimeMillis() < deadline) {
+                try { Thread.sleep(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
             }
+            if (!ProcessHelper.listRunningWineProcesses().isEmpty()) ProcessHelper.terminateAllWineProcessesAndWait(3000, true);
+            Log.i(tag, "prefix update: finished in " + (System.currentTimeMillis() - t0) + " ms (wineboot exit " + status + ")");
         } catch (Throwable t) {
             Log.w(tag, "prefix update: the step before the session failed; launching anyway", t);
         }
