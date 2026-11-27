@@ -131,26 +131,52 @@ public final class EpicBridgeProvider extends ContentProvider {
             return result;
         }
 
-        if ("status".equals(method) || "ping".equals(method)) {
+        if ("ping".equals(method)) {
+            // Cheap provider-discovery probe. Do not extract or initialize the
+            // Python runtime just to determine whether this APK contains Epic IPC.
+            result.putBoolean("installed", true);
+            result.putBoolean("host_embedded",
+                    !"com.maliwinlator.epicbridge".equals(getContext().getPackageName()));
+            result.putString("state", "provider_available");
+            return result;
+        }
+
+        if ("status".equals(method)) {
             boolean cryptoReady = cryptoSelfTest();
             boolean runtimePackaged = EpicPythonRuntime.isPackaged(getContext());
+            boolean runtimeInitialized = false;
+            if (runtimePackaged && cryptoReady) {
+                try {
+                    // "Packaged" is not the same as usable: this performs the
+                    // app-private extraction, Bionic/JNI initialization and
+                    // CPython startup that the first real Epic command requires.
+                    runtimeInitialized = EpicPythonRuntime.initialize(getContext());
+                } catch (Exception | LinkageError failure) {
+                    android.util.Log.e("EpicBridgeProvider",
+                            "Epic runtime initialization failed ("
+                                    + failure.getClass().getSimpleName() + ")");
+                }
+            }
             result.putBoolean("installed", true);
             // The embedded provider shares Android's all-files permission with
             // Winlator; the standalone companion has its own package grant.
             result.putBoolean("host_embedded",
                     !"com.maliwinlator.epicbridge".equals(getContext().getPackageName()));
             result.putBoolean("crypto_supported", cryptoReady);
-            result.putBoolean("runtime_ready", runtimePackaged && cryptoReady);
+            result.putBoolean("runtime_packaged", runtimePackaged);
+            result.putBoolean("runtime_ready", runtimeInitialized);
             result.putBoolean("storage_access",
                     Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager());
-            result.putString("state", runtimePackaged
-                    ? (cryptoReady ? "runtime_ready" : "crypto_unavailable")
-                    : "runtime_not_installed");
+            result.putString("state", !runtimePackaged ? "runtime_not_installed"
+                    : !cryptoReady ? "crypto_unavailable"
+                    : runtimeInitialized ? "runtime_ready" : "runtime_initialization_failed");
             result.putString("crypto_status", cryptoReady
                     ? "Android AES-GCM self-test passed" : "Android AES-GCM unavailable");
-            result.putString("message", runtimePackaged
-                    ? (cryptoReady ? "Legendary Android runtime is packaged" : "Android AES-GCM self-test failed")
-                    : "Epic runtime is not bundled in this companion build");
+            result.putString("message", !runtimePackaged
+                    ? "Epic runtime assets or native libraries are missing"
+                    : !cryptoReady ? "Android AES-GCM self-test failed"
+                    : runtimeInitialized ? "Legendary Android runtime initialized successfully"
+                    : "The embedded Android Python runtime could not initialize");
             return result;
         }
 
