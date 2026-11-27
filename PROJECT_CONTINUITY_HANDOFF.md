@@ -3427,3 +3427,15 @@ Replace the current largely linear home-page composition with a more deliberate 
 
 
 - Installation caution: the latest APK is debug-signed. The Epic workflow's own log warns that debug certificates can differ between CI runs and may require uninstalling an earlier debug package. Do not uninstall an existing installation until its containers/game data are backed up; a stable persistent signing key is needed for reliable in-place upgrades across CI artifacts.
+
+
+## 2026-11-27 container regression correction — Essentials installer
+
+- User confirmed ordinary containers launched correctly before the Essentials installer work. Root cause candidate was the Essentials implementation's unnecessary ImageFS version bump from 21 to 22, which forced shared rootfs extraction and container image-version resets.
+- Corrective source commit: `cfac9c3ffe515ab6e786c08be0b61bb42cb42d4b`.
+- CI guard update: `1fc97f61e6a7cc1e04b3054cd39342b513481360`.
+- Restored `LATEST_VERSION = 21`; no forced global ImageFS migration for the Essentials batch-file change.
+- Existing installations now receive the replacement batch file in-place through `installIfNeeded()`; this only writes the Start Menu script under `/home/xuser/.wine`.
+- During a genuine ImageFS extraction, failure to write the optional Essentials script is warning-only and cannot prevent Wine/driver installation or version-marker creation.
+- Did not modify Epic integration, ProcessHelper/CommandLineParser, or the Wine prefix-update code in this corrective patch.
+- CI must pass before sharing a new APK. Device launch validation remains required. Preserve existing containers and prefixes; no wipe/recreation.
