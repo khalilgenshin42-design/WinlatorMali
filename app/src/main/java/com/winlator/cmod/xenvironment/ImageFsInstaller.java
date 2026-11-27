@@ -22,11 +22,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,35 +68,6 @@ public abstract class ImageFsInstaller {
             adrenotoolsManager.extractDriverFromResources(driver);
     }
 
-    /**
-     * Replace the upstream Essentials batch file with the checked installer shipped
-     * by this app. The guest image is externally versioned, so patch it after every
-     * image extraction rather than modifying the upstream archive in-place.
-     */
-    private static boolean installEssentialsInstaller(Context context, File rootDir) {
-        File installer = new File(rootDir,
-                "home/xuser/.wine/drive_c/ProgramData/Microsoft/Windows/Start Menu/1-INSTALL/INSTALL RECOMMENDED ESSENTIAL FILES.bat");
-        try (InputStream input = context.getAssets().open("essentials_install.bat");
-             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-            byte[] chunk = new byte[8192];
-            int count;
-            while ((count = input.read(chunk)) != -1) buffer.write(chunk, 0, count);
-            String script = new String(buffer.toByteArray(), StandardCharsets.UTF_8)
-                    .replace("\r\n", "\n")
-                    .replace("\n", "\r\n");
-            File parent = installer.getParentFile();
-            if (parent == null || (!parent.isDirectory() && !parent.mkdirs())) return false;
-            try (FileOutputStream output = new FileOutputStream(installer, false)) {
-                output.write(script.getBytes(StandardCharsets.UTF_8));
-                output.flush();
-            }
-            return installer.isFile() && installer.length() > 0;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public static void installFromAssets(final MainActivity activity) {
         if (!isInstalling.compareAndSet(false, true)) return;
         AppUtils.keepScreenOn(activity);
@@ -129,12 +95,6 @@ public abstract class ImageFsInstaller {
                 });
 
                 if (success) {
-                    // This guest-side convenience script is optional. A failed patch must
-                    // never prevent Wine layers, graphics drivers, or the ImageFS marker
-                    // from being installed.
-                    if (!installEssentialsInstaller(activity, rootDir)) {
-                        android.util.Log.w("ImageFsInstaller", "Unable to update Essentials installer; continuing ImageFS installation");
-                    }
                     installWineFromAssets(activity);
                     installDriversFromAssets(activity);
                     imageFs.createImgVersionFile(LATEST_VERSION);
@@ -160,12 +120,6 @@ public abstract class ImageFsInstaller {
         if (!imageFs.isValid() || imageFs.getVersion() < LATEST_VERSION) {
             installFromAssets(activity);
             return true;
-        }
-
-        // Update the Start Menu installer independently of the shared ImageFS version.
-        // This touches only the script under /home and does not trigger a rootfs rebuild.
-        if (!installEssentialsInstaller(activity, imageFs.getRootDir())) {
-            android.util.Log.w("ImageFsInstaller", "Unable to update Essentials installer; existing container runtime left unchanged");
         }
         return false;
     }
