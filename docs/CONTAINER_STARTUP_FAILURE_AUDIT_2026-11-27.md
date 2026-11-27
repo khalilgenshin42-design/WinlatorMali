@@ -39,3 +39,20 @@ Added a CI static guard in `.github/workflows/maliwinlator-ci.yml` to reject reg
 - CI static validation and APK build must complete before an artifact is considered ready.
 - No target-device runtime validation has yet been performed. In particular, we still need to confirm on the user's Android 16 device that `wineboot -u` returns zero, updates `.update-timestamp`, and allows the container to remain open.
 - Do not reset/delete the user's container or uninstall the app as part of this diagnosis.
+
+
+## 2026-11-27 follow-up: Essentials patch no longer forces ImageFS migration
+
+The user's report established that ordinary container startup worked before the Essentials installer changes. The prior implementation coupled a Start Menu batch-file replacement to a global ImageFS version bump from 21 to 22. That caused `installIfNeeded()` to enter `installFromAssets()`, which clears and re-extracts the shared root filesystem (preserving `/home`) and resets container image-version metadata. It also made successful copying of the optional batch file a prerequisite for continuing the Wine/driver installation sequence.
+
+Corrective commit: `cfac9c3ffe515ab6e786c08be0b61bb42cb42d4b`.
+
+Changes:
+1. Restored `ImageFsInstaller.LATEST_VERSION` to 21. The Essentials script update no longer triggers a global ImageFS reinstall.
+2. Existing valid ImageFS installations receive the small Start Menu batch-file replacement directly from `installIfNeeded()`, without clearing the root filesystem or changing container metadata.
+3. On a genuine ImageFS extraction, failure to copy the optional Essentials script is logged but does not block Wine layers, graphics drivers, symlink setup, or the ImageFS version marker.
+4. Updated the CI static guard to enforce version 21, non-fatal patch behavior, and patching of existing ImageFS installations.
+
+Scope intentionally limited to `ImageFsInstaller.java` and its CI guard. Epic integration, command parsing, and Wine prefix-update behavior were not rolled back in this corrective change.
+
+Validation status: source and CI guard committed. The CI workflow must complete before an APK is distributed. No target-device launch validation has yet occurred. Existing containers and game data must not be deleted or recreated.
