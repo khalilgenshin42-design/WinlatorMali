@@ -3349,3 +3349,12 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Added `:app:testStandardDebugUnitTest` to CI before APK assembly. Run `46041631043` (commit `0eeaa610903376c0367747a4583e9d66d12143ed`) is currently running; no test result recorded yet.
 - Successful preceding build run `46040972776` produced artifact `maliwinlator-1.2.1-standard-debug-80e8cf913d280c05ae3d9ca67a460516c6833de3` (446,758,797 bytes; SHA-256 `a4fea1e5e93924b48a524a10d47d598bb05c735297a727202b7c561a89af7e9d`). It predates the parser extraction and tests; do not distribute it as the latest tested fix.
 - Actual guest Essentials installer scripts remain uninspected: the Winlator-Extras repository's visible source tree contains no installer scripts; the referenced runtime image is distributed as a large release asset. Do not infer VC++ package coverage or claim end-to-end repair until the guest image/script and Wine execution path are verified.
+
+
+## 2026-11-27 Parser CI failure and follow-up correction
+
+- Run **46041631043** completed with failure before the JUnit task could execute. The compiler identified one missing method in the extracted parser: `CommandLineParser.split()` recursively called `splitCommand(prefix)`, a method that exists on `ProcessHelper` but not on `CommandLineParser`.
+- Fixed the recursion to call `CommandLineParser.split(prefix)` in commit **49a7a2b977d8a27e051f3ed4e3ee920aa91939ca**.
+- New CI run **46041899013** was triggered for that exact commit. At the time of this update it was in progress; JVM regression tests, APK assembly, embedded Epic Bridge verification, and artifact upload have not yet completed.
+- This is a compile defect correction. Even if CI passes, it proves only parser unit behavior and APK build integrity, not successful Wine `cmd.exe` execution or installation of Essentials redistributables on the phone.
+- Next: monitor run 46041899013; if the four parser tests fail, fix their actual expectations/implementation; if they pass, inspect the APK artifact and continue tracing the bundled guest Essentials script. Do not claim end-to-end Essentials repair without device/runtime verification.
