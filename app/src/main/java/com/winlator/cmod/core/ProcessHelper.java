@@ -276,6 +276,45 @@ public abstract class ProcessHelper {
     public static String[] splitCommand(String command) {
         if (command == null || command.trim().isEmpty()) return new String[0];
 
+        /*
+         * cmd.exe /c is different from an ordinary executable invocation: everything
+         * after /c is one command-line string. Treating its quoted tail as one normal
+         * argv token makes Wine cmd interpret "wget.exe -q ..." as the executable name.
+         * Preserve the command tail, and if it was wrapped as one outer quoted string,
+         * move those quotes onto the executable token (the common Winlator Extras form).
+         */
+        int firstStart = skipWhitespace(command, 0);
+        int firstEnd = findTokenEnd(command, firstStart);
+        if (firstEnd > firstStart) {
+            String executable = unquoteToken(command.substring(firstStart, firstEnd));
+            int secondStart = skipWhitespace(command, firstEnd);
+            int secondEnd = findTokenEnd(command, secondStart);
+            if (secondEnd > secondStart &&
+                    (executable.toLowerCase(java.util.Locale.ROOT).endsWith("cmd.exe") ||
+                     executable.equalsIgnoreCase("cmd")) &&
+                    (command.substring(secondStart, secondEnd).equalsIgnoreCase("/c") ||
+                     command.substring(secondStart, secondEnd).equalsIgnoreCase("/k"))) {
+                String tail = command.substring(skipWhitespace(command, secondEnd)).trim();
+                if (tail.length() >= 2 && tail.charAt(0) == '"' &&
+                        tail.charAt(tail.length() - 1) == '"' &&
+                        tail.substring(1, tail.length() - 1).indexOf('"') < 0) {
+                    tail = tail.substring(1, tail.length() - 1).trim();
+                    int space = firstWhitespace(tail);
+                    String commandName = space < 0 ? tail : tail.substring(0, space);
+                    if (!commandName.isEmpty() && !commandName.startsWith("\\\"") &&
+                            (commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".exe") ||
+                             commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".com") ||
+                             commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".bat") ||
+                             commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".cmd"))) {
+                        tail = "\\\"" + commandName + "\\\"" +
+                                (space < 0 ? "" : tail.substring(space));
+                    }
+                }
+                if (tail.isEmpty()) throw new IllegalArgumentException("Missing command after cmd.exe /c");
+                return new String[] { command.substring(firstStart, firstEnd), command.substring(secondStart, secondEnd), tail };
+            }
+        }
+
         ArrayList<String> result = new ArrayList<>();
         StringBuilder value = new StringBuilder();
         boolean inQuotes = false;
@@ -283,20 +322,17 @@ public abstract class ProcessHelper {
 
         for (int i = 0; i < command.length(); i++) {
             char current = command.charAt(i);
-
             if (current == '"') {
                 inQuotes = !inQuotes;
-                tokenStarted = true; // preserve an explicitly empty quoted argument
+                tokenStarted = true;
                 continue;
             }
-
-            if (current == '\\' && i + 1 < command.length()
+            if (current == '\\\\' && i + 1 < command.length()
                     && Character.isWhitespace(command.charAt(i + 1))) {
                 value.append(command.charAt(++i));
                 tokenStarted = true;
                 continue;
             }
-
             if (Character.isWhitespace(current) && !inQuotes) {
                 if (tokenStarted) {
                     result.add(value.toString());
@@ -305,16 +341,40 @@ public abstract class ProcessHelper {
                 }
                 continue;
             }
-
             value.append(current);
             tokenStarted = true;
         }
-
-        if (inQuotes) {
-            throw new IllegalArgumentException("Unterminated double quote in command line");
-        }
+        if (inQuotes) throw new IllegalArgumentException("Unterminated double quote in command line");
         if (tokenStarted) result.add(value.toString());
         return result.toArray(new String[0]);
+    }
+
+    private static int skipWhitespace(String value, int index) {
+        while (index < value.length() && Character.isWhitespace(value.charAt(index))) index++;
+        return index;
+    }
+
+    private static int findTokenEnd(String value, int start) {
+        boolean quoted = false;
+        for (int i = start; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '"') quoted = !quoted;
+            else if (Character.isWhitespace(c) && !quoted) return i;
+        }
+        return value.length();
+    }
+
+    private static String unquoteToken(String token) {
+        return token.length() >= 2 && token.charAt(0) == '"' &&
+                token.charAt(token.length() - 1) == '"'
+                ? token.substring(1, token.length() - 1) : token;
+    }
+
+    private static int firstWhitespace(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.isWhitespace(value.charAt(i))) return i;
+        }
+        return -1;
     }
 
     public static String getAffinityMaskAsHexString(String cpuList) {
