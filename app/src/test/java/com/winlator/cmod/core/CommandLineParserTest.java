@@ -25,4 +25,16 @@ public class CommandLineParserTest {
         assertArrayEquals(new String[]{"Z:\\Program Files\\tool.exe", "--quiet"},
                 CommandLineParser.split("\"Z:\\Program Files\\tool.exe\" --quiet"));
     }
+    @Test public void preservesBatchFilePathContainingSpacesAfterCmdC() {
+        String batch = "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\1-INSTALL\\INSTALL RECOMMENDED ESSENTIAL FILES.bat";
+        assertArrayEquals(new String[]{"cmd.exe", "/c", "\"" + batch + "\""},
+                CommandLineParser.split("cmd.exe /c \"" + batch + "\""));
+    }
+
+    @Test public void quotesFullExecutablePathBeforeArgumentsWhenOuterWrapped() {
+        String tail = "\"C:\\Program Files\\Tools\\wget.exe\" -q --show-progress";
+        assertArrayEquals(new String[]{"cmd.exe", "/c", tail},
+                CommandLineParser.split("cmd.exe /c \"C:\\Program Files\\Tools\\wget.exe -q --show-progress\""));
+    }
+
 }
