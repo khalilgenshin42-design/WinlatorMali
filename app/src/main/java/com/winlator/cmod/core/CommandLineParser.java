@@ -46,7 +46,7 @@ final class CommandLineParser {
                 }
                 if (tail.isEmpty()) throw new IllegalArgumentException("Missing command after cmd.exe /c");
                 String prefix = command.substring(0, scan);
-                String[] prefixArgs = prefix.trim().isEmpty() ? new String[0] : splitCommand(prefix);
+                String[] prefixArgs = prefix.trim().isEmpty() ? new String[0] : split(prefix);
                 String[] result = new String[prefixArgs.length + 3];
                 System.arraycopy(prefixArgs, 0, result, 0, prefixArgs.length);
                 result[prefixArgs.length] = token;
