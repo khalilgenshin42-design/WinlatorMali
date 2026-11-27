@@ -3324,3 +3324,14 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Follow-up correction `7fb588353658f3685910edef10b1215e7c9be3fd` fixes the Java backslash character literal in that parser.
 - **Validation status: source patch only.** No Android build, CI run, on-device essentials installation, download verification, or successful VC++ runtime installation has yet been demonstrated. Do not tell the user the essentials installer is fixed/working until the new APK builds and the full install flow is verified.
 - Required next work: add tokenizer regression tests for quoted executable paths, quoted arguments with spaces, `cmd.exe /c` invocation, escaped spaces, empty quoted args, and unmatched quotes; build ARM64 debug APK; on device verify each redistributable download returns HTTP success, expected file size/hash where available, installer exit code is zero, and installed runtime detection succeeds. Make installer UI report per-component success/failure from actual exit codes rather than unconditional progress labels.
+
+
+## Engineering step log — 2026-11-27: Essentials installer command-line repair
+
+- User-visible failure: Wine cmd reports that a command resembling `Z:\\opt\\wget.exe -q --show-progress -O ...` cannot be recognized. This indicates the executable and its switches are reaching `cmd.exe /c` as one command name rather than an executable plus arguments.
+- Compared fork `ProcessHelper.splitCommand()` with upstream Winlator Mali 1.2.1. The fork's generic quote-stripping tokenizer did not preserve the special command-string semantics of `cmd.exe /c`.
+- Commit `1dc906c60218e8d486afff5f27fdeada98f2f0e3` introduced a cmd-tail handler; immediate source review found an escaping defect in its generated Java string literals.
+- Corrected that defect in commit `f5a0918be0e41c9e172fefe194ce267ae7b6168a`. The handler now preserves the complete `/c` tail as one argument and, when the tail is wholly wrapped in quotes, moves those outer quotes onto an executable filename ending in .exe/.com/.bat/.cmd. Ordinary command tokenization remains unchanged.
+- GitHub Actions build triggered by `f5a0918be0e41c9e172fefe194ce267ae7b6168a`: run `46040541549`, currently queued at the time of this update: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46040541549
+- Not yet proven: actual Wine `cmd.exe` behavior, the exact bundled Extras script invocation, successful wget download, or VC++ redistributable installation. The patch targets the observed command-shape failure but must not be called a complete essentials-installer fix until those checks pass.
+- Next: inspect CI result; add a regression test for representative `cmd.exe /c "Z:\\opt\\wget.exe -q ..."` and non-cmd commands; then trace the Extras script's download/install sequence and validate every component by exit code and installed-file checks. Preserve the original Wine prefix and do not silently mark failed prerequisites as installed.
