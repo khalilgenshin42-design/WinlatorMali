@@ -3410,3 +3410,17 @@ Replace the current largely linear home-page composition with a more deliberate 
 - Added CI static checks: exactly 13 download calls and guards, 11 installer result checks, 13 fail-closed install/registry/extraction guards, and the imagefs patch/version hook.
 - Latest CI run **46048349563** on commit `1bdd4919cd420300835ae6e5f6e066d10695d93f`: static Essentials checks passed and `:app:testStandardDebugUnitTest` passed; APK build was still in progress at last observation. Run: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46048349563.
 - IMPORTANT LIMITATION: the new batch script has not yet been executed under Wine on the target Android device. Exact file-size checks prove downloaded byte count, not cryptographic hash or runtime installation. CI static checks do not prove all components install on the phone. Do not call the Essentials installer fully fixed until the resulting APK is built and target-device execution/logs confirm successful downloads and installs.
+
+
+## 2026-11-27 Essentials hardening APK CI completed
+
+- Final source commit: `1bdd4919cd420300835ae6e5f6e066d10695d93f`.
+- Workflow **46048349563** completed successfully: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46048349563.
+  - Essentials static safeguards passed: 13 downloads / 13 guards, 11 installer result checks, 13 fail-closed installer/registry/extraction guards, imagefs v22 patch hook.
+  - All CommandLineParser JVM regression tests passed, including quoted batch path with spaces and built-in echo with URL ending in .exe.
+  - Standard debug APK assembled successfully; embedded Epic Bridge APK byte-matched companion APK and signer equality passed. Host/companion certificate SHA-256: `33bc8c334fc62b85e519636a98cfbfe895b2033d2a9c6c1ec8f474b43fe8564a`.
+- Artifact **15222754571**: https://github.com/khalilgenshin42-design/WinlatorMali/actions/runs/46048349563/artifacts/15222754571.
+  - Name: `maliwinlator-1.2.1-standard-debug-1bdd4919cd420300835ae6e5f6e066d10695d93f`.
+  - Size: 446,762,674 bytes; uploaded artifact ZIP SHA-256: `0718544f14f2c8d59e47c63e9b0f18f33462f2c6870573178b14699ec33cfab4`; retention until 2026-12-11.
+- Install main `app-standard-debug.apk`; Epic Bridge is embedded. Companion APK is optional.
+- This is a debug build and CI verification only. The Essentials script has not been executed under the Android Wine runtime on the target device. File-size validation is not cryptographic validation and installer exit codes are not post-install runtime verification. Target-device validation remains outstanding.
