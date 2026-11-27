@@ -87,6 +87,24 @@ jobs:
           print("Essentials static safeguards passed: 13 verified downloads, 11 checked installers, fail-closed completion.")
           PY
 
+      - name: Validate Wine prefix update lifecycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("app/src/main/java/com/winlator/cmod/xenvironment/components/GuestProgramLauncherComponent.java").read_text(encoding="utf-8")
+          start = source.index("private void updatePrefixBeforeSession")
+          end = source.index("private void addBox64EnvVars", start)
+          method = source[start:end]
+          assert 'wineboot -u' in method, "Prefix update must use Wine's update operation"
+          assert 'wineboot -h' not in method, "Help must never be used as a prefix update"
+          assert 'terminateAllWineProcessesAndWait' not in method, "Prefix update must not kill unrelated Wine sessions"
+          assert 'listRunningWineProcesses' not in method, "Prefix update must not globally poll /proc"
+          assert 'timestampUpdated' in method, "Prefix update must verify its timestamp"
+          print("Wine prefix lifecycle safeguards passed.")
+          PY
+
       - name: Run command parser JVM regression tests
         run: ./gradlew :app:testStandardDebugUnitTest --no-daemon --stacktrace
 
