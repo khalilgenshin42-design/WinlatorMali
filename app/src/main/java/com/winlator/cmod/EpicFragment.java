@@ -2703,17 +2703,22 @@ public final class EpicFragment extends Fragment {
                 return;
             }
 
-            String ownershipTokenPath;
+            List<String> ownershipTokenPaths;
             try {
-                ownershipTokenPath = materializeOwnershipToken(launch, container);
+                ownershipTokenPaths = materializeOwnershipTokens(launch, container);
             } catch (Exception e) {
-                statusText.setText("Unable to prepare Epic ownership token for Wine: " + e.getMessage());
+                statusText.setText("Unable to prepare Epic authentication data for Wine. Refresh Epic sign-in and try again.");
                 return;
             }
             List<String> args = new ArrayList<>();
-            appendArguments(args, launch.optJSONArray("game_parameters"), null);
-            appendArguments(args, launch.optJSONArray("egl_parameters"), ownershipTokenPath);
-            appendArguments(args, launch.optJSONArray("user_parameters"), null);
+            try {
+                appendArguments(args, launch.optJSONArray("game_parameters"), null);
+                appendArguments(args, launch.optJSONArray("egl_parameters"), ownershipTokenPaths);
+                appendArguments(args, launch.optJSONArray("user_parameters"), null);
+            } catch (IllegalStateException incompleteAuthentication) {
+                statusText.setText("Epic launch authentication data is incomplete. Refresh Epic sign-in and try again.");
+                return;
+            }
             String commandLine = joinArguments(args);
             EnvVars environment = new EnvVars();
             JSONObject env = launch.optJSONObject("environment");
@@ -2770,9 +2775,16 @@ public final class EpicFragment extends Fragment {
         }
     }
 
-    private String materializeOwnershipToken(JSONObject launch, Container container) throws Exception {
+    /**
+     * Materialize every short-lived Epic ownership token under the selected
+     * container's image root. Legendary emits one secret file per -epicovt
+     * argument; preserve that ordering so multi-token launch metadata is not
+     * accidentally collapsed into the last file.
+     */
+    private List<String> materializeOwnershipTokens(JSONObject launch, Container container) throws Exception {
         JSONArray secretFiles = launch.optJSONArray("secret_files");
-        if (secretFiles == null || secretFiles.length() == 0) return null;
+        List<String> winePaths = new ArrayList<>();
+        if (secretFiles == null || secretFiles.length() == 0) return winePaths;
 
         File secretDir = new File(container.getRootDir(), "tmp/epic-secrets");
         if (!secretDir.exists() && !secretDir.mkdirs()) {
@@ -2784,10 +2796,11 @@ public final class EpicFragment extends Fragment {
             for (File file : stale) if (file.lastModified() < cutoff) file.delete();
         }
 
-        String winePath = null;
         for (int i = 0; i < secretFiles.length(); i++) {
             JSONObject secret = secretFiles.optJSONObject(i);
-            if (secret == null) continue;
+            if (secret == null) {
+                throw new java.io.IOException("Epic returned malformed ownership-token metadata");
+            }
             String name = secret.optString("name", "");
             if (!name.matches("epic-[A-Za-z0-9_-]+\\.ovt")) {
                 throw new java.io.IOException("Invalid Epic ownership-token filename");
@@ -2806,26 +2819,35 @@ public final class EpicFragment extends Fragment {
             String imageRoot = ImageFs.find(requireContext()).getRootDir().getCanonicalPath();
             String targetPath = target.getCanonicalPath();
             if (!targetPath.startsWith(imageRoot + File.separator)) {
+                target.delete();
                 throw new java.io.IOException("Epic ownership token escaped the container image root");
             }
             String relativePath = targetPath.substring(imageRoot.length() + 1)
-                    .replace(File.separatorChar, '\\');
-            winePath = "Z:\\" + relativePath;
+                    .replace(File.separatorChar, '\\\\');
+            winePaths.add("Z:\\\\" + relativePath);
             File cleanupTarget = target;
             new Handler(Looper.getMainLooper()).postDelayed(cleanupTarget::delete, 30L * 60L * 1000L);
         }
-        return winePath;
+        return winePaths;
     }
 
-    private static void appendArguments(List<String> output, JSONArray input, String ownershipTokenPath) {
+    private static void appendArguments(List<String> output, JSONArray input,
+                                        List<String> ownershipTokenPaths) {
         if (input == null) return;
+        int ownershipTokenIndex = 0;
         for (int i = 0; i < input.length(); i++) {
             String value = input.optString(i, "");
             if (value.equals("-epicovt=__EPIC_OVT_PLACEHOLDER__")) {
-                if (ownershipTokenPath == null) continue;
-                value = "-epicovt=" + ownershipTokenPath;
+                if (ownershipTokenPaths == null
+                        || ownershipTokenIndex >= ownershipTokenPaths.size()) {
+                    throw new IllegalStateException("Epic ownership token is required but unavailable");
+                }
+                value = "-epicovt=" + ownershipTokenPaths.get(ownershipTokenIndex++);
             }
             if (!value.isEmpty()) output.add(value);
+        }
+        if (ownershipTokenPaths != null && ownershipTokenIndex != ownershipTokenPaths.size()) {
+            throw new IllegalStateException("Epic returned unused ownership-token files");
         }
     }
 
