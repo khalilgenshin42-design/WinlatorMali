@@ -47,15 +47,11 @@ jobs:
           for archive in payload/*.tzst; do
             tar --zstd -xf "$archive" -C extracted
           done
-          find extracted -type f \( -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' -o -iname '*.sh' -o -iname '*.reg' \) \
+          find extracted -type f \( -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' -o -iname '*.sh' -o -iname '*.reg' -o -iname '*.vbs' \) \
             -print > report/script-files.txt
           while IFS= read -r file; do
-            case "$file" in
-              *[Ee]ssential*|*[Ii]nstall*|*[Vv]credist*|*[Dd]irect[Xx]*|*[Pp]hys[Xx]*|*[Ww]get*)
-                mkdir -p "report/scripts/$(dirname "$file")"
-                cp "$file" "report/scripts/$file"
-                ;;
-            esac
+            mkdir -p "report/scripts/$(dirname "$file")"
+            cp "$file" "report/scripts/$file"
           done < report/script-files.txt
           grep -RInE 'wget|--show-progress|vcredist|DirectX|PhysX|OpenAL|wine-mono|wine-gecko|LAVFilters' extracted \
             --include='*.bat' --include='*.cmd' --include='*.sh' --include='*.ps1' \
