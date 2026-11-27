@@ -3201,3 +3201,21 @@ Replace the current largely linear home-page composition with a more deliberate 
   - Epic runtime/Android instrumentation/ARM64 workflow **45986160018**: queued at handoff update time.
   - Earlier runs for intermediate commit `304ba9b652307666c5038983bea50d8da6890267` were automatically cancelled when the second source commit arrived; do not treat those as failures.
 - No new APK build result, artifact, or Xiaomi 15T runtime test is claimed yet. Next gate: inspect both exact-head workflow results and logs; if successful, run device validation of first launch/runtime extraction, account status, library refresh, and the active download/re-entry path.
+
+
+## Engineering step log — 2026-11-27: install-result and cancellation recovery
+
+- Audited the foreground install result from the Python bridge through `EpicRuntimeService`, `waitForJob()`, and the game-profile callback.
+- Found that Legendary's successful response is nested as `{ok:true, game:{...}}`, while the host UI read prerequisite and compatibility-warning fields from the top level. The host now reads the nested `game` object and remains compatible with older flat responses.
+- Corrected terminal install failure/cancellation handling: cancellation is now described as cancellation rather than an install failure, and the Library refreshes after a terminal failed/cancelled operation so game cards cannot remain visually stuck in a downloading state.
+- Restored the game-profile primary action according to actual install support and storage readiness instead of unconditionally enabling an Install button after any terminal job.
+- Added an Android instrumentation regression test for the provider contract: `ping` is lightweight and does not claim runtime readiness; `status` must confirm packaged assets and successful CPython initialization.
+- Additional source commits:
+  - `a1fd27411d93869420b539989b1482e8c8f5722d` — nested install metadata and valid post-job actions.
+  - `aee503872d084bc603d5d96212674b9ed39eb4c0` — provider readiness instrumentation coverage.
+  - `d1ea96368e5ca85045e5c3949926cb2672bb6447` — terminal cancellation/failure UI recovery.
+- Exact latest source head: `d1ea96368e5ca85045e5c3949926cb2672bb6447`.
+- CI for that exact head:
+  - Standard APK build: **45987158199**, running.
+  - Epic CPython/Android instrumentation/ARM64 packaging: **45987158152**, running.
+- Do not distribute an APK from the earlier `a1fd` or `aee5038` runs as the latest build; wait for the exact `d1ea963` workflows and artifact verification.
