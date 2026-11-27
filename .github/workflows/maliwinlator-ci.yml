@@ -69,6 +69,24 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --version
 
+      - name: Validate Essentials installer safeguards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          script = Path("app/src/main/assets/essentials_install.bat").read_text(encoding="utf-8")
+          installer = Path("app/src/main/java/com/winlator/cmod/xenvironment/ImageFsInstaller.java").read_text(encoding="utf-8")
+          assert script.count("call :download ") == 13, "Expected all 13 Essentials payloads"
+          assert script.count("if errorlevel 1 goto download_failed") == 13, "Every download must be checked"
+          assert script.count("call :check_installer") == 11, "Every executable/MSI installer must be checked"
+          assert script.count("if errorlevel 1 goto install_failed") == 13, "Installer and registry/extraction steps must fail closed"
+          assert 'LATEST_VERSION = 22' in installer, "ImageFS version must trigger the installer patch"
+          assert 'installEssentialsInstaller(activity, rootDir)' in installer, "Installer patch must be applied after extraction"
+          assert 'installer-scripts-readable' not in script
+          print("Essentials static safeguards passed: 13 verified downloads, 11 checked installers, fail-closed completion.")
+          PY
+
       - name: Run command parser JVM regression tests
         run: ./gradlew :app:testStandardDebugUnitTest --no-daemon --stacktrace
 
