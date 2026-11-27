@@ -527,3 +527,115 @@ class GameDetailsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class EpicLaunchInfoTests(unittest.TestCase):
+    def test_launch_info_preserves_egs_arguments_environment_and_all_ownership_tokens(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first_path = os.path.join(directory, "first.ovt")
+            second_path = os.path.join(directory, "second.ovt")
+            first_token = b"first-short-lived-ownership-token"
+            second_token = b"second-short-lived-ownership-token"
+            with open(first_path, "wb") as output:
+                output.write(first_token)
+            with open(second_path, "wb") as output:
+                output.write(second_token)
+
+            launch_parameters = SimpleNamespace(
+                game_executable="Binaries/Win64/Game.exe",
+                game_directory="/games/Example",
+                working_directory="/games/Example/Binaries/Win64",
+                game_parameters=["-AUTH_LOGIN=unused", "-AUTH_TYPE=exchangecode"],
+                egl_parameters=[
+                    "-epicapp=example-app",
+                    "-epicovt=" + first_path,
+                    "-epicenv=Prod",
+                    "-epicovt=" + second_path,
+                ],
+                user_parameters=["-windowed", "-language=en"],
+                environment={"EOS_Overlay": "1", "EOS_TEST_SESSION": "opaque-value"},
+            )
+
+            class FakeCore:
+                def login(self):
+                    return True
+
+                def is_installed(self, app_name):
+                    return app_name == "EXAMPLE"
+
+                def get_launch_parameters(self, app_name, disable_wine=False):
+                    self.request = (app_name, disable_wine)
+                    return launch_parameters
+
+            core = FakeCore()
+            with patch.object(runner, "_require_login"):
+                result = runner._launch_info(core, {"app_name": "EXAMPLE"})
+
+            self.assertEqual(core.request, ("EXAMPLE", True))
+            self.assertEqual(result["game_executable"], launch_parameters.game_executable)
+            self.assertEqual(result["game_directory"], launch_parameters.game_directory)
+            self.assertEqual(result["working_directory"], launch_parameters.working_directory)
+            self.assertEqual(result["game_parameters"], launch_parameters.game_parameters)
+            self.assertEqual(result["user_parameters"], launch_parameters.user_parameters)
+            self.assertEqual(result["environment"], launch_parameters.environment)
+            self.assertEqual(result["egl_parameters"], [
+                "-epicapp=example-app",
+                "-epicovt=__EPIC_OVT_PLACEHOLDER__",
+                "-epicenv=Prod",
+                "-epicovt=__EPIC_OVT_PLACEHOLDER__",
+            ])
+            self.assertEqual(len(result["secret_files"]), 2)
+            self.assertEqual(
+                [__import__("base64").b64decode(item["data_base64"])
+                 for item in result["secret_files"]],
+                [first_token, second_token],
+            )
+            self.assertTrue(all(
+                item["name"].startswith("epic-") and item["name"].endswith(".ovt")
+                for item in result["secret_files"]
+            ))
+            self.assertFalse(os.path.exists(first_path))
+            self.assertFalse(os.path.exists(second_path))
+
+    def test_launch_info_rejects_missing_ownership_token_file(self):
+        missing_path = "/path/that/does/not/exist/epic-token.ovt"
+        params = SimpleNamespace(
+            game_executable="Game.exe",
+            game_directory="/games/Example",
+            working_directory="/games/Example",
+            game_parameters=[],
+            egl_parameters=["-epicovt=" + missing_path],
+            user_parameters=[],
+            environment={},
+        )
+        core = SimpleNamespace(
+            is_installed=lambda app_name: True,
+            get_launch_parameters=lambda *args, **kwargs: params,
+        )
+        with patch.object(runner, "_require_login"):
+            with self.assertRaises(FileNotFoundError):
+                runner._launch_info(core, {"app_name": "EXAMPLE"})
+
+    def test_launch_info_rejects_oversized_ownership_token_and_removes_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            token_path = os.path.join(directory, "oversized.ovt")
+            with open(token_path, "wb") as output:
+                output.write(b"x" * (256 * 1024 + 1))
+            params = SimpleNamespace(
+                game_executable="Game.exe",
+                game_directory="/games/Example",
+                working_directory="/games/Example",
+                game_parameters=[],
+                egl_parameters=["-epicovt=" + token_path],
+                user_parameters=[],
+                environment={},
+            )
+            core = SimpleNamespace(
+                is_installed=lambda app_name: True,
+                get_launch_parameters=lambda *args, **kwargs: params,
+            )
+            with patch.object(runner, "_require_login"):
+                with self.assertRaises(ValueError):
+                    runner._launch_info(core, {"app_name": "EXAMPLE"})
+            self.assertFalse(os.path.exists(token_path))
+
