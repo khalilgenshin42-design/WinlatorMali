@@ -2501,11 +2501,15 @@ public final class EpicFragment extends Fragment {
         runCommand("install", payload.toString(), result -> {
             if (!result.optBoolean("pending", false)) {
                 gameJobActive = false;
+                boolean installedNow = installedApps.contains(appName);
+                boolean installAvailable = isGameInstallSupported(findCachedGame(appName)) && storageReady;
                 if (gameDockStatusText != null && appName.equals(selectedGameAppName)) {
-                    gameDockStatusText.setText(installedApps.contains(appName)
+                    gameDockStatusText.setText(installedNow
                             ? "READY TO PLAY" : "READY TO INSTALL");
                 }
-                updateGameActionButton(installedApps.contains(appName) ? "Play game" : "Install", true);
+                updateGameActionButton(installedNow ? "Play game"
+                        : (installAvailable ? "Install" : "Unavailable"),
+                        installedNow || installAvailable);
             }
             if (!result.optBoolean("ok", false)) {
                 if (result.optBoolean("pending", false)) {
@@ -2518,13 +2522,18 @@ public final class EpicFragment extends Fragment {
             }
             String installMessage = title + (update ? " updated in " : " installed in ") +
                     targetContainer.getName() + ". Select that container to launch the game.";
-            JSONObject prerequisites = result.optJSONObject("prerequisites");
+            // The bridge's install response is {ok:true, game:{...}}.
+            // Read metadata from that nested game object, while tolerating
+            // older flat responses during companion/host version transitions.
+            JSONObject installResult = result.optJSONObject("game");
+            if (installResult == null) installResult = result;
+            JSONObject prerequisites = installResult.optJSONObject("prerequisites");
             if (prerequisites != null && !prerequisites.optString("path", "").isEmpty()) {
                 installMessage += " Epic lists a prerequisite installer (" +
                         prerequisites.optString("name", "required component") +
                         "); it is not launched automatically by this build.";
             }
-            JSONArray warnings = result.optJSONArray("warnings");
+            JSONArray warnings = installResult.optJSONArray("warnings");
             if (warnings != null && warnings.length() > 0) {
                 installMessage += " Compatibility warnings: " + warnings.toString();
             }
