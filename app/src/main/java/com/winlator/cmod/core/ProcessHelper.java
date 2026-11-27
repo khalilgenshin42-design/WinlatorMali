@@ -265,51 +265,55 @@ public abstract class ProcessHelper {
         }
     }
 
+    /**
+     * Tokenize a command line for ProcessBuilder. Double quotes group whitespace but are
+     * syntax, not part of the resulting argv entries. Keeping quote characters in argv
+     * breaks cmd.exe /c: cmd then treats the quoted executable and its switches as one
+     * command name (notably the Winlator Extras wget.exe invocations).
+     *
+     * A backslash immediately before a space retains the legacy escaped-space behavior.
+     */
     public static String[] splitCommand(String command) {
-        ArrayList<String> result = new ArrayList<>();
-        boolean startedQuotes = false;
-        String value = "";
-        char currChar, nextChar;
-        for (int i = 0, count = command.length(); i < count; i++) {
-            currChar = command.charAt(i);
+        if (command == null || command.trim().isEmpty()) return new String[0];
 
-            if (startedQuotes) {
-                if (currChar == '"') {
-                    startedQuotes = false;
-                    if (!value.isEmpty()) {
-                        value += '"';
-                        result.add(value);
-                        value = "";
-                    }
-                }
-                else value += currChar;
+        ArrayList<String> result = new ArrayList<>();
+        StringBuilder value = new StringBuilder();
+        boolean inQuotes = false;
+        boolean tokenStarted = false;
+
+        for (int i = 0; i < command.length(); i++) {
+            char current = command.charAt(i);
+
+            if (current == '"') {
+                inQuotes = !inQuotes;
+                tokenStarted = true; // preserve an explicitly empty quoted argument
+                continue;
             }
-            else if (currChar == '"') {
-                startedQuotes = true;
-                value += '"';
+
+            if (current == '\\\\' && i + 1 < command.length()
+                    && Character.isWhitespace(command.charAt(i + 1))) {
+                value.append(command.charAt(++i));
+                tokenStarted = true;
+                continue;
             }
-            else {
-                nextChar = i < count-1 ? command.charAt(i+1) : '\0';
-                if (currChar == ' ' || (currChar == '\\' && nextChar == ' ')) {
-                    if (currChar == '\\') {
-                        value += ' ';
-                        i++;
-                    }
-                    else if (!value.isEmpty()) {
-                        result.add(value);
-                        value = "";
-                    }
+
+            if (Character.isWhitespace(current) && !inQuotes) {
+                if (tokenStarted) {
+                    result.add(value.toString());
+                    value.setLength(0);
+                    tokenStarted = false;
                 }
-                else {
-                    value += currChar;
-                    if (i == count-1) {
-                        result.add(value);
-                        value = "";
-                    }
-                }
+                continue;
             }
+
+            value.append(current);
+            tokenStarted = true;
         }
 
+        if (inQuotes) {
+            throw new IllegalArgumentException("Unterminated double quote in command line");
+        }
+        if (tokenStarted) result.add(value.toString());
         return result.toArray(new String[0]);
     }
 
