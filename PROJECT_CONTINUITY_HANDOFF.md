@@ -3182,3 +3182,22 @@ Replace the current largely linear home-page composition with a more deliberate 
 
 - Follow-up source commit `7cb04db15d61f049fc9e8d62d851fd13858f6a13` expands the destination bar to Library, Discover, Downloads, and Settings. Discover deliberately opens the official Epic Games Store website rather than fabricating a storefront catalog or pretending the owned-library API provides store-discovery data. Settings routes to the existing Account & setup screen.
 - Fresh standard APK and Epic ARM64 workflow results are required for this follow-up SHA; the previous source commit `84b41a819405e1359f19639fc18685f32512a43f` had both workflows running at the time of this note.
+
+
+## Engineering step log — 2026-11-27: embedded runtime readiness hardening
+
+- Audited the current Epic host/embedded-runtime path on `development/maliwinlator-1.2.1-bootstrap` at the prior source tip `7832aa88277e1d2c160930c98b26982f547ed644`.
+- Found a readiness-reporting gap: the embedded provider's `status` response treated packaged Python assets + loadable JNI library + AES-GCM self-test as proof that Legendary was ready. It did not run `EpicPythonRuntime.initialize()`, so a CPython extraction/initialization failure could be reported as ready and only surface on the first account/library request.
+- Fixed the provider status contract:
+  - Added a cheap `ping` response for provider discovery; it does not extract or initialize CPython.
+  - `status` now runs the actual embedded CPython initialization on the provider's background process and reports `runtime_ready=true` only after initialization succeeds.
+  - Added explicit `runtime_packaged` and `runtime_initialization_failed` reporting so packaged-but-unusable runtimes are not misreported as healthy.
+- Updated `EpicBridgeClient.isInstalled()` to use the cheap ping and allow the optional companion fallback when embedded runtime initialization or the AES-GCM self-test fails. The embedded one-APK path remains primary; the companion remains a fallback, not a required install.
+- Source commits:
+  - `304ba9b652307666c5038983bea50d8da6890267` — provider readiness now reflects actual CPython initialization.
+  - `4dfd7350cd4651187db051057d24a030380e7e37` — cheap provider discovery and companion fallback for initialization failures.
+- CI triggered for exact source head `4dfd7350cd4651187db051057d24a030380e7e37`:
+  - Standard APK workflow **45986159980**: queued at handoff update time.
+  - Epic runtime/Android instrumentation/ARM64 workflow **45986160018**: queued at handoff update time.
+  - Earlier runs for intermediate commit `304ba9b652307666c5038983bea50d8da6890267` were automatically cancelled when the second source commit arrived; do not treat those as failures.
+- No new APK build result, artifact, or Xiaomi 15T runtime test is claimed yet. Next gate: inspect both exact-head workflow results and logs; if successful, run device validation of first launch/runtime extraction, account status, library refresh, and the active download/re-entry path.
