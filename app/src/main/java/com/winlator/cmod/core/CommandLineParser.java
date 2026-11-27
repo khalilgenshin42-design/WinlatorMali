@@ -123,9 +123,14 @@ final class CommandLineParser {
                 int index = lower.indexOf(extension, from);
                 if (index < 0) break;
                 int end = index + extension.length();
-                if ((end == value.length() || Character.isWhitespace(value.charAt(end))) &&
-                        (best < 0 || end < best)) {
-                    best = end;
+                if (end == value.length() || Character.isWhitespace(value.charAt(end))) {
+                    String candidate = value.substring(0, end);
+                    boolean rootedPath = candidate.matches("^[A-Za-z]:[\\\\/].*") ||
+                            candidate.startsWith("\\\\") ||
+                            candidate.startsWith("./") || candidate.startsWith(".\\\\") ||
+                            candidate.startsWith("../") || candidate.startsWith("..\\\\");
+                    boolean simpleCommand = candidate.chars().noneMatch(Character::isWhitespace);
+                    if ((rootedPath || simpleCommand) && (best < 0 || end < best)) best = end;
                 }
                 from = index + 1;
             }
