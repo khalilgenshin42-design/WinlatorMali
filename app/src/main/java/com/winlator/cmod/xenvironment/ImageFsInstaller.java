@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class ImageFsInstaller {
-    public static final byte LATEST_VERSION = 21;
+    public static final byte LATEST_VERSION = 22;
     private static final AtomicBoolean isInstalling = new AtomicBoolean(false);
 
     private static void resetContainerImgVersions(Context context) {
@@ -66,6 +66,35 @@ public abstract class ImageFsInstaller {
 
         for (String driver : adrenotoolsAssetDrivers)
             adrenotoolsManager.extractDriverFromResources(driver);
+    }
+
+    /**
+     * Replace the upstream Essentials batch file with the checked installer shipped
+     * by this app. The guest image is externally versioned, so patch it after every
+     * image extraction rather than modifying the upstream archive in-place.
+     */
+    private static boolean installEssentialsInstaller(Context context, File rootDir) {
+        File installer = new File(rootDir,
+                "home/xuser/.wine/drive_c/ProgramData/Microsoft/Windows/Start Menu/1-INSTALL/INSTALL RECOMMENDED ESSENTIAL FILES.bat");
+        try (InputStream input = context.getAssets().open("essentials_install.bat");
+             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] chunk = new byte[8192];
+            int count;
+            while ((count = input.read(chunk)) != -1) buffer.write(chunk, 0, count);
+            String script = new String(buffer.toByteArray(), StandardCharsets.UTF_8)
+                    .replace("\r\n", "\n")
+                    .replace("\n", "\r\n");
+            File parent = installer.getParentFile();
+            if (parent == null || (!parent.isDirectory() && !parent.mkdirs())) return false;
+            try (FileOutputStream output = new FileOutputStream(installer, false)) {
+                output.write(script.getBytes(StandardCharsets.UTF_8));
+                output.flush();
+            }
+            return installer.isFile() && installer.length() > 0;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static void installFromAssets(final MainActivity activity) {
