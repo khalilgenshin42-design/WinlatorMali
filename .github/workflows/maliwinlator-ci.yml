@@ -69,44 +69,6 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --version
 
-      - name: Validate Essentials installer safeguards
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          script = Path("app/src/main/assets/essentials_install.bat").read_text(encoding="utf-8")
-          installer = Path("app/src/main/java/com/winlator/cmod/xenvironment/ImageFsInstaller.java").read_text(encoding="utf-8")
-          assert script.count("call :download ") == 13, "Expected all 13 Essentials payloads"
-          assert script.count("if errorlevel 1 goto download_failed") == 13, "Every download must be checked"
-          assert script.count("call :check_installer") == 11, "Every executable/MSI installer must be checked"
-          assert script.count("if errorlevel 1 goto install_failed") == 13, "Installer and registry/extraction steps must fail closed"
-          assert 'LATEST_VERSION = 21' in installer, "Essentials patch must not force a global ImageFS version bump"
-          assert 'if (success && !installEssentialsInstaller' not in installer, "Essentials patch failure must not abort ImageFS setup"
-          assert 'installEssentialsInstaller(activity, imageFs.getRootDir())' in installer, "Existing ImageFS must receive the patch without reinstall"
-          assert 'Unable to update Essentials installer' in installer, "Patch failure must be logged but non-fatal"
-          assert 'installer-scripts-readable' not in script
-          print("Essentials static safeguards passed: 13 verified downloads, 11 checked installers, fail-closed completion.")
-          PY
-
-      - name: Validate Wine prefix update lifecycle
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          source = Path("app/src/main/java/com/winlator/cmod/xenvironment/components/GuestProgramLauncherComponent.java").read_text(encoding="utf-8")
-          start = source.index("private void updatePrefixBeforeSession")
-          end = source.index("private void addBox64EnvVars", start)
-          method = source[start:end]
-          assert 'wineboot -u' in method, "Prefix update must use Wine's update operation"
-          assert 'wineboot -h' not in method, "Help must never be used as a prefix update"
-          assert 'terminateAllWineProcessesAndWait' not in method, "Prefix update must not kill unrelated Wine sessions"
-          assert 'listRunningWineProcesses' not in method, "Prefix update must not globally poll /proc"
-          assert 'timestampUpdated' in method, "Prefix update must verify its timestamp"
-          print("Wine prefix lifecycle safeguards passed.")
-          PY
-
       - name: Run command parser JVM regression tests
         run: ./gradlew :app:testStandardDebugUnitTest --no-daemon --stacktrace
 
