@@ -196,6 +196,12 @@ jobs:
           set -euo pipefail
           SITE_PACKAGES="$PWD/cross-build/x86_64-linux-android/prefix/lib/python3.15/site-packages"
           cp "$GITHUB_WORKSPACE/maliwinlator/epicbridge/poc/site-packages/epic_runtime_smoke.py" "$SITE_PACKAGES/"
+          # CPython v3.15.2 currently pins AGP 9.3.1 in its testbed. That
+          # release resolves Kotlin 2.3.20, which is not published in the
+          # configured repositories; use AGP 9.2.0 (Gradle 9.5 compatible)
+          # for this CI-only testbed without changing CPython runtime sources.
+          sed -i 's/id("com.android.application") version "9.3.1"/id("com.android.application") version "9.2.0"/' Platforms/Android/testbed/build.gradle.kts
+          grep -F 'version "9.2.0"' Platforms/Android/testbed/build.gradle.kts
           # Maven Central occasionally rate-limits the upstream CPython Android
           # testbed's Gradle dependency resolution. Retry only explicit HTTP 429
           # failures; real test/build failures remain fail-fast.
