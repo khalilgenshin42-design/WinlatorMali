@@ -336,7 +336,7 @@ public abstract class ProcessHelper {
                 tokenStarted = true;
                 continue;
             }
-            if (current == '\\\\' && i + 1 < command.length()
+            if (current == '\\' && i + 1 < command.length()
                     && Character.isWhitespace(command.charAt(i + 1))) {
                 value.append(command.charAt(++i));
                 tokenStarted = true;
