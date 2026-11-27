@@ -48,7 +48,9 @@ public final class EpicBridgeClient {
     private EpicBridgeClient() {}
 
     public static boolean isInstalled(Context context) {
-        Bundle embedded = callEmbedded(context, "status", null, null);
+        // Provider discovery must stay cheap; runtime extraction/initialization
+        // is performed by getStatus() on the background status executor.
+        Bundle embedded = callEmbedded(context, "ping", null, null);
         if (embedded != null && embedded.getBoolean("installed", false)) return true;
         try {
             if (Build.VERSION.SDK_INT >= 33) {
@@ -86,6 +88,8 @@ public final class EpicBridgeClient {
             String state = embedded.getString("state", "");
             return !embedded.getBoolean("runtime_ready", false)
                     && ("runtime_not_installed".equals(state)
+                    || "runtime_initialization_failed".equals(state)
+                    || "crypto_unavailable".equals(state)
                     || "provider_unavailable".equals(state));
         }
         String error = embedded.getString("error", "");
