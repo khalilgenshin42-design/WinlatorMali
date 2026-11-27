@@ -302,12 +302,12 @@ public abstract class ProcessHelper {
                     tail = tail.substring(1, tail.length() - 1).trim();
                     int space = firstWhitespace(tail);
                     String commandName = space < 0 ? tail : tail.substring(0, space);
-                    if (!commandName.isEmpty() && !commandName.startsWith("\\\"") &&
+                    if (!commandName.isEmpty() && !commandName.startsWith("\"") &&
                             (commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".exe") ||
                              commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".com") ||
                              commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".bat") ||
                              commandName.toLowerCase(java.util.Locale.ROOT).endsWith(".cmd"))) {
-                        tail = "\\\"" + commandName + "\\\"" +
+                        tail = "\"" + commandName + "\"" +
                                 (space < 0 ? "" : tail.substring(space));
                     }
                 }
