@@ -37,4 +37,9 @@ public class CommandLineParserTest {
                 CommandLineParser.split("cmd.exe /c \"C:\\Program Files\\Tools\\wget.exe -q --show-progress\""));
     }
 
+    @Test public void doesNotQuoteExeUrlAsExecutableForBuiltinCommand() {
+        assertArrayEquals(new String[]{"cmd.exe", "/c", "echo https://example.invalid/file.exe"},
+                CommandLineParser.split("cmd.exe /c \"echo https://example.invalid/file.exe\""));
+    }
+
 }
