@@ -3294,3 +3294,21 @@ Replace the current largely linear home-page composition with a more deliberate 
 2. Verify embedded runtime readiness, Epic sign-in, owned library, install progress/cancel/retry, and launch.
 3. Test Borderlands 2 specifically only after account/library launch flow works; it remains unverified.
 4. If device testing passes, continue title-specific DRM compatibility matrix and release hardening/signing review.
+
+
+## Device validation update — 2026-11-27: first Epic game confirmed working
+
+- User reports that small Epic games, specifically **while True: learn()**, install and work through the MaliWinlator Epic integration on the Xiaomi 15T / Android 16.
+- Record this as a positive user-device smoke test for at least one owned Windows title: Epic runtime startup, catalog/install path and game launch can work end-to-end on the target phone. This is user-reported, not independently observed by CI.
+- Do not generalize this result to all titles, large downloads, prerequisites, Epic EOS ownership-token enforcement, publisher launchers, or anti-cheat.
+- The successful build remains the prerelease at `maliwinlator-1.2.1-epic-02061dbd7fb5`, source `02061dbd7fb54af56c96b498669af72fbd607d5b`.
+- Source audit confirms that `EpicFragment.launchGame()` obtains fresh Legendary launch metadata, validates executable/game/working-directory containment within the selected container, materializes short-lived `-epicovt` ownership tokens, and fails closed if token placeholders and token files do not match. The payload is consumed by `XServerDisplayActivity`, which sets the game arguments/working directory and enables secure launch; `GuestProgramLauncherComponent` injects the Epic environment only after prefix maintenance and uses `ProcessHelper.execSecure` so launch credentials are not written to the ordinary command log.
+- Known limitation still relevant to larger titles: Epic's `install_game()` result may include a prerequisite installer, but the host currently only reports that prerequisite to the user; it does not automatically execute it. Treat missing VC runtimes, DirectX components, or title-specific prerequisites as a likely compatibility blocker until an explicit safe installer workflow is implemented.
+- Next device validation target: **Borderlands 2 launched from the Epic Library card**, not from an unrelated shortcut. First test the unmodified Epic launch path; do not add launch flags or alter DXVK settings until the failure stage is known. Capture whether the game reaches its publisher splash, title screen, or main menu. If it fails, capture non-secret logs around Epic launch preparation and Wine/DXVK startup. Never share EOS passwords, session tokens, or ownership-token contents.
+
+### Next actions
+
+1. Test Borderlands 2 through the Epic Library launch button using the successful Epic prerelease and the intended container.
+2. If it exits or black-screens, distinguish Epic auth failure from Wine/game prerequisites and D3D9/DXVK rendering by recording the last visible screen and the corresponding log tail.
+3. Add a prerequisite-installer workflow only after validating the exact Legendary prerequisite metadata and safe Wine invocation semantics; do not blindly run arbitrary installers or claim universal DRM support.
+4. After Borderlands 2, test a larger Epic title to exercise sustained download/install, disk space, container path handling, and longer-running process stability.
